@@ -31,12 +31,12 @@
             @if(request()->routeIs('laporan.create'))<span class="nav-chevron">›</span>@endif
         </a>
 
-        <a href="{{ route('laporan.index') }}" class="nav-item {{ request()->routeIs('laporan.*') ? 'active' : '' }}">
+        <a href="{{ route('laporan.index') }}" class="nav-item {{ request()->routeIs('laporan.index', 'laporan.show') ? 'active' : '' }}">
             <span class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M9 12h6M9 16h6M9 8h2"/></svg>
             </span>
             <span class="nav-text">Daftar Laporan</span>
-            @if(request()->routeIs('laporan.*'))<span class="nav-chevron">›</span>@endif
+            @if(request()->routeIs('laporan.index', 'laporan.show'))<span class="nav-chevron">›</span>@endif
         </a>
 
         <a href="{{ route('detail-data.index') }}" class="nav-item {{ request()->routeIs('detail-data.*') ? 'active' : '' }}">

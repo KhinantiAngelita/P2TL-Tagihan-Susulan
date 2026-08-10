@@ -12,7 +12,14 @@ class LaporanController extends Controller
 {
     public function create()
     {
-        return view('laporan.create');
+        $lastUpload = LaporanSusulan::latest()->first();
+
+        // "Berhasil" dihitung beneran dari data yang masuk hari ini.
+        // Gagal/Diproses/Antrian belum ada tracking-nya di skema saat ini
+        // (butuh tabel log/queue job kalau mau real) — untuk sementara 0.
+        $berhasilHariIni = LaporanSusulan::whereDate('created_at', today())->count();
+
+        return view('laporan.create', compact('lastUpload', 'berhasilHariIni'));
     }
 
     public function store(Request $request)
@@ -30,9 +37,11 @@ class LaporanController extends Controller
             Excel::import($import, $file);
             DB::commit();
 
+            $waktu = now()->translatedFormat('d/m/Y \p\u\k\u\l H:i');
+
             return redirect()
                 ->route('laporan.show', $import->laporan->id)
-                ->with('success', 'File berhasil diimport: ' . $import->laporan->jumlah_baris . ' baris data.');
+                ->with('success', 'File berhasil diimport: ' . $import->laporan->jumlah_baris . ' baris data. Diupload pada ' . $waktu . '.');
         } catch (\Throwable $e) {
             DB::rollBack();
             return back()->withErrors(['file_excel' => 'Gagal memproses file: ' . $e->getMessage()]);
