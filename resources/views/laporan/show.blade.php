@@ -2,8 +2,24 @@
 @section('title', 'Detail Laporan')
 @section('content')
 <div class="card">
-    <h2>{{ $laporan->judul_laporan }}</h2>
-    <p>{{ $laporan->unit_induk }} — {{ $laporan->unit_up3 }} — {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+            <h2 style="margin:0 0 4px">{{ $laporan->judul_laporan }}</h2>
+            <p style="margin:0">{{ $laporan->unit_induk }} — {{ $laporan->unit_up3 }} — {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
+        </div>
+        <div style="text-align:right">
+            @if ($laporan->status === 'aktif')
+                <span class="badge badge-latest">Versi Aktif (v{{ $laporan->versi }})</span>
+            @else
+                <span style="color:#888;font-size:13px">Versi Lama (v{{ $laporan->versi }}) — sudah digantikan</span>
+            @endif
+            @if ($jumlahVersi > 1)
+                <div style="margin-top:6px">
+                    <a href="{{ route('laporan.riwayat', $laporan->id) }}" style="font-size:13px">Lihat riwayat versi ({{ $jumlahVersi }})</a>
+                </div>
+            @endif
+        </div>
+    </div>
     <div class="grid">
         <div class="card stat"><h3>Total Keseluruhan</h3><p>Rp {{ number_format($laporan->total_keseluruhan,0,',','.') }}</p></div>
         <div class="card stat"><h3>Total Tunai</h3><p>Rp {{ number_format($laporan->total_tunai,0,',','.') }}</p></div>

@@ -14,9 +14,6 @@ class LaporanController extends Controller
     {
         $lastUpload = LaporanSusulan::latest()->first();
 
-        // "Berhasil" dihitung beneran dari data yang masuk hari ini.
-        // Gagal/Diproses/Antrian belum ada tracking-nya di skema saat ini
-        // (butuh tabel log/queue job kalau mau real) — untuk sementara 0.
         $berhasilHariIni = LaporanSusulan::whereDate('created_at', today())->count();
 
         return view('laporan.create', compact('lastUpload', 'berhasilHariIni'));
@@ -37,20 +34,29 @@ class LaporanController extends Controller
             Excel::import($import, $file);
             DB::commit();
 
-            $waktu = now()->translatedFormat('d/m/Y \p\u\k\u\l H:i');
+            $pesan = $import->laporan->versi > 1
+                ? "File berhasil diimport sebagai versi {$import->laporan->versi} ({$import->laporan->jumlah_baris} baris). Versi sebelumnya otomatis dipindah ke riwayat."
+                : "File berhasil diimport: {$import->laporan->jumlah_baris} baris data.";
 
             return redirect()
                 ->route('laporan.show', $import->laporan->id)
-                ->with('success', 'File berhasil diimport: ' . $import->laporan->jumlah_baris . ' baris data. Diupload pada ' . $waktu . '.');
+                ->with('success', $pesan);
         } catch (\Throwable $e) {
             DB::rollBack();
             return back()->withErrors(['file_excel' => 'Gagal memproses file: ' . $e->getMessage()]);
         }
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $laporans = LaporanSusulan::latest()->paginate(10);
+        $sort = $request->query('sort', 'terbaru');
+
+        $laporans = LaporanSusulan::query()
+            ->aktif()
+            ->when($sort === 'terlama', fn ($q) => $q->oldest())
+            ->when($sort !== 'terlama', fn ($q) => $q->latest())
+            ->paginate(10);
+
         return view('laporan.index', compact('laporans'));
     }
 
@@ -67,7 +73,39 @@ class LaporanController extends Controller
 
         $top10 = $laporan->details()->orderByDesc('total')->limit(10)->get();
 
-        return view('laporan.show', compact('laporan', 'perGol', 'perHari', 'top10'));
+        $jumlahVersi = $laporan->semuaVersi()->count();
+
+        return view('laporan.show', compact('laporan', 'perGol', 'perHari', 'top10', 'jumlahVersi'));
+    }
+
+    /**
+     * Lihat semua versi (aktif + digantikan) untuk periode & unit yang sama.
+     */
+    public function riwayat(LaporanSusulan $laporan)
+    {
+        $versi = $laporan->semuaVersi();
+
+        return view('laporan.riwayat', compact('laporan', 'versi'));
+    }
+
+    /**
+     * Rollback: aktifkan kembali versi lama, versi yang sedang aktif dipindah jadi 'digantikan'.
+     */
+    public function aktifkan(LaporanSusulan $laporan)
+    {
+        DB::transaction(function () use ($laporan) {
+            LaporanSusulan::aktif()
+                ->where('unit_up3', $laporan->unit_up3)
+                ->where('bulan', $laporan->bulan)
+                ->where('tahun', $laporan->tahun)
+                ->update(['status' => 'digantikan']);
+
+            $laporan->update(['status' => 'aktif']);
+        });
+
+        return redirect()
+            ->route('laporan.show', $laporan->id)
+            ->with('success', "Versi {$laporan->versi} sekarang jadi versi aktif.");
     }
 
     public function destroy(LaporanSusulan $laporan)

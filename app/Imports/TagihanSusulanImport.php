@@ -36,6 +36,23 @@ class TagihanSusulanImport implements ToCollection, WithCalculatedFormulas
             $tahun = $m[2];
         }
 
+        // --- Cek apakah periode + unit yang sama sudah punya laporan aktif ---
+        // Kalau ada, laporan lama ditandai 'digantikan' (tetap disimpan sebagai riwayat),
+        // laporan baru jadi 'aktif' dengan nomor versi naik satu.
+        $versiBaru = 1;
+        if ($bulan && $tahun && $unitUp3) {
+            $existingAktif = LaporanSusulan::aktif()
+                ->where('unit_up3', $unitUp3)
+                ->where('bulan', $bulan)
+                ->where('tahun', $tahun)
+                ->first();
+
+            if ($existingAktif) {
+                $versiBaru = $existingAktif->versi + 1;
+                $existingAktif->update(['status' => 'digantikan']);
+            }
+        }
+
         $this->laporan = LaporanSusulan::create([
             'unit_induk'     => $unitInduk ?: null,
             'unit_up3'       => $unitUp3 ?: null,
@@ -44,6 +61,8 @@ class TagihanSusulanImport implements ToCollection, WithCalculatedFormulas
             'tahun'          => $tahun,
             'nama_file_asli' => $this->originalName,
             'path_file'      => $this->storedPath,
+            'status'         => 'aktif',
+            'versi'          => $versiBaru,
         ]);
 
         $buffer = [];

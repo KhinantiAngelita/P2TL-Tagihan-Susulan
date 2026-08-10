@@ -28,15 +28,18 @@ class DashboardController extends Controller
         }
 
         // Daftar periode (bulan+tahun) yang tersedia buat opsi filter,
-        // diurutkan dari yang terbaru.
-        $periodeTersedia = LaporanSusulan::select('bulan', 'tahun')
+        // diambil dari laporan versi aktif aja (biar gak nampilin periode
+        // yang sebenarnya cuma sisa versi lama yang udah digantikan).
+        $periodeTersedia = LaporanSusulan::aktif()
+            ->select('bulan', 'tahun')
             ->whereNotNull('bulan')->whereNotNull('tahun')
             ->distinct()->get()
             ->sortByDesc(fn ($p) => $p->tahun * 100 + (self::URUTAN_BULAN[$p->bulan] ?? 0))
             ->values();
 
-        // Query laporan sesuai filter (kalau ada)
-        $laporanQuery = LaporanSusulan::query();
+        // Query laporan sesuai filter (kalau ada) — cuma versi aktif,
+        // supaya angka gak dobel kalau ada bulan/unit yang pernah diupload ulang.
+        $laporanQuery = LaporanSusulan::query()->aktif();
         if ($bulan) $laporanQuery->where('bulan', $bulan);
         if ($tahun) $laporanQuery->where('tahun', $tahun);
 
@@ -52,8 +55,11 @@ class DashboardController extends Controller
             ->groupBy('gol')->orderByDesc('total_rp')->get();
 
         // Tren bulanan selalu tampil penuh (semua periode) sebagai konteks,
-        // terlepas dari filter yang lagi aktif.
-        $perBulan = LaporanSusulan::select('bulan', 'tahun', DB::raw('SUM(total_keseluruhan) as total_rp'))
+        // terlepas dari filter yang lagi aktif — tetap cuma dari versi aktif
+        // per periode, biar gak dobel hitung kalau ada bulan yang pernah
+        // diupload ulang.
+        $perBulan = LaporanSusulan::aktif()
+            ->select('bulan', 'tahun', DB::raw('SUM(total_keseluruhan) as total_rp'))
             ->whereNotNull('bulan')->whereNotNull('tahun')
             ->groupBy('bulan', 'tahun')->get()
             ->sortBy(fn ($p) => $p->tahun * 100 + (self::URUTAN_BULAN[$p->bulan] ?? 0))
