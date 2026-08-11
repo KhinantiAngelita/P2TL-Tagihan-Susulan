@@ -45,20 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'read'])->name('notifications.read');
     Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.readAll');
 
-    /*
-    |----------------------------------------------------------------------
-    | Laporan routes (semua route terkait "laporan" sekarang konsisten
-    | dalam satu group prefix + name, termasuk export yang sebelumnya
-    | nyasar keluar dan bikin route('laporan.export', ...) error)
-    |
-    | PENTING: route spesifik (upload, riwayat, aktifkan, export) HARUS
-    | didaftarkan SEBELUM route wildcard '/{laporan}' (show/destroy).
-    | Kalau kebalik, '/laporan/upload' bakal ke-match sama '{laporan}'
-    | (laporan dianggap id = "upload") duluan -> ModelNotFoundException
-    | -> 404, padahal route 'upload' sendiri sebenarnya valid & terdaftar.
-    | Ini persis bug yang bikin GET /laporan/upload 404 kemarin.
-    |----------------------------------------------------------------------
-    */
+    
     Route::prefix('laporan')->name('laporan.')->group(function () {
         Route::get('/', [LaporanController::class, 'index'])->name('index');
         Route::get('/upload', [LaporanController::class, 'create'])->name('create');
@@ -72,12 +59,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{laporan}', [LaporanController::class, 'destroy'])->name('destroy');
     });
 
-    /*
-    |----------------------------------------------------------------------
-    | Detail Data routes (dulu terpisah & duplikat, sekarang satu group
-    | prefix 'data-detail' + name 'detail-data.' yang konsisten)
-    |----------------------------------------------------------------------
-    */
     Route::prefix('data-detail')->name('detail-data.')->group(function () {
         Route::get('/', [DetailDataController::class, 'index'])->name('index');
         Route::get('/{detail}', [DetailDataController::class, 'showDetail'])->name('show');

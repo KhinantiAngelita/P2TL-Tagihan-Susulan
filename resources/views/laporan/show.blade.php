@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Detail Laporan')
 @section('content')
+
 <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
@@ -20,11 +21,55 @@
             @endif
         </div>
     </div>
-    <div class="grid">
-        <div class="card stat"><h3>Total Keseluruhan</h3><p>Rp {{ number_format($laporan->total_keseluruhan,0,',','.') }}</p></div>
-        <div class="card stat"><h3>Total Tunai</h3><p>Rp {{ number_format($laporan->total_tunai,0,',','.') }}</p></div>
-        <div class="card stat"><h3>Total Angsuran</h3><p>Rp {{ number_format($laporan->total_angsuran,0,',','.') }}</p></div>
-        <div class="card stat"><h3>Jumlah Baris</h3><p>{{ $laporan->jumlah_baris }}</p></div>
+</div>
+
+<div class="dash-stats">
+    <div class="dash-stat-card tone-yellow">
+        <div class="dash-stat-top">
+            <div class="dash-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+            </div>
+            <h3>Total Keseluruhan</h3>
+        </div>
+        <div class="dash-stat-value">Rp {{ number_format($laporan->total_keseluruhan,0,',','.') }}</div>
+        <div class="dash-stat-sub">Seluruh tagihan laporan ini</div>
+    </div>
+
+    <div class="dash-stat-card tone-blue">
+        <div class="dash-stat-top">
+            <div class="dash-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg>
+            </div>
+            <h3>Total Tunai</h3>
+        </div>
+        <div class="dash-stat-value">Rp {{ number_format($laporan->total_tunai,0,',','.') }}</div>
+        <div class="dash-stat-sub">
+            {{ $laporan->total_keseluruhan > 0 ? number_format($laporan->total_tunai / $laporan->total_keseluruhan * 100, 1) : 0 }}% dari total
+        </div>
+    </div>
+
+    <div class="dash-stat-card tone-purple">
+        <div class="dash-stat-top">
+            <div class="dash-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="6" rx="1"/><rect x="3" y="15" width="18" height="6" rx="1"/><rect x="3" y="3" width="18" height="2" rx="1"/></svg>
+            </div>
+            <h3>Total Angsuran</h3>
+        </div>
+        <div class="dash-stat-value">Rp {{ number_format($laporan->total_angsuran,0,',','.') }}</div>
+        <div class="dash-stat-sub">
+            {{ $laporan->total_keseluruhan > 0 ? number_format($laporan->total_angsuran / $laporan->total_keseluruhan * 100, 1) : 0 }}% dari total
+        </div>
+    </div>
+
+    <div class="dash-stat-card tone-green">
+        <div class="dash-stat-top">
+            <div class="dash-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M9 12h6M9 16h6M9 8h2"/></svg>
+            </div>
+            <h3>Jumlah Baris</h3>
+        </div>
+        <div class="dash-stat-value">{{ $laporan->jumlah_baris }}</div>
+        <div class="dash-stat-sub">Baris data pelanggan</div>
     </div>
 </div>
 

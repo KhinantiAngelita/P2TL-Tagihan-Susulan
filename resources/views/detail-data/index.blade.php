@@ -22,34 +22,9 @@
     .info-label { font-size: 12px; color: var(--text-muted); margin: 0 0 3px; }
     .info-value { font-size: 14.5px; font-weight: 700; color: #1b2559; margin: 0; }
 
-    .stat-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-        margin-bottom: 22px;
-    }
-    .stat-card {
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 18px 20px;
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-    }
-    .stat-card.highlight { border: 2px solid #ffce3a; }
-    .stat-icon {
-        width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .stat-icon svg { width: 19px; height: 19px; }
-    .stat-icon.yellow  { background: #fff6dc; color: #d99f00; }
-    .stat-icon.green   { background: #e6f7ea; color: #17803c; }
-    .stat-icon.orange  { background: #fff1e6; color: #d9720c; }
-    .stat-icon.purple  { background: #f0edfc; color: #6a4fe0; }
-    .stat-card .stat-label { font-size: 12.5px; color: var(--text-muted); margin: 0 0 6px; }
-    .stat-card .stat-value { font-size: 22px; font-weight: 800; color: #1b2559; margin: 0; }
-    .stat-card .stat-sub { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; }
+    /* Kartu statistik pakai .dash-stats / .dash-stat-card dari layouts/app.blade.php
+       — jangan didefinisikan ulang di sini biar gak ada 2 sumber style yang beda nama
+       dan style-nya gak sinkron kayak kemarin. */
 
     .chart-grid {
         display: grid;
@@ -179,7 +154,7 @@
     }
 
     @media (max-width: 900px) {
-        .stat-grid, .info-grid { grid-template-columns: repeat(2, 1fr); }
+        .info-grid { grid-template-columns: repeat(2, 1fr); }
         .chart-grid { grid-template-columns: 1fr; }
     }
 
@@ -454,47 +429,50 @@
     </div>
 </div>
 
-{{-- Kartu statistik --}}
-<div class="stat-grid">
-    <div class="stat-card highlight">
-        <div class="stat-icon yellow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
+{{-- Kartu statistik — sekarang pakai .dash-stats / .dash-stat-card, sama persis kayak dashboard --}}
+<div class="dash-stats">
+    <div class="dash-stat-card tone-yellow">
+        <div class="dash-stat-top">
+            <div class="dash-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
+            </div>
+            <h3>Total Keseluruhan</h3>
         </div>
-        <div>
-            <p class="stat-label">Total Keseluruhan</p>
-            <p class="stat-value">{{ \App\Http\Controllers\DetailDataController::formatRupiahJt($laporan->total_keseluruhan) }}</p>
-            <p class="stat-sub">Rp</p>
-        </div>
+        <div class="dash-stat-value">Rp {{ number_format($laporan->total_keseluruhan, 0, ',', '.') }}</div>
+        <div class="dash-stat-sub">Seluruh tagihan laporan ini</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon green">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+
+    <div class="dash-stat-card tone-blue">
+        <div class="dash-stat-top">
+            <div class="dash-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            </div>
+            <h3>Total Tunai</h3>
         </div>
-        <div>
-            <p class="stat-label">Total Tunai</p>
-            <p class="stat-value">{{ \App\Http\Controllers\DetailDataController::formatRupiahJt($laporan->total_tunai) }}</p>
-            <p class="stat-sub">{{ $persenTunai }}% dari total</p>
-        </div>
+        <div class="dash-stat-value">Rp {{ number_format($laporan->total_tunai, 0, ',', '.') }}</div>
+        <div class="dash-stat-sub">{{ $persenTunai }}% dari total</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon orange">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+
+    <div class="dash-stat-card tone-purple">
+        <div class="dash-stat-top">
+            <div class="dash-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+            </div>
+            <h3>Total Angsuran</h3>
         </div>
-        <div>
-            <p class="stat-label">Total Angsuran</p>
-            <p class="stat-value">{{ \App\Http\Controllers\DetailDataController::formatRupiahJt($laporan->total_angsuran) }}</p>
-            <p class="stat-sub">{{ $persenAngsuran }}% dari total</p>
-        </div>
+        <div class="dash-stat-value">Rp {{ number_format($laporan->total_angsuran, 0, ',', '.') }}</div>
+        <div class="dash-stat-sub">{{ $persenAngsuran }}% dari total</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon purple">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+
+    <div class="dash-stat-card tone-green">
+        <div class="dash-stat-top">
+            <div class="dash-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+            </div>
+            <h3>Jumlah Baris</h3>
         </div>
-        <div>
-            <p class="stat-label">Jumlah Baris</p>
-            <p class="stat-value">{{ $laporan->jumlah_baris }} baris</p>
-            <p class="stat-sub">Data aktif</p>
-        </div>
+        <div class="dash-stat-value">{{ $laporan->jumlah_baris }}</div>
+        <div class="dash-stat-sub">Data aktif</div>
     </div>
 </div>
 
@@ -953,129 +931,6 @@
         </form>
     </div>
 </div>
-</div>
-
-{{-- ================= MODAL EDIT ================= --}}
-<div id="editModal" class="custom-modal">
-    <div class="custom-modal-content">
-        <form id="editForm" method="POST">
-            @csrf
-            @method('PUT')
-
-            <div class="modal-header-blue">
-                <div class="header-text">
-                    <div class="header-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                    </div>
-                    <div>
-                        <h3>Edit Data Pelanggan</h3>
-                        <p>No. Agenda: <span id="editAgenda">-</span></p>
-                    </div>
-                </div>
-                <button class="close-modal" type="button">&times;</button>
-            </div>
-
-            <div class="modal-body">
-                <div class="modal-grid">
-                    <div class="form-group">
-                        <label>No Agenda</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
-                            <input type="text" name="no_agenda" id="e_no_agenda">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>IDPEL</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M19 4h-2a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/></svg>
-                            <input type="text" name="idpel" id="e_idpel" required>
-                        </div>
-                    </div>
-                    <div class="form-group full">
-                        <label>Nama Pelanggan</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            <input type="text" name="nama" id="e_nama" required>
-                        </div>
-                    </div>
-                    <div class="form-group full">
-                        <label>Alamat</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v18"/><path d="M2 22h20M10 6h.01M14 6h.01M10 10h.01M14 10h.01M10 14h.01M14 14h.01M10 18h4"/></svg>
-                            <input type="text" name="alamat" id="e_alamat">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Daya (VA)</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                            <input type="text" name="daya" id="e_daya">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>KWH</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                            <input type="number" step="0.01" name="kwh" id="e_kwh">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Beban (Rp)</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                            <input type="number" step="0.01" name="beban" id="e_beban">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Tunai (Rp)</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                            <input type="number" step="0.01" name="tunai" id="e_tunai">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Angsuran (Rp)</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                            <input type="number" step="0.01" name="angsuran" id="e_angsuran">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal Register</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                            <input type="date" name="tanggal_register" id="e_tanggal_register">
-                        </div>
-                    </div>
-                    <div class="form-group full">
-                        <label>Nomor Register</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
-                            <input type="text" name="nomor_register" id="e_nomor_register">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="total-box">
-                    <div>
-                        <span>Total (Tunai + Angsuran)</span>
-                        <p style="margin:4px 0 0;font-size:12px;color:#9aa4c2;">Dihitung otomatis</p>
-                    </div>
-                    <h2 id="e_total">Rp 0</h2>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline close-modal">Batal</button>
-                <button type="submit" class="btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><polyline points="20 6 9 17 4 12"/></svg>
-                    Simpan Perubahan
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
