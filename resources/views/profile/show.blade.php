@@ -179,9 +179,10 @@
     <p>Kelola informasi dan keamanan akun Anda.</p>
 </div>
 
-@if (session('success'))
-    <div class="alert-success" style="margin-bottom:18px;">{{ session('success') }}</div>
-@endif
+{{-- Catatan: alert "session('success')" SUDAH dirender otomatis oleh
+     layouts/app.blade.php sebelum @yield('content'). Jangan tambahkan
+     blok @if(session('success')) lagi di sini, supaya pesan sukses
+     tidak muncul dobel. --}}
 
 <div class="pf-layout">
     {{-- Kolom kiri: ringkasan profil --}}
