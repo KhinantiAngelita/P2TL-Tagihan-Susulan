@@ -1,7 +1,7 @@
 {{--
     Sidebar navigasi utama.
-    Item tanpa route asli (Analitik, Riwayat Upload, Manajemen User, Pengaturan)
-    diarahkan ke "#" — tinggal ganti route('nama.route') begitu halamannya jadi.
+    Item tanpa route asli (Analitik) masih diarahkan ke "#" — tinggal ganti
+    route('nama.route') begitu halamannya jadi.
 --}}
 <aside class="sidebar">
     <div class="sidebar-brand">
@@ -47,7 +47,6 @@
             @if(request()->routeIs('detail-data.*'))<span class="nav-chevron">›</span>@endif
         </a>
 
-        {{-- Placeholder — belum ada route/controller-nya --}}
         <a href="#" class="nav-item">
             <span class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
@@ -55,27 +54,34 @@
             <span class="nav-text">Analitik</span>
         </a>
 
-        <a href="#" class="nav-item">
-            <span class="nav-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </span>
-            <span class="nav-text">Manajemen User</span>
-        </a>
+        @if (auth()->check() && auth()->user()->isSuperAdmin())
+            <a href="{{ route('admin.users.index') }}" class="nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </span>
+                <span class="nav-text">Manajemen User</span>
+                @if(request()->routeIs('admin.users.*'))<span class="nav-chevron">›</span>@endif
+            </a>
+        @endif
 
-        <a href="#" class="nav-item">
+        {{-- Slot "Pengaturan" sekarang mengarah ke halaman Profil Saya (bisa update nama/email/password) --}}
+        <a href="{{ route('profile.show') }}" class="nav-item {{ request()->routeIs('profile.*') ? 'active' : '' }}">
             <span class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.56 1.04Z"/></svg>
             </span>
-            <span class="nav-text">Pengaturan</span>
+            <span class="nav-text">Profil Saya</span>
+            @if(request()->routeIs('profile.*'))<span class="nav-chevron">›</span>@endif
         </a>
     </nav>
 
     <div class="sidebar-user">
-        <div class="user-avatar">{{ $userInitials ?? 'AR' }}</div>
-        <div class="user-info">
-            <strong>{{ $userName ?? 'Ahmad Rizki' }}</strong>
-            <span>{{ $userRole ?? 'Admin Sistem' }}</span>
-        </div>
+        <a href="{{ Route::has('profile.show') ? route('profile.show') : '#' }}" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;flex:1">
+            <div class="user-avatar">{{ $userInitials ?? 'AR' }}</div>
+            <div class="user-info">
+                <strong>{{ $userName ?? auth()->user()?->name ?? 'Ahmad Rizki' }}</strong>
+                <span>{{ auth()->user()?->isSuperAdmin() ? 'Super Admin' : ($userRole ?? 'Pengguna') }}</span>
+            </div>
+        </a>
         @if (Route::has('logout'))
             <form action="{{ route('logout') }}" method="POST" style="margin:0">
                 @csrf

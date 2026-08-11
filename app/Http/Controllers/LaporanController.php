@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Imports\TagihanSusulanImport;
 use App\Models\LaporanSusulan;
+use App\Models\User;
+use App\Notifications\LaporanBaruDiupload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
@@ -13,7 +16,6 @@ class LaporanController extends Controller
     public function create()
     {
         $lastUpload = LaporanSusulan::latest()->first();
-
         $berhasilHariIni = LaporanSusulan::whereDate('created_at', today())->count();
 
         return view('laporan.create', compact('lastUpload', 'berhasilHariIni'));
@@ -33,6 +35,14 @@ class LaporanController extends Controller
             $import = new TagihanSusulanImport($file->getClientOriginalName(), $storedPath);
             Excel::import($import, $file);
             DB::commit();
+
+            // Kabarin user lain yang aktif (selain yang barusan upload) lewat notifikasi
+            // di topbar. Ditaruh di luar transaksi DB supaya kalau gagal kirim notif,
+            // data laporan yang sudah tersimpan tidak ikut ke-rollback.
+            $penerima = User::where('id', '!=', auth()->id())->aktif()->get();
+            if ($penerima->isNotEmpty()) {
+                Notification::send($penerima, new LaporanBaruDiupload($import->laporan, auth()->user()));
+            }
 
             $pesan = $import->laporan->versi > 1
                 ? "File berhasil diimport sebagai versi {$import->laporan->versi} ({$import->laporan->jumlah_baris} baris). Versi sebelumnya otomatis dipindah ke riwayat."

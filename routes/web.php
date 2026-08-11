@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DetailDataController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -34,6 +37,13 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.readAll');
+
     Route::get('/data-detail', [DetailDataController::class, 'index'])->name('detail-data.index');
 
     Route::prefix('laporan')->name('laporan.')->group(function () {
@@ -44,5 +54,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/{laporan}/riwayat', [LaporanController::class, 'riwayat'])->name('riwayat');
         Route::post('/{laporan}/aktifkan', [LaporanController::class, 'aktifkan'])->name('aktifkan');
         Route::delete('/{laporan}', [LaporanController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::middleware('super_admin')->prefix('manajemen-user')->name('admin.users.')->group(function () {
+        Route::get('/', [UserManagementController::class, 'index'])->name('index');
+        Route::get('/{user}', [UserManagementController::class, 'show'])->name('show');
+        Route::patch('/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('toggle');
     });
 });
