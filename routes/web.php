@@ -7,6 +7,7 @@ use App\Http\Controllers\DetailDataController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\P2tlController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -44,16 +45,45 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'read'])->name('notifications.read');
     Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.readAll');
 
-    Route::get('/data-detail', [DetailDataController::class, 'index'])->name('detail-data.index');
-
+    /*
+    |----------------------------------------------------------------------
+    | Laporan routes (semua route terkait "laporan" sekarang konsisten
+    | dalam satu group prefix + name, termasuk export yang sebelumnya
+    | nyasar keluar dan bikin route('laporan.export', ...) error)
+    |
+    | PENTING: route spesifik (upload, riwayat, aktifkan, export) HARUS
+    | didaftarkan SEBELUM route wildcard '/{laporan}' (show/destroy).
+    | Kalau kebalik, '/laporan/upload' bakal ke-match sama '{laporan}'
+    | (laporan dianggap id = "upload") duluan -> ModelNotFoundException
+    | -> 404, padahal route 'upload' sendiri sebenarnya valid & terdaftar.
+    | Ini persis bug yang bikin GET /laporan/upload 404 kemarin.
+    |----------------------------------------------------------------------
+    */
     Route::prefix('laporan')->name('laporan.')->group(function () {
         Route::get('/', [LaporanController::class, 'index'])->name('index');
         Route::get('/upload', [LaporanController::class, 'create'])->name('create');
         Route::post('/upload', [LaporanController::class, 'store'])->name('store');
-        Route::get('/{laporan}', [LaporanController::class, 'show'])->name('show');
         Route::get('/{laporan}/riwayat', [LaporanController::class, 'riwayat'])->name('riwayat');
         Route::post('/{laporan}/aktifkan', [LaporanController::class, 'aktifkan'])->name('aktifkan');
+        Route::get('/{laporan}/export', [LaporanController::class, 'export'])->name('export');
+
+        // Wildcard routes selalu paling bawah di dalam group ini
+        Route::get('/{laporan}', [DetailDataController::class, 'show'])->name('show');
         Route::delete('/{laporan}', [LaporanController::class, 'destroy'])->name('destroy');
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | Detail Data routes (dulu terpisah & duplikat, sekarang satu group
+    | prefix 'data-detail' + name 'detail-data.' yang konsisten)
+    |----------------------------------------------------------------------
+    */
+    Route::prefix('data-detail')->name('detail-data.')->group(function () {
+        Route::get('/', [DetailDataController::class, 'index'])->name('index');
+        Route::get('/{detail}', [DetailDataController::class, 'showDetail'])->name('show');
+        Route::get('/{detail}/edit', [DetailDataController::class, 'edit'])->name('edit');
+        Route::put('/{detail}', [DetailDataController::class, 'update'])->name('update');
+        Route::delete('/{detail}', [DetailDataController::class, 'destroy'])->name('destroy');
     });
 
     Route::middleware('super_admin')->prefix('manajemen-user')->name('admin.users.')->group(function () {
