@@ -50,16 +50,16 @@ class DetailDataController extends Controller
 
         $detailBase = fn () => DetailTagihanSusulan::where('laporan_susulan_id', $laporan->id);
 
-        // ---- Chart: distribusi per golongan tarif ----
+        // ---- Chart: distribusi KWH per golongan tarif ----
         $distribusiGolongan = (clone $detailBase())
-            ->selectRaw('gol, SUM(total) as total')
+            ->selectRaw('gol, SUM(kwh) as kwh')
             ->groupBy('gol')
             ->orderBy('gol')
-            ->pluck('total', 'gol');
+            ->pluck('kwh', 'gol');
 
-        // ---- Chart: tren harian tunai vs angsuran ----
+        // ---- Chart: tren harian KWH vs TS ----
         $trenHarian = (clone $detailBase())
-            ->selectRaw('DATE(tanggal_register) as tanggal, SUM(tunai) as tunai, SUM(angsuran) as angsuran')
+            ->selectRaw('DATE(tanggal_register) as tanggal, SUM(kwh) as kwh, SUM(ts) as ts, SUM(tunai) as tunai, SUM(angsuran) as angsuran')
             ->whereNotNull('tanggal_register')
             ->groupBy('tanggal')
             ->orderBy('tanggal')
@@ -69,6 +69,10 @@ class DetailDataController extends Controller
         $totalBayar     = $laporan->total_tunai + $laporan->total_angsuran;
         $persenTunai    = $totalBayar > 0 ? round($laporan->total_tunai / $totalBayar * 100) : 0;
         $persenAngsuran = $totalBayar > 0 ? 100 - $persenTunai : 0;
+
+        // ---- Total KWH & TS untuk kartu statistik ----
+        $totalKwh = (clone $detailBase())->sum('kwh');
+        $totalTs  = (clone $detailBase())->sum('ts');
 
         // ---- Tabel "Semua Data Detail" ----
         $rows = (clone $detailBase())
@@ -99,6 +103,8 @@ class DetailDataController extends Controller
             'persenAngsuran'     => $persenAngsuran,
             'distribusiGolongan' => $distribusiGolongan,
             'trenHarian'         => $trenHarian,
+            'totalKwh'           => $totalKwh,
+            'totalTs'            => $totalTs,
         ]);
     }
 

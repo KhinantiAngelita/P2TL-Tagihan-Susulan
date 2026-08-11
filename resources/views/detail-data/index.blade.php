@@ -32,6 +32,14 @@
         gap: 16px;
         margin-bottom: 16px;
     }
+    .chart-grid-equal {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    @media (max-width: 900px) {
+        .chart-grid-equal { grid-template-columns: 1fr; }
+    }
     .chart-card {
         background: #fff;
         border: 1px solid var(--border);
@@ -434,12 +442,12 @@
     <div class="dash-stat-card tone-yellow">
         <div class="dash-stat-top">
             <div class="dash-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
-            <h3>Total Keseluruhan</h3>
+            <h3>Total KWH</h3>
         </div>
-        <div class="dash-stat-value">Rp {{ number_format($laporan->total_keseluruhan, 0, ',', '.') }}</div>
-        <div class="dash-stat-sub">Seluruh tagihan laporan ini</div>
+        <div class="dash-stat-value">{{ number_format($totalKwh, 0, ',', '.') }}</div>
+        <div class="dash-stat-sub">KWH seluruh baris</div>
     </div>
 
     <div class="dash-stat-card tone-blue">
@@ -447,10 +455,10 @@
             <div class="dash-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
             </div>
-            <h3>Total Tunai</h3>
+            <h3>Rp. TS</h3>
         </div>
-        <div class="dash-stat-value">Rp {{ number_format($laporan->total_tunai, 0, ',', '.') }}</div>
-        <div class="dash-stat-sub">{{ $persenTunai }}% dari total</div>
+        <div class="dash-stat-value">Rp {{ number_format($totalTs, 0, ',', '.') }}</div>
+        <div class="dash-stat-sub">Total TS seluruh baris</div>
     </div>
 
     <div class="dash-stat-card tone-purple">
@@ -458,21 +466,10 @@
             <div class="dash-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
             </div>
-            <h3>Total Angsuran</h3>
+            <h3>Penetapan</h3>
         </div>
-        <div class="dash-stat-value">Rp {{ number_format($laporan->total_angsuran, 0, ',', '.') }}</div>
-        <div class="dash-stat-sub">{{ $persenAngsuran }}% dari total</div>
-    </div>
-
-    <div class="dash-stat-card tone-green">
-        <div class="dash-stat-top">
-            <div class="dash-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-            </div>
-            <h3>Jumlah Baris</h3>
-        </div>
-        <div class="dash-stat-value">{{ $laporan->jumlah_baris }}</div>
-        <div class="dash-stat-sub">Data aktif</div>
+        <div class="dash-stat-value">Rp {{ number_format($laporan->total_keseluruhan, 0, ',', '.') }}</div>
+        <div class="dash-stat-sub">Total tunai + angsuran</div>
     </div>
 </div>
 
@@ -481,11 +478,12 @@
     <div class="chart-card">
         <div class="chart-card-head">
             <div>
-                <h4>Distribusi per Golongan Tarif</h4>
-                <p class="chart-sub">Total tagihan per golongan (Rp)</p>
+                <h4>Distribusi KWH per Golongan</h4>
+                <p class="chart-sub">Total pemakaian KWH berdasarkan golongan tarif</p>
             </div>
             <span class="chart-badge">{{ $laporan->bulan }} {{ $laporan->tahun }}</span>
         </div>
+
         <canvas id="chartGolongan" height="110"></canvas>
     </div>
     <div class="chart-card">
@@ -499,15 +497,27 @@
     </div>
 </div>
 
-{{-- Chart: tren harian --}}
-<div class="chart-card" style="margin-bottom:22px;">
-    <div class="chart-card-head">
-        <div>
-            <h4>Tren Harian</h4>
-            <p class="chart-sub">Tagihan tunai dan angsuran per hari &mdash; {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
+{{-- Chart: tren harian & tunai vs angsuran --}}
+<div class="chart-grid-equal" style="margin-bottom:22px;">
+    <div class="chart-card">
+        <div class="chart-card-head">
+            <div>
+                <h4>Tren Harian</h4>
+                <p class="chart-sub">KWH dan TS per hari &mdash; {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
+            </div>
         </div>
+        <canvas id="chartTren" height="90"></canvas>
     </div>
-    <canvas id="chartTren" height="90"></canvas>
+
+    <div class="chart-card">
+        <div class="chart-card-head">
+            <div>
+                <h4>Tren Tunai vs Angsuran</h4>
+                <p class="chart-sub">Tagihan tunai dan angsuran per hari &mdash; {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
+            </div>
+        </div>
+        <canvas id="chartTunaiAngsuranHarian" height="90"></canvas>
+    </div>
 </div>
 
 {{-- Tabel semua data detail --}}
@@ -545,13 +555,14 @@
             <thead>
                 <tr>
                     <th>No</th>
+                    <th>ULP</th>
                     <th>IDPEL</th>
                     <th>Nama</th>
                     <th>Gol</th>
-                    <th>Alamat</th>
+                    <th>Tarif</th>
                     <th>Daya (VA)</th>
-                    <th>Total</th>
-                    <th>Tgl Register</th>
+                    <th>KWH</th>
+                    <th>TS</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -559,108 +570,51 @@
                 @forelse ($rows as $i => $row)
                     <tr>
                         <td>{{ $row->no ?? ($rows->firstItem() + $i) }}</td>
+                        <td>{{ $row->ulp ?? '-' }}</td>
                         <td>
                             <a href="{{ route('detail-data.show', $row->id) }}" class="idpel-link">{{ $row->idpel }}</a>
                         </td>
                         <td>{{ $row->nama }}</td>
                         <td><span class="gol-pill">{{ $row->gol }}</span></td>
-                        <td><span class="truncate-cell" title="{{ $row->alamat }}">{{ $row->alamat }}</span></td>
-                        <td style="color:#6b7690;">{{ $row->daya }}</td>
-                        <td style="font-weight:700;color:#1b2559;">Rp{{ number_format($row->total, 0, ',', '.') }}</td>
-                        <td style="color:#6b7690;">{{ optional($row->tanggal_register)->format('d/m/Y') }}</td>
+                        <td>{{ $row->tarif ?? '-' }}</td>
+                        <td style="color:#6b7690;">{{ $row->daya_va ?? '-' }}</td>
+                        <td style="color:#6b7690;">{{ number_format($row->kwh, 0, ',', '.') }}</td>
+                        <td style="color:#6b7690;">{{ number_format($row->ts, 0, ',', '.') }}</td>
                         <td>
-                        <div class="row-actions">
-
-                            {{-- Detail --}}
-                            <button
-                                type="button"
-                                class="icon-btn btn-detail"
-                                data-id="{{ $row->id }}"
-                                title="Detail">
-
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    width="18"
-                                    height="18"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    viewBox="0 0 24 24">
-
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-
-                                </svg>
-
-                            </button>
-
-
-                            {{-- Edit --}}
-                            <button
-                                type="button"
-                                class="icon-btn btn-edit"
-                                data-id="{{ $row->id }}"
-                                title="Edit">
-
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    width="18"
-                                    height="18"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    viewBox="0 0 24 24">
-
-                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-
-                                </svg>
-
-                            </button>
-
-
-                            {{-- Hapus --}}
-                            <form
-                                action="{{ route('detail-data.destroy',$row->id) }}"
-                                method="POST"
-                                style="display:inline"
-                                onsubmit="return confirm('Yakin ingin menghapus data ini?')">
-
-                                @csrf
-                                @method('DELETE')
-
-                                <button
-                                    type="submit"
-                                    class="icon-btn danger"
-                                    title="Hapus">
-
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                        width="18"
-                                        height="18"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        viewBox="0 0 24 24">
-
-                                        <path d="M3 6h18"/>
-                                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                        <path d="m19 6-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-
+                            <div class="row-actions">
+                                {{-- Detail --}}
+                                <button type="button" class="icon-btn btn-detail" data-id="{{ $row->id }}" title="Detail">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
+                                        <circle cx="12" cy="12" r="3"/>
                                     </svg>
-
                                 </button>
 
-                            </form>
+                                {{-- Edit --}}
+                                <button type="button" class="icon-btn btn-edit" data-id="{{ $row->id }}" title="Edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                                    </svg>
+                                </button>
 
-                        </div>
-                    </td>
+                                {{-- Hapus --}}
+                                <form action="{{ route('detail-data.destroy',$row->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Yakin ingin menghapus data ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="icon-btn danger" title="Hapus">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                            <path d="M3 6h18"/>
+                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            <path d="m19 6-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" style="text-align:center;color:#9aa4c2;padding:32px;">Tidak ada data yang cocok.</td>
+                        <td colspan="10" style="text-align:center;color:#9aa4c2;padding:32px;">Tidak ada data yang cocok.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -943,15 +897,68 @@
                 data: {!! json_encode($distribusiGolongan->values()) !!},
                 backgroundColor: ['#ffce3a', '#0b3d91', '#3d63b8', '#6b8fd6'],
                 borderRadius: 4,
+                minBarLength: 6,
             }]
         },
         options: {
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ' ' + Number(ctx.raw).toLocaleString('id-ID') + ' KWH';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return Number(value).toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
         }
     });
 
-    new Chart(document.getElementById('chartTunaiAngsuran'), {
+    new Chart(document.getElementById('chartTunaiAngsuranHarian'), {
+    type: 'line',
+    data: {
+        labels: {!! json_encode($trenHarian->pluck('tanggal')->map(fn ($t) => \Carbon\Carbon::parse($t)->format('d M'))) !!},
+        datasets: [
+            {
+                label: 'Tunai',
+                data: {!! json_encode($trenHarian->pluck('tunai')) !!},
+                borderColor: '#0b3d91',
+                tension: 0.3,
+            },
+            {
+                label: 'Angsuran',
+                data: {!! json_encode($trenHarian->pluck('angsuran')) !!},
+                borderColor: '#ffce3a',
+                tension: 0.3,
+            }
+        ]
+    },
+    options: {
+        plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+                callbacks: {
+                    label: function(ctx) {
+                        return ' ' + ctx.dataset.label + ': Rp ' + Number(ctx.raw).toLocaleString('id-ID');
+                    }
+                }
+            }
+        },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+new Chart(document.getElementById('chartTunaiAngsuran'), {
         type: 'doughnut',
         data: {
             labels: ['Tunai', 'Angsuran'],
@@ -972,14 +979,14 @@
             labels: {!! json_encode($trenHarian->pluck('tanggal')->map(fn ($t) => \Carbon\Carbon::parse($t)->format('d M'))) !!},
             datasets: [
                 {
-                    label: 'Tunai',
-                    data: {!! json_encode($trenHarian->pluck('tunai')) !!},
+                    label: 'KWH',
+                    data: {!! json_encode($trenHarian->pluck('kwh')) !!},
                     borderColor: '#0b3d91',
                     tension: 0.3,
                 },
                 {
-                    label: 'Angsuran',
-                    data: {!! json_encode($trenHarian->pluck('angsuran')) !!},
+                    label: 'TS',
+                    data: {!! json_encode($trenHarian->pluck('ts')) !!},
                     borderColor: '#ffce3a',
                     tension: 0.3,
                 }
@@ -990,6 +997,29 @@
             scales: { y: { beginAtZero: true } }
         }
     });
+    new Chart(document.getElementById('chartTunaiAngsuranHarian'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Tunai', 'Angsuran'],
+            datasets: [{
+                data: [{{ $laporan->total_tunai }}, {{ $laporan->total_angsuran }}],
+                backgroundColor: ['#0b3d91', '#ffce3a'],
+            }]
+        },
+        options: {
+            cutout: '70%',
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ' ' + ctx.label + ': Rp ' + Number(ctx.raw).toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
+        }
+});
 
     document.addEventListener('DOMContentLoaded', function () {
 
