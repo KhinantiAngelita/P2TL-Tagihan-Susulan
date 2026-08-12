@@ -93,12 +93,18 @@ class DetailDataController extends Controller
             ->orderBy('gol')
             ->pluck('gol');
 
+        $daftarLaporanBulan = LaporanSusulan::aktif()
+            ->where('unit_up3', $laporan->unit_up3)
+            ->orderByDesc('tahun')->orderByDesc('bulan')
+            ->get(['id', 'bulan', 'tahun']);
+
         return view('detail-data.index', [
             'laporan'            => $laporan,
             'rows'               => $rows,
             'search'             => $search,
             'golonganAktif'      => $golongan,
             'daftarGolongan'     => $daftarGolongan,
+            'daftarLaporanBulan' => $daftarLaporanBulan,
             'persenTunai'        => $persenTunai,
             'persenAngsuran'     => $persenAngsuran,
             'distribusiGolongan' => $distribusiGolongan,

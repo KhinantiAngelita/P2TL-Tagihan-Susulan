@@ -178,6 +178,8 @@
         z-index:9999;
         overflow-y:auto;
         padding:20px 0;
+        align-items:center;       
+        justify-content:center; 
     }
 
     .custom-modal-content{
@@ -305,15 +307,12 @@
     }
 
     .form-group input{
-
-    padding:12px;
-
-    border-radius:10px;
-
-    border:1px solid #ddd;
-
-    background:#f8f9fb;
-
+        padding:12px;
+        border-radius:10px;
+        border:1px solid #ddd;
+        background:#f8f9fb;
+        width:100%;              /* tambahin ini */
+        box-sizing:border-box;   /* biar padding gak bikin overflow */
     }
 
     .total-box{
@@ -353,7 +352,10 @@
     .modal-header-blue p{margin:0;font-size:12.5px;opacity:.85;}
 
     .form-group.full{grid-column:1 / -1;}
-    .form-group .field-wrap{position:relative;}
+    .form-group .field-wrap{
+        position:relative;
+        width:100%;}
+
     .form-group .field-wrap svg{
         position:absolute;left:12px;top:50%;transform:translateY(-50%);
         width:15px;height:15px;color:#9aa4c2;pointer-events:none;
@@ -377,15 +379,38 @@
             Rekap tagihan pelanggan &mdash; Bulan {{ $laporan->bulan }} {{ $laporan->tahun }} &middot; {{ $laporan->unit_up3 }}
         </p>
     </div>
-    <div style="display:flex;gap:8px;">
-        <a href="#" class="btn btn-outline">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+    <div style="display:flex;align-items:flex-end;gap:10px;">
+    <div>
+        <label style="display:block;font-size:11.5px;font-weight:600;color:#9aa4c2;text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px 2px;visibility:hidden;">
+            &nbsp;
+        </label>
+        <a href="#" class="btn btn-outline" style="padding:9px 14px;font-size:13px;white-space:nowrap;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
             Export
         </a>
-        <a href="{{ route('detail-data.edit', $laporan) }}" class="btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-            Edit Laporan
-        </a>
+    </div>
+    {{-- Filter Periode: Tahun + Bulan --}}
+    <div style="display:flex;gap:10px;">
+        <div>
+            <label for="tahunSelect" style="display:block;font-size:11.5px;font-weight:600;color:#9aa4c2;text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px 2px;">
+                Tahun
+            </label>
+            <div class="filter-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <select id="tahunSelect" class="filter-select" style="min-width:110px;"></select>
+            </div>
+        </div>
+
+        <div>
+            <label for="bulanSelect" style="display:block;font-size:11.5px;font-weight:600;color:#9aa4c2;text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px 2px;">
+                Bulan
+            </label>
+            <div class="filter-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"/></svg>
+                <select id="bulanSelect" class="filter-select" style="min-width:150px;"></select>
+            </div>
+        </div>
+    </div>
     </div>
 </div>
 
@@ -493,7 +518,7 @@
                 <p class="chart-sub">Proporsi pembayaran</p>
             </div>
         </div>
-        <canvas id="chartTunaiAngsuran" height="180"></canvas>
+        <canvas id="chartTunaiAngsuranDonut" height="110"></canvas>
     </div>
 </div>
 
@@ -506,7 +531,7 @@
                 <p class="chart-sub">KWH dan TS per hari &mdash; {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
             </div>
         </div>
-        <canvas id="chartTren" height="90"></canvas>
+        <canvas id="chartTren" height="150"></canvas>
     </div>
 
     <div class="chart-card">
@@ -516,7 +541,7 @@
                 <p class="chart-sub">Tagihan tunai dan angsuran per hari &mdash; {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
             </div>
         </div>
-        <canvas id="chartTunaiAngsuranHarian" height="90"></canvas>
+        <canvas id="chartTunaiAngsuranHarian" height="150"></canvas>
     </div>
 </div>
 
@@ -598,17 +623,17 @@
                                 </button>
 
                                 {{-- Hapus --}}
-                                <form action="{{ route('detail-data.destroy',$row->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Yakin ingin menghapus data ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="icon-btn danger" title="Hapus">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                            <path d="M3 6h18"/>
-                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                            <path d="m19 6-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                                        </svg>
-                                    </button>
-                                </form>
+                                <button type="button" class="icon-btn danger btn-delete"
+                                        data-id="{{ $row->id }}"
+                                        data-nama="{{ $row->nama }}"
+                                        data-idpel="{{ $row->idpel }}"
+                                        title="Hapus">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                        <path d="M3 6h18"/>
+                                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                        <path d="m19 6-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                    </svg>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -731,7 +756,7 @@
 {{-- ================= MODAL EDIT ================= --}}
 <div id="editModal" class="custom-modal">
     <div class="custom-modal-content" style="width:1000px;">
-        <form id="editForm" method="POST">
+        <form id="editForm" method="POST" style="display:flex;flex-direction:column;min-height:0;flex:1 1 auto;overflow:hidden;">
             @csrf
             @method('PUT')
 
@@ -748,121 +773,141 @@
                 <button class="close-modal" type="button">&times;</button>
             </div>
 
-            <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+            <div class="modal-body">
 
-                <p class="section-label">Data Pelanggan</p>
-                <div class="modal-grid">
-                    <div class="form-group">
-                        <label>No Agenda</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
-                            <input type="text" name="no_agenda" id="e_no_agenda">
+                <div class="modal-section">
+                    <p class="section-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        Data Pelanggan
+                    </p>
+                    <div class="modal-grid">
+                        <div class="form-group">
+                            <label>No Agenda</label>
+                            <div class="field-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+                                <input type="text" name="no_agenda" id="e_no_agenda">
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>IDPEL</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M19 4h-2a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/></svg>
-                            <input type="text" name="idpel" id="e_idpel" required>
+                        <div class="form-group">
+                            <label>IDPEL</label>
+                            <div class="field-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M19 4h-2a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/></svg>
+                                <input type="text" name="idpel" id="e_idpel" required>
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group full">
-                        <label>Nama Pelanggan</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            <input type="text" name="nama" id="e_nama" required>
+                        <div class="form-group full">
+                            <label>Nama Pelanggan</label>
+                            <div class="field-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                <input type="text" name="nama" id="e_nama" required>
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Golongan</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"/></svg>
-                            <input type="text" name="gol" id="e_gol">
+                        <div class="form-group">
+                            <label>Golongan</label>
+                            <div class="field-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"/></svg>
+                                <input type="text" name="gol" id="e_gol">
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Daya (VA)</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                            <input type="text" name="daya" id="e_daya">
+                        <div class="form-group">
+                            <label>Daya (VA)</label>
+                            <div class="field-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                <input type="text" name="daya" id="e_daya">
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group full">
-                        <label>Alamat</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v18"/><path d="M2 22h20M10 6h.01M14 6h.01M10 10h.01M14 10h.01M10 14h.01M14 14h.01M10 18h4"/></svg>
-                            <input type="text" name="alamat" id="e_alamat">
+                        <div class="form-group full">
+                            <label>Alamat</label>
+                            <div class="field-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v18"/><path d="M2 22h20M10 6h.01M14 6h.01M10 10h.01M14 10h.01M10 14h.01M14 14h.01M10 18h4"/></svg>
+                                <input type="text" name="alamat" id="e_alamat">
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <p class="section-label spaced">Tagihan Susulan</p>
-                <div class="modal-grid">
-                    <div class="form-group">
-                        <label>KWH</label>
-                        <div class="field-wrap"><input type="number" step="1" name="kwh" id="e_kwh"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>Beban (Rp)</label>
-                        <div class="field-wrap"><input type="number" step="1" name="beban" id="e_beban"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>KWH (Rp)</label>
-                        <div class="field-wrap"><input type="number" step="1" name="kwh_rupiah" id="e_kwh_rupiah"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>TS</label>
-                        <div class="field-wrap"><input type="number" step="1" name="ts" id="e_ts"></div>
+                <div class="modal-section">
+                    <p class="section-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Tagihan Susulan
+                    </p>
+                    <div class="modal-grid">
+                        <div class="form-group">
+                            <label>KWH</label>
+                            <div class="field-wrap"><input type="number" step="1" name="kwh" id="e_kwh"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Beban (Rp)</label>
+                            <div class="field-wrap"><input type="number" step="1" name="beban" id="e_beban"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>KWH (Rp)</label>
+                            <div class="field-wrap"><input type="number" step="1" name="kwh_rupiah" id="e_kwh_rupiah"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>TS</label>
+                            <div class="field-wrap"><input type="number" step="1" name="ts" id="e_ts"></div>
+                        </div>
                     </div>
                 </div>
 
-                <p class="section-label spaced">Rupiah Biaya Lain-lain</p>
-                <div class="modal-grid">
-                    <div class="form-group"><label>Materai</label><div class="field-wrap"><input type="number" step="1" name="materai" id="e_materai"></div></div>
-                    <div class="form-group"><label>Segel</label><div class="field-wrap"><input type="number" step="1" name="segel" id="e_segel"></div></div>
-                    <div class="form-group"><label>Materia</label><div class="field-wrap"><input type="number" step="1" name="materia" id="e_materia"></div></div>
-                    <div class="form-group"><label>RPPPJ</label><div class="field-wrap"><input type="number" step="1" name="rpppj" id="e_rpppj"></div></div>
-                    <div class="form-group"><label>RPUJL</label><div class="field-wrap"><input type="number" step="1" name="rpujl" id="e_rpujl"></div></div>
-                    <div class="form-group"><label>RPPPN</label><div class="field-wrap"><input type="number" step="1" name="rpppn" id="e_rpppn"></div></div>
+                <div class="modal-section">
+                    <p class="section-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        Rupiah Biaya Lain-lain
+                    </p>
+                    <div class="modal-grid">
+                        <div class="form-group"><label>Materai</label><div class="field-wrap"><input type="number" step="1" name="materai" id="e_materai"></div></div>
+                        <div class="form-group"><label>Segel</label><div class="field-wrap"><input type="number" step="1" name="segel" id="e_segel"></div></div>
+                        <div class="form-group"><label>Materia</label><div class="field-wrap"><input type="number" step="1" name="materia" id="e_materia"></div></div>
+                        <div class="form-group"><label>RPPPJ</label><div class="field-wrap"><input type="number" step="1" name="rpppj" id="e_rpppj"></div></div>
+                        <div class="form-group"><label>RPUJL</label><div class="field-wrap"><input type="number" step="1" name="rpujl" id="e_rpujl"></div></div>
+                        <div class="form-group"><label>RPPPN</label><div class="field-wrap"><input type="number" step="1" name="rpppn" id="e_rpppn"></div></div>
+                    </div>
                 </div>
 
-                <p class="section-label spaced">Penetapan</p>
-                <div class="modal-grid">
-                    <div class="form-group">
-                        <label>Tunai (Rp)</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                            <input type="number" step="1" name="tunai" id="e_tunai">
+                <div class="modal-section">
+                    <p class="section-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
+                        Penetapan
+                    </p>
+                    <div class="modal-grid">
+                        <div class="form-group">
+                            <label>Tunai (Rp)</label>
+                            <div class="field-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                <input type="number" step="1" name="tunai" id="e_tunai">
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Angsuran (Rp)</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                            <input type="number" step="1" name="angsuran" id="e_angsuran">
+                        <div class="form-group">
+                            <label>Angsuran (Rp)</label>
+                            <div class="field-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                                <input type="number" step="1" name="angsuran" id="e_angsuran">
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal Register</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                            <input type="date" name="tanggal_register" id="e_tanggal_register">
+                        <div class="form-group">
+                            <label>Tanggal Register</label>
+                            <div class="field-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                                <input type="date" name="tanggal_register" id="e_tanggal_register">
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Nomor Register</label>
-                        <div class="field-wrap"><input type="text" name="nomor_register" id="e_nomor_register"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal SPH</label>
-                        <div class="field-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                            <input type="date" name="tanggal_sph" id="e_tanggal_sph">
+                        <div class="form-group">
+                            <label>Nomor Register</label>
+                            <div class="field-wrap"><input type="text" name="nomor_register" id="e_nomor_register"></div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Nomor SPH</label>
-                        <div class="field-wrap"><input type="text" name="nomor_sph" id="e_nomor_sph"></div>
+                        <div class="form-group">
+                            <label>Tanggal SPH</label>
+                            <div class="field-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                                <input type="date" name="tanggal_sph" id="e_tanggal_sph">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Nomor SPH</label>
+                            <div class="field-wrap"><input type="text" name="nomor_sph" id="e_nomor_sph"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -883,6 +928,57 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+{{-- ================= MODAL DELETE ================= --}}
+{{-- ================= MODAL DELETE ================= --}}
+<div id="deleteModal" class="custom-modal">
+    <div class="custom-modal-content" style="width:440px;">
+
+        <div class="modal-header-blue" style="background:linear-gradient(90deg,#a30d1a,#d11a2a);">
+            <div class="header-text">
+                <div class="header-icon" style="background:rgba(255,255,255,.18);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M3 6h18"/>
+                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        <path d="m19 6-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3>Hapus Data Pelanggan</h3>
+                    <p>Tindakan ini tidak dapat dibatalkan</p>
+                </div>
+            </div>
+            <button class="close-modal" type="button">&times;</button>
+        </div>
+
+        <div class="modal-body" style="text-align:center;padding:28px;">
+            <p style="margin:0 0 4px;font-size:13.5px;color:#6b7690;line-height:1.5;">
+                Kamu akan menghapus data pelanggan
+            </p>
+            <p style="margin:0;font-size:14.5px;font-weight:700;color:#1b2559;">
+                <span id="del_nama"></span>
+                <span style="font-weight:500;color:#9aa4c2;"> &middot; </span>
+                <span id="del_idpel" style="color:#6b7690;font-weight:500;"></span>
+            </p>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline close-modal">Batal</button>
+
+            <form id="deleteForm" action="" method="POST" style="display:inline">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn" style="background:#d11a2a;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;">
+                        <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="m19 6-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    </svg>
+                    Ya, Hapus
+                </button>
+            </form>
+        </div>
+
     </div>
 </div>
 
@@ -997,7 +1093,7 @@ new Chart(document.getElementById('chartTunaiAngsuran'), {
             scales: { y: { beginAtZero: true } }
         }
     });
-    new Chart(document.getElementById('chartTunaiAngsuranHarian'), {
+    new Chart(document.getElementById('chartTunaiAngsuranDonut'), {
         type: 'doughnut',
         data: {
             labels: ['Tunai', 'Angsuran'],
@@ -1019,12 +1115,13 @@ new Chart(document.getElementById('chartTunaiAngsuran'), {
                 }
             }
         }
-});
+})
 
     document.addEventListener('DOMContentLoaded', function () {
 
     const showUrlTemplate   = @json(route('detail-data.show', ['detail' => '__ID__']));
     const updateUrlTemplate = @json(route('detail-data.update', ['detail' => '__ID__']));
+    const destroyUrlTemplate = @json(route('detail-data.destroy', ['detail' => '__ID__']));
 
     function formatRupiah(n){
         return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
@@ -1099,12 +1196,13 @@ new Chart(document.getElementById('chartTunaiAngsuran'), {
         const detailBtn = e.target.closest('.btn-detail');
         const editBtn   = e.target.closest('.btn-edit');
         const closeBtn  = e.target.closest('.close-modal');
+        const deleteBtn = e.target.closest('.btn-delete');
 
         if (detailBtn) {
             const id = detailBtn.dataset.id;
             fetch(showUrlTemplate.replace('__ID__', id))
                 .then(res => { if (!res.ok) throw new Error(res.status); return res.json(); })
-                .then(data => { fillDetail(data); document.getElementById('detailModal').style.display = 'block'; })
+                .then(data => { fillDetail(data); document.getElementById('detailModal').style.display = 'flex'; })
                 .catch(err => { console.error(err); alert('Gagal memuat detail data.'); });
         }
 
@@ -1112,7 +1210,7 @@ new Chart(document.getElementById('chartTunaiAngsuran'), {
             const id = editBtn.dataset.id;
             fetch(showUrlTemplate.replace('__ID__', id))
                 .then(res => { if (!res.ok) throw new Error(res.status); return res.json(); })
-                .then(data => { fillEdit(data, id); document.getElementById('editModal').style.display = 'block'; })
+                .then(data => { fillEdit(data, id); document.getElementById('editModal').style.display = 'flex'; })
                 .catch(err => { console.error(err); alert('Gagal memuat data untuk edit.'); });
         }
 
@@ -1120,11 +1218,72 @@ new Chart(document.getElementById('chartTunaiAngsuran'), {
             closeBtn.closest('.custom-modal').style.display = 'none';
         }
 
+        if (deleteBtn) {
+            const id    = deleteBtn.dataset.id;
+            const nama  = deleteBtn.dataset.nama;
+            const idpel = deleteBtn.dataset.idpel;
+
+            document.getElementById('del_nama').textContent  = nama;
+            document.getElementById('del_idpel').textContent = idpel;
+            document.getElementById('deleteForm').action = destroyUrlTemplate.replace('__ID__', id);
+
+            document.getElementById('deleteModal').style.display = 'flex';   // ganti dari 'block'
+        }
+
         if (e.target.classList.contains('custom-modal')) {
             e.target.style.display = 'none';
         }
-    });
 
+        
+
+    });
+    
+
+});
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const dataPeriode = @json(
+            $daftarLaporanBulan->groupBy('tahun')->map(function ($items) {
+                return $items->map(fn ($i) => ['bulan' => $i->bulan, 'url' => route('laporan.show', $i->id)]);
+            })
+        );
+
+        const tahunAktif = "{{ $laporan->tahun }}";
+        const bulanAktif = "{{ $laporan->bulan }}";
+
+        const tahunSelect = document.getElementById('tahunSelect');
+        const bulanSelect = document.getElementById('bulanSelect');
+
+        // Isi dropdown Tahun (urut terbaru dulu)
+        Object.keys(dataPeriode).sort((a, b) => b - a).forEach(tahun => {
+            const opt = document.createElement('option');
+            opt.value = tahun;
+            opt.textContent = tahun;
+            if (tahun === tahunAktif) opt.selected = true;
+            tahunSelect.appendChild(opt);
+        });
+
+        function isiBulan(tahun) {
+            bulanSelect.innerHTML = '';
+            (dataPeriode[tahun] || []).forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.url;
+                opt.textContent = item.bulan;
+                if (tahun === tahunAktif && item.bulan === bulanAktif) opt.selected = true;
+                bulanSelect.appendChild(opt);
+            });
+        }
+
+        isiBulan(tahunSelect.value);
+
+        tahunSelect.addEventListener('change', function () {
+            isiBulan(this.value);
+            bulanSelect.dispatchEvent(new Event('change')); // langsung pindah ke bulan pertama tahun itu
+        });
+
+        bulanSelect.addEventListener('change', function () {
+            if (this.value) window.location.href = this.value;
+        });
 });
 
     // ---- Tutup modal (tombol X, Batal, klik backdrop) ----
