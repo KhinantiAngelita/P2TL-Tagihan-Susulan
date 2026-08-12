@@ -499,12 +499,23 @@
     <div class="chart-card">
         <div class="chart-card-head">
             <div>
-                <h4>Tren Harian</h4>
-                <p class="chart-sub">KWH dan TS per hari &mdash; {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
+                <h4>Tren KWH Harian</h4>
+                <p class="chart-sub">Total pemakaian KWH per hari &mdash; {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
             </div>
         </div>
-        <canvas id="chartTren" height="150"></canvas>
+        <canvas id="chartTrenKwh" height="150"></canvas>
     </div>
+
+    <div class="chart-card">
+        <div class="chart-card-head">
+            <div>
+                <h4>Tren TS Harian</h4>
+                <p class="chart-sub">Total TS (Rp) per hari &mdash; {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
+            </div>
+        </div>
+        <canvas id="chartTrenTs" height="150"></canvas>
+    </div>
+</div>
 
     <div class="chart-card">
         <div class="chart-card-head">
@@ -513,9 +524,10 @@
                 <p class="chart-sub">Tagihan tunai dan angsuran per hari &mdash; {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
             </div>
         </div>
-        <canvas id="chartTunaiAngsuranHarian" height="150"></canvas>
+        <div style="height:180px;">
+            <canvas id="chartTunaiAngsuranHarian"></canvas>
+        </div>
     </div>
-</div>
 
 {{-- Tabel semua data detail --}}
 <div class="card" style="padding:0;overflow:hidden;">
@@ -553,6 +565,7 @@
                 <tr>
                     <th>No</th>
                     <th>ULP</th>
+                    <th>Tanggal Agenda</th>
                     <th>IDPEL</th>
                     <th>Nama</th>
                     <th>Gol</th>
@@ -564,57 +577,60 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse ($rows as $i => $row)
-                    <tr>
-                        <td>{{ $row->no ?? ($rows->firstItem() + $i) }}</td>
-                        <td>{{ $row->ulp ?? '-' }}</td>
-                        <td>
-                            <a href="{{ route('detail-data.show', $row->id) }}" class="idpel-link">{{ $row->idpel }}</a>
-                        </td>
-                        <td>{{ $row->nama }}</td>
-                        <td><span class="gol-pill">{{ $row->gol }}</span></td>
-                        <td>{{ $row->tarif ?? '-' }}</td>
-                        <td style="color:#6b7690;">{{ $row->daya_va ?? '-' }}</td>
-                        <td style="color:#6b7690;">{{ number_format($row->kwh, 0, ',', '.') }}</td>
-                        <td style="color:#6b7690;">{{ number_format($row->ts, 0, ',', '.') }}</td>
-                        <td>
-                            <div class="row-actions">
-                                {{-- Detail --}}
-                                <button type="button" class="icon-btn btn-detail" data-id="{{ $row->id }}" title="Detail">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
-                                        <circle cx="12" cy="12" r="3"/>
-                                    </svg>
-                                </button>
+            @forelse ($rows as $i => $row)
+                <tr>
+                    <td>{{ $row->no ?? ($rows->firstItem() + $i) }}</td>
+                    <td>{{ $row->ulp ?? '-' }}</td>
+                    <td style="color:#6b7690;">
+                        {{ $row->tanggal_agenda?->format('d/m/Y') ?? '-' }}
+                    </td>
+                    <td>
+                        <a href="{{ route('detail-data.show', $row->id) }}" class="idpel-link">{{ $row->idpel }}</a>
+                    </td>
+                    <td>{{ $row->nama }}</td>
+                    <td><span class="gol-pill">{{ $row->gol }}</span></td>
+                    <td>{{ $row->tarif ?? '-' }}</td>
+                    <td style="color:#6b7690;">{{ $row->daya_va ?? '-' }}</td>
+                    <td style="color:#6b7690;">{{ number_format($row->kwh, 0, ',', '.') }}</td>
+                    <td style="color:#6b7690;">{{ number_format($row->ts, 0, ',', '.') }}</td>
+                    <td>
+                        <div class="row-actions">
+                            {{-- Detail --}}
+                            <button type="button" class="icon-btn btn-detail" data-id="{{ $row->id }}" title="Detail">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
 
-                                {{-- Edit --}}
-                                <button type="button" class="icon-btn btn-edit" data-id="{{ $row->id }}" title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                                    </svg>
-                                </button>
+                            {{-- Edit --}}
+                            <button type="button" class="icon-btn btn-edit" data-id="{{ $row->id }}" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                                </svg>
+                            </button>
 
-                                {{-- Hapus --}}
-                                <button type="button" class="icon-btn danger btn-delete"
-                                        data-id="{{ $row->id }}"
-                                        data-nama="{{ $row->nama }}"
-                                        data-idpel="{{ $row->idpel }}"
-                                        title="Hapus">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                        <path d="M3 6h18"/>
-                                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                        <path d="m19 6-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="10" style="text-align:center;color:#9aa4c2;padding:32px;">Tidak ada data yang cocok.</td>
-                    </tr>
-                @endforelse
-            </tbody>
+                            {{-- Hapus --}}
+                            <button type="button" class="icon-btn danger btn-delete"
+                                    data-id="{{ $row->id }}"
+                                    data-nama="{{ $row->nama }}"
+                                    data-idpel="{{ $row->idpel }}"
+                                    title="Hapus">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="M3 6h18"/>
+                                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    <path d="m19 6-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="11" style="text-align:center;color:#9aa4c2;padding:32px;">Tidak ada data yang cocok.</td>
+                </tr>
+            @endforelse
+        </tbody>
         </table>
     </div>
 
@@ -993,78 +1009,106 @@
     });
 
     new Chart(document.getElementById('chartTunaiAngsuranHarian'), {
-    type: 'line',
-    data: {
-        labels: {!! json_encode($trenHarian->pluck('tanggal')->map(fn ($t) => \Carbon\Carbon::parse($t)->format('d M'))) !!},
-        datasets: [
-            {
-                label: 'Tunai',
-                data: {!! json_encode($trenHarian->pluck('tunai')) !!},
-                borderColor: '#0b3d91',
-                tension: 0.3,
-            },
-            {
-                label: 'Angsuran',
-                data: {!! json_encode($trenHarian->pluck('angsuran')) !!},
-                borderColor: '#ffce3a',
-                tension: 0.3,
-            }
-        ]
-    },
-    options: {
-        plugins: {
-            legend: { position: 'top' },
-            tooltip: {
-                callbacks: {
-                    label: function(ctx) {
-                        return ' ' + ctx.dataset.label + ': Rp ' + Number(ctx.raw).toLocaleString('id-ID');
-                    }
-                }
-            }
-        },
-        scales: { y: { beginAtZero: true } }
-    }
-});
-
-new Chart(document.getElementById('chartTunaiAngsuran'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Tunai', 'Angsuran'],
-            datasets: [{
-                data: [{{ $laporan->total_tunai }}, {{ $laporan->total_angsuran }}],
-                backgroundColor: ['#0b3d91', '#ffce3a'],
-            }]
-        },
-        options: {
-            cutout: '70%',
-            plugins: { legend: { position: 'bottom' } }
-        }
-    });
-
-    new Chart(document.getElementById('chartTren'), {
         type: 'line',
         data: {
             labels: {!! json_encode($trenHarian->pluck('tanggal')->map(fn ($t) => \Carbon\Carbon::parse($t)->format('d M'))) !!},
             datasets: [
                 {
-                    label: 'KWH',
-                    data: {!! json_encode($trenHarian->pluck('kwh')) !!},
+                    label: 'Tunai',
+                    data: {!! json_encode($trenHarian->pluck('tunai')) !!},
                     borderColor: '#0b3d91',
                     tension: 0.3,
                 },
                 {
-                    label: 'TS',
-                    data: {!! json_encode($trenHarian->pluck('ts')) !!},
+                    label: 'Angsuran',
+                    data: {!! json_encode($trenHarian->pluck('angsuran')) !!},
                     borderColor: '#ffce3a',
                     tension: 0.3,
                 }
             ]
         },
         options: {
-            plugins: { legend: { position: 'top' } },
+            maintainAspectRatio: false,   // <-- tambahin ini
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ' ' + ctx.dataset.label + ': Rp ' + Number(ctx.raw).toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
             scales: { y: { beginAtZero: true } }
         }
     });
+
+    new Chart(document.getElementById('chartTrenKwh'), {
+    type: 'line',
+    data: {
+        labels: {!! json_encode($trenHarian->pluck('tanggal')->map(fn ($t) => \Carbon\Carbon::parse($t)->format('d M'))) !!},
+        datasets: [{
+            label: 'KWH',
+            data: {!! json_encode($trenHarian->pluck('kwh')) !!},
+            borderColor: '#0b3d91',
+            backgroundColor: 'rgba(11,61,145,.08)',
+            fill: true,
+            tension: 0.3,
+        }]
+    },
+    options: {
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: function(ctx) {
+                        return ' ' + Number(ctx.raw).toLocaleString('id-ID') + ' KWH';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { callback: v => Number(v).toLocaleString('id-ID') }
+            }
+        }
+    }
+});
+
+    new Chart(document.getElementById('chartTrenTs'), {
+        type: 'line',
+        data: {
+            labels: {!! json_encode($trenHarian->pluck('tanggal')->map(fn ($t) => \Carbon\Carbon::parse($t)->format('d M'))) !!},
+            datasets: [{
+                label: 'TS',
+                data: {!! json_encode($trenHarian->pluck('ts')) !!},
+                borderColor: '#ffce3a',
+                backgroundColor: 'rgba(255,206,58,.12)',
+                fill: true,
+                tension: 0.3,
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ' Rp ' + Number(ctx.raw).toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => 'Rp ' + Number(v).toLocaleString('id-ID') }
+                }
+            }
+        }
+    });
+
     new Chart(document.getElementById('chartTunaiAngsuranDonut'), {
         type: 'doughnut',
         data: {
@@ -1088,6 +1132,7 @@ new Chart(document.getElementById('chartTunaiAngsuran'), {
             }
         }
 })
+
 
     document.addEventListener('DOMContentLoaded', function () {
 

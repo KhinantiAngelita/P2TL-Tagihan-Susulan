@@ -213,13 +213,25 @@
     <div style="overflow-x:auto;">
         <table>
             <thead>
-                <tr><th>No</th><th>ULP</th><th>IDPEL</th><th>Nama</th><th>Gol</th><th>Tarif</th><th>Daya (VA)</th><th>KWH</th><th>TS</th></tr>
+                <tr>
+                    <th>No</th>
+                    <th>ULP</th>
+                    <th>Tanggal Agenda</th>
+                    <th>IDPEL</th>
+                    <th>Nama</th>
+                    <th>Gol</th>
+                    <th>Tarif</th>
+                    <th>Daya (VA)</th>
+                    <th>KWH</th>
+                    <th>TS</th>
+                </tr>
             </thead>
             <tbody>
             @forelse ($detailPreview as $d)
                 <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td><strong style="color:#0b3d91">{{ $d->ulp }}</strong></td>
+                    <td>{{ $d->tanggal_agenda?->format('d/m/Y') ?? '-' }}</td>
                     <td><strong>{{ $d->idpel }}</strong></td>
                     <td>{{ $d->nama }}</td>
                     <td><span class="badge gol-badge-{{ (crc32($d->gol) % 4) + 1 }}">{{ $d->gol }}</span></td>
@@ -230,7 +242,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9">
+                    <td colspan="10">
                         <div class="table-empty-state">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
                             <div>Belum ada data detail.</div>

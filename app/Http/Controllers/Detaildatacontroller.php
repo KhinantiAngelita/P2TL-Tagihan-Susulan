@@ -185,6 +185,30 @@ class DetailDataController extends Controller
     }
 
     /**
+     * Tanggal agenda diambil dari segmen ketiga no_agenda,
+     * format: P2TL/{kode}/{YYYYMMDD}/{urut} -> contoh: P2TL/53853/20260602/00011
+     */
+    public function getTanggalAgendaAttribute(): ?\Carbon\Carbon
+    {
+        if (! $this->no_agenda) {
+            return null;
+        }
+
+        $segmen = explode('/', $this->no_agenda);
+        $tanggalStr = $segmen[2] ?? null;
+
+        if (! $tanggalStr || ! preg_match('/^\d{8}$/', $tanggalStr)) {
+            return null;
+        }
+
+        try {
+            return \Carbon\Carbon::createFromFormat('Ymd', $tanggalStr);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
      * Hapus satu baris DetailTagihanSusulan.
      *
      * Route: DELETE /data-detail/{detail} -> name('detail-data.destroy')

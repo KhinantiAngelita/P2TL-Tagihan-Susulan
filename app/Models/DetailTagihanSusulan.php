@@ -48,4 +48,24 @@ class DetailTagihanSusulan extends Model
         $parts = explode('/', (string) $this->daya);
         return isset($parts[1]) ? trim($parts[1]) : null;
     }
+
+    public function getTanggalAgendaAttribute(): ?\Carbon\Carbon
+    {
+        if (! $this->no_agenda) {
+            return null;
+        }
+
+        $segmen = explode('/', $this->no_agenda);
+        $tanggalStr = $segmen[2] ?? null;
+
+        if (! $tanggalStr || ! preg_match('/^\d{8}$/', $tanggalStr)) {
+            return null;
+        }
+
+        try {
+            return \Carbon\Carbon::createFromFormat('Ymd', $tanggalStr);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
 }
