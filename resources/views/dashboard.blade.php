@@ -68,6 +68,13 @@
 
     .table-empty-state { text-align: center; padding: 26px 0; color: #9aa4c2; font-size: 13.5px; }
     .table-empty-state svg { width: 26px; height: 26px; margin-bottom: 8px; opacity: .6; }
+
+    .um-view-btn {
+        width: 26px; height: 26px; border-radius: 7px; background: #eaf1ff;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: #0b3d91; text-decoration: none;
+    }
+    .um-view-btn svg { width: 13px; height: 13px; }
 </style>
 
 <div class="dash-header">
@@ -175,8 +182,16 @@
 </div>
 
 <div class="card">
-    <h3 style="margin:0 0 2px;font-size:16px;">Tren Pendapatan per Bulan</h3>
-    <p style="margin:0 0 16px;font-size:12.5px;color:#6b7690;">Total keseluruhan (Rp) tiap periode bulan/tahun laporan</p>
+    <h3 style="margin:0 0 2px;font-size:16px;">
+        {{ $trenMode === 'harian' ? 'Tren Pendapatan Harian' : 'Tren Pendapatan per Bulan' }}
+    </h3>
+    <p style="margin:0 0 16px;font-size:12.5px;color:#6b7690;">
+        @if ($trenMode === 'harian')
+            Total tagihan (Rp) per hari (berdasarkan tanggal register) — {{ ucfirst(strtolower($bulan)) }} {{ $tahun }}
+        @else
+            Total keseluruhan (Rp) tiap periode bulan/tahun laporan — pilih 1 periode di filter atas buat lihat rincian per hari
+        @endif
+    </p>
     <canvas id="chartTrenBulanan" height="90"></canvas>
 </div>
 
@@ -184,28 +199,38 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <div>
             <h3 style="margin:0 0 2px;font-size:16px;">Ringkasan Data Detail</h3>
-            <p style="margin:0;font-size:12.5px;color:#6b7690;">8 baris data pelanggan terbaru (isi Excel)</p>
+            <p style="margin:0;font-size:12.5px;color:#6b7690;">
+                8 baris data pelanggan terbaru
+                @if ($bulan && $tahun)
+                    &mdash; {{ ucfirst(strtolower($bulan)) }} {{ $tahun }}
+                @else
+                    (semua periode)
+                @endif
+            </p>
         </div>
         <a href="{{ route('detail-data.index') }}" class="btn btn-outline">Lihat Data Lengkap</a>
     </div>
     <div style="overflow-x:auto;">
         <table>
             <thead>
-                <tr><th>IDPEL</th><th>Nama</th><th>Gol</th><th>Daya (VA)</th><th>Total</th><th>Tgl Register</th></tr>
+                <tr><th>No</th><th>ULP</th><th>IDPEL</th><th>Nama</th><th>Gol</th><th>Tarif</th><th>Daya (VA)</th><th>KWH</th><th>TS</th></tr>
             </thead>
             <tbody>
             @forelse ($detailPreview as $d)
                 <tr>
+                    <td>{{ $loop->iteration }}</td>
+                    <td><strong style="color:#0b3d91">{{ $d->ulp }}</strong></td>
                     <td><strong>{{ $d->idpel }}</strong></td>
                     <td>{{ $d->nama }}</td>
                     <td><span class="badge gol-badge-{{ (crc32($d->gol) % 4) + 1 }}">{{ $d->gol }}</span></td>
-                    <td>{{ $d->daya }}</td>
-                    <td>Rp {{ number_format($d->total,0,',','.') }}</td>
-                    <td>{{ $d->tanggal_register ? $d->tanggal_register->format('d/m/Y') : '-' }}</td>
+                    <td>{{ $d->tarif }}</td>
+                    <td>{{ $d->daya_va }}</td>
+                    <td>{{ number_format($d->kwh,0,',','.') }}</td>
+                    <td>Rp {{ number_format($d->ts,0,',','.') }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6">
+                    <td colspan="9">
                         <div class="table-empty-state">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
                             <div>Belum ada data detail.</div>
@@ -234,7 +259,11 @@
                 <td>{{ $l->bulan }} {{ $l->tahun }}</td>
                 <td>{{ $l->jumlah_baris }}</td>
                 <td>Rp {{ number_format($l->total_keseluruhan,0,',','.') }}</td>
-                <td><a href="{{ route('laporan.show', $l->id) }}" class="badge">Lihat</a></td>
+                <td>
+                    <a href="{{ route('laporan.show', $l->id) }}" class="um-view-btn" title="Lihat Detail">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </a>
+                </td>
             </tr>
         @empty
             <tr>
@@ -282,10 +311,10 @@ new Chart(document.getElementById('chartBayarAll'), {
 new Chart(document.getElementById('chartTrenBulanan'), {
     type: 'line',
     data: {
-        labels: @json($perBulan->map(fn($b) => $b->bulan . ' ' . $b->tahun)),
+        labels: @json($trenLabels),
         datasets: [{
-            label: 'Total Rp',
-            data: @json($perBulan->pluck('total_rp')),
+            label: {!! json_encode($trenMode === 'harian' ? 'Total Rp per Hari' : 'Total Rp per Bulan') !!},
+            data: @json($trenData),
             borderColor: '#023e8a',
             backgroundColor: 'rgba(2,62,138,0.08)',
             fill: true,

@@ -126,12 +126,11 @@
         @foreach ($laporans as $laporan)
             @php
                 $label = $laporan->unit_up3 ?: $laporan->unit_induk ?: '?';
-                $initials = collect(explode(' ', $label))->map(fn($w) => mb_substr($w, 0, 1))->take(2)->implode('');
                 $color = $avatarPalette[crc32($label) % count($avatarPalette)];
             @endphp
             <div class="lap-row">
                 <div class="lap-avatar" style="background:{{ $color['bg'] }};color:{{ $color['fg'] }};">
-                    {{ mb_strtoupper($initials) ?: '?' }}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
                 </div>
 
                 <div style="min-width:0;">
@@ -153,6 +152,8 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
                             {{ $laporan->nama_file_asli }}
                         </span>
+                        <span class="dot"></span>
+                        <span>Diupload oleh {{ $laporan->uploader?->name ?? 'Tidak diketahui' }}</span>
                     </div>
                 </div>
 

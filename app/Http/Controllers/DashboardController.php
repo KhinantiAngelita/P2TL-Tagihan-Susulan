@@ -54,30 +54,55 @@ class DashboardController extends Controller
             ->whereIn('laporan_susulan_id', $laporanIds)
             ->groupBy('gol')->orderByDesc('total_rp')->get();
 
-        // Tren bulanan selalu tampil penuh (semua periode) sebagai konteks,
-        // terlepas dari filter yang lagi aktif — tetap cuma dari versi aktif
-        // per periode, biar gak dobel hitung kalau ada bulan yang pernah
-        // diupload ulang.
-        $perBulan = LaporanSusulan::aktif()
-            ->select('bulan', 'tahun', DB::raw('SUM(total_keseluruhan) as total_rp'))
-            ->whereNotNull('bulan')->whereNotNull('tahun')
-            ->groupBy('bulan', 'tahun')->get()
-            ->sortBy(fn ($p) => $p->tahun * 100 + (self::URUTAN_BULAN[$p->bulan] ?? 0))
-            ->values();
+        // ------------------------------------------------------------------
+        // Chart tren: kalau lagi difilter ke 1 periode spesifik, tampilin
+        // tren HARIAN buat bulan itu (dari tanggal_register di data detail).
+        // Kalau "Semua Bulan", tetap tren per-bulan seperti biasa (dari versi
+        // aktif tiap periode, biar gak dobel hitung kalau ada upload ulang).
+        // ------------------------------------------------------------------
+        if ($bulan && $tahun) {
+            $trenMode = 'harian';
+
+            $perHari = DetailTagihanSusulan::select('tanggal_register', DB::raw('SUM(total) as total_rp'))
+                ->whereIn('laporan_susulan_id', $laporanIds)
+                ->whereNotNull('tanggal_register')
+                ->groupBy('tanggal_register')
+                ->orderBy('tanggal_register')
+                ->get();
+
+            $trenLabels = $perHari->pluck('tanggal_register')->map(fn ($t) => $t->format('d/m'));
+            $trenData   = $perHari->pluck('total_rp');
+        } else {
+            $trenMode = 'bulanan';
+
+            $perBulan = LaporanSusulan::aktif()
+                ->select('bulan', 'tahun', DB::raw('SUM(total_keseluruhan) as total_rp'))
+                ->whereNotNull('bulan')->whereNotNull('tahun')
+                ->groupBy('bulan', 'tahun')->get()
+                ->sortBy(fn ($p) => $p->tahun * 100 + (self::URUTAN_BULAN[$p->bulan] ?? 0))
+                ->values();
+
+            $trenLabels = $perBulan->map(fn ($p) => ucfirst(strtolower($p->bulan)) . ' ' . $p->tahun);
+            $trenData   = $perBulan->pluck('total_rp');
+        }
 
         $laporanTerbaru = (clone $laporanQuery)->latest()->limit(5)->get();
 
         // Ringkasan singkat data detail (isi Excel) buat ditampilin di dashboard.
         // Detail lengkap + pencarian ada di halaman "Data Detail" terpisah.
+        // ->with('laporan:id,bulan,tahun') biar link ikon/kolom yang balik ke
+        // laporan asal gak nge-trigger query N+1 tiap baris.
         $detailPreview = DetailTagihanSusulan::query()
+            ->with('laporan:id,bulan,tahun')
             ->when($laporanIds->isNotEmpty() || $bulan || $tahun, fn ($query) => $query->whereIn('laporan_susulan_id', $laporanIds))
             ->latest('tanggal_register')
             ->limit(8)->get();
 
         return view('dashboard', compact(
             'totalLaporan', 'totalPendapatan', 'totalTunai', 'totalAngsuran',
-            'perGol', 'perBulan', 'laporanTerbaru', 'periodeTersedia',
-            'bulan', 'tahun', 'detailPreview'
+            'perGol', 'laporanTerbaru', 'periodeTersedia',
+            'bulan', 'tahun', 'detailPreview',
+            'trenMode', 'trenLabels', 'trenData'
         ));
     }
 }

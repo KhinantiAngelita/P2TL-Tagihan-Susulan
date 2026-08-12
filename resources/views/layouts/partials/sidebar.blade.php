@@ -39,20 +39,12 @@
             @if(request()->routeIs('laporan.index', 'laporan.show'))<span class="nav-chevron">›</span>@endif
         </a>
 
-        <a href="{{ route('detail-data.index') }}" class="nav-item {{ request()->routeIs('detail-data.*') ? 'active' : '' }}">
-            <span class="nav-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>
-            </span>
-            <span class="nav-text">Data Detail</span>
-            @if(request()->routeIs('detail-data.*'))<span class="nav-chevron">›</span>@endif
-        </a>
-
-        <a href="#" class="nav-item">
+        <!-- <a href="#" class="nav-item">
             <span class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
             </span>
             <span class="nav-text">Analitik</span>
-        </a>
+        </a> -->
 
         @if (auth()->check() && auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.users.index') }}" class="nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">

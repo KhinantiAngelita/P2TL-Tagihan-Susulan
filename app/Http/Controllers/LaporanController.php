@@ -63,6 +63,7 @@ class LaporanController extends Controller
 
         $laporans = LaporanSusulan::query()
             ->aktif()
+            ->with('uploader:id,name')
             ->when($sort === 'terlama', fn ($q) => $q->oldest())
             ->when($sort !== 'terlama', fn ($q) => $q->latest())
             ->paginate(10);

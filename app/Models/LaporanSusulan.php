@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LaporanSusulan extends Model
@@ -13,6 +14,14 @@ class LaporanSusulan extends Model
     public function details(): HasMany
     {
         return $this->hasMany(DetailTagihanSusulan::class);
+    }
+
+    /**
+     * User yang mengupload laporan ini.
+     */
+    public function uploader(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
     }
 
     /**

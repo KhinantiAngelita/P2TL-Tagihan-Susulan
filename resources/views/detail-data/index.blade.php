@@ -389,36 +389,8 @@
             Export
         </a>
     </div>
-    {{-- Filter Periode: Tahun + Bulan --}}
-    <div style="display:flex;gap:10px;">
-        <div>
-            <label for="tahunSelect" style="display:block;font-size:11.5px;font-weight:600;color:#9aa4c2;text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px 2px;">
-                Tahun
-            </label>
-            <div class="filter-wrap">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                <select id="tahunSelect" class="filter-select" style="min-width:110px;"></select>
-            </div>
-        </div>
-
-        <div>
-            <label for="bulanSelect" style="display:block;font-size:11.5px;font-weight:600;color:#9aa4c2;text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px 2px;">
-                Bulan
-            </label>
-            <div class="filter-wrap">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"/></svg>
-                <select id="bulanSelect" class="filter-select" style="min-width:150px;"></select>
-            </div>
-        </div>
-    </div>
     </div>
 </div>
-
-@if (session('success'))
-    <div style="margin-bottom:16px;border-radius:10px;background:#e6f7ea;border:1px solid #b9e6c4;color:#17803c;font-size:13.5px;padding:12px 16px;">
-        {{ session('success') }}
-    </div>
-@endif
 
 {{-- Info laporan --}}
 <div class="card" style="padding:18px 22px;margin-bottom:22px;">

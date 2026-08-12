@@ -63,6 +63,7 @@ class TagihanSusulanImport implements ToCollection, WithCalculatedFormulas
             'path_file'      => $this->storedPath,
             'status'         => 'aktif',
             'versi'          => $versiBaru,
+            'uploaded_by'    => auth()->id(),
         ]);
 
         $buffer = [];
