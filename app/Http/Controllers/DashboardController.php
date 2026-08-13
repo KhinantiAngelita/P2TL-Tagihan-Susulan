@@ -21,6 +21,10 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
+        $request->validate([
+            'periode' => 'nullable|string',
+        ]);
+
         $periode = $request->query('periode'); // format: "BULAN|TAHUN"
         $bulan = $tahun = null;
         if ($periode && str_contains($periode, '|')) {
@@ -37,34 +41,41 @@ class DashboardController extends Controller
             ->sortByDesc(fn ($p) => $p->tahun * 100 + (self::URUTAN_BULAN[$p->bulan] ?? 0))
             ->values();
 
-        // Query laporan sesuai filter (kalau ada) — cuma versi aktif,
+        // Query laporan sesuai filter periode (kalau ada) — cuma versi aktif,
         // supaya angka gak dobel kalau ada bulan/unit yang pernah diupload ulang.
         $laporanQuery = LaporanSusulan::query()->aktif();
         if ($bulan) $laporanQuery->where('bulan', $bulan);
         if ($tahun) $laporanQuery->where('tahun', $tahun);
 
+        $laporanIds = (clone $laporanQuery)->pluck('id');
+
+        // Base query baris detail, dipakai bareng buat perGol, tren harian,
+        // dan preview tabel — sudah kefilter periode.
+        $detailFiltered = fn () => DetailTagihanSusulan::whereIn('laporan_susulan_id', $laporanIds);
+
+        // Angka statistik tetap pakai kolom rekap laporan (lebih presisi &
+        // sedikit query dibanding hitung ulang dari ribuan baris), karena
+        // sekarang gak ada lagi filter di level baris detail (ULP/tanggal).
         $totalLaporan    = (clone $laporanQuery)->count();
         $totalPendapatan = (clone $laporanQuery)->sum('total_keseluruhan');
         $totalTunai      = (clone $laporanQuery)->sum('total_tunai');
         $totalAngsuran   = (clone $laporanQuery)->sum('total_angsuran');
 
-        $laporanIds = (clone $laporanQuery)->pluck('id');
-
-        $perGol = DetailTagihanSusulan::select('gol', DB::raw('SUM(total) as total_rp'), DB::raw('COUNT(*) as jumlah'))
-            ->whereIn('laporan_susulan_id', $laporanIds)
+        $perGol = (clone $detailFiltered())
+            ->select('gol', DB::raw('SUM(total) as total_rp'), DB::raw('COUNT(*) as jumlah'))
             ->groupBy('gol')->orderByDesc('total_rp')->get();
 
         // ------------------------------------------------------------------
         // Chart tren: kalau lagi difilter ke 1 periode spesifik, tampilin
         // tren HARIAN buat bulan itu (dari tanggal_register di data detail).
-        // Kalau "Semua Bulan", tetap tren per-bulan seperti biasa (dari versi
-        // aktif tiap periode, biar gak dobel hitung kalau ada upload ulang).
+        // Kalau "Semua Bulan", tetap tren per-bulan (join ke laporan_susulans
+        // buat ambil bulan/tahun).
         // ------------------------------------------------------------------
         if ($bulan && $tahun) {
             $trenMode = 'harian';
 
-            $perHari = DetailTagihanSusulan::select('tanggal_register', DB::raw('SUM(total) as total_rp'))
-                ->whereIn('laporan_susulan_id', $laporanIds)
+            $perHari = (clone $detailFiltered())
+                ->select('tanggal_register', DB::raw('SUM(total) as total_rp'))
                 ->whereNotNull('tanggal_register')
                 ->groupBy('tanggal_register')
                 ->orderBy('tanggal_register')
@@ -75,10 +86,17 @@ class DashboardController extends Controller
         } else {
             $trenMode = 'bulanan';
 
-            $perBulan = LaporanSusulan::aktif()
-                ->select('bulan', 'tahun', DB::raw('SUM(total_keseluruhan) as total_rp'))
-                ->whereNotNull('bulan')->whereNotNull('tahun')
-                ->groupBy('bulan', 'tahun')->get()
+            $perBulan = DetailTagihanSusulan::query()
+                ->join('laporan_susulans', 'laporan_susulans.id', '=', 'detail_tagihan_susulans.laporan_susulan_id')
+                ->where('laporan_susulans.status', 'aktif')
+                ->whereNotNull('laporan_susulans.bulan')->whereNotNull('laporan_susulans.tahun')
+                ->select(
+                    'laporan_susulans.bulan',
+                    'laporan_susulans.tahun',
+                    DB::raw('SUM(detail_tagihan_susulans.total) as total_rp')
+                )
+                ->groupBy('laporan_susulans.bulan', 'laporan_susulans.tahun')
+                ->get()
                 ->sortBy(fn ($p) => $p->tahun * 100 + (self::URUTAN_BULAN[$p->bulan] ?? 0))
                 ->values();
 
@@ -88,13 +106,13 @@ class DashboardController extends Controller
 
         $laporanTerbaru = (clone $laporanQuery)->latest()->limit(5)->get();
 
-        // Ringkasan singkat data detail (isi Excel) buat ditampilin di dashboard.
-        // Detail lengkap + pencarian ada di halaman "Data Detail" terpisah.
+        // Ringkasan singkat data detail (isi Excel) buat ditampilin di dashboard,
+        // ikut kefilter periode. Detail lengkap + pencarian/filter ULP ada di
+        // halaman "Data Detail" terpisah.
         // ->with('laporan:id,bulan,tahun') biar link ikon/kolom yang balik ke
         // laporan asal gak nge-trigger query N+1 tiap baris.
-        $detailPreview = DetailTagihanSusulan::query()
+        $detailPreview = (clone $detailFiltered())
             ->with('laporan:id,bulan,tahun')
-            ->when($laporanIds->isNotEmpty() || $bulan || $tahun, fn ($query) => $query->whereIn('laporan_susulan_id', $laporanIds))
             ->latest('tanggal_register')
             ->limit(8)->get();
 

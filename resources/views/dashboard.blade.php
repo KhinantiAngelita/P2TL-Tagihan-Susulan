@@ -7,14 +7,14 @@
     .dash-header h2 { margin: 0 0 4px; font-size: 22px; }
     .dash-header p { margin: 0; color: #6b7690; font-size: 14px; }
     .dash-period-badge {
-        display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+        display: inline-flex; align-items: center; gap: 6px; margin: 8px 8px 0 0;
         background: #eaf1ff; color: #0b3d91; font-size: 12px; font-weight: 700;
         padding: 4px 12px; border-radius: 20px;
     }
-    .dash-filter-form { display: flex; align-items: center; gap: 8px; }
+    .dash-filter-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .dash-filter-form select {
         padding: 9px 14px; border-radius: 8px; border: 1px solid #e7eaf3;
-        font-size: 13.5px; color: #1b2559; background: #fff; font-weight: 600; min-width: 190px;
+        font-size: 13.5px; color: #1b2559; background: #fff; font-weight: 600; min-width: 170px;
     }
 
     /* ---------- Stat cards — desain lokal, gak pakai .stat-card.highlight bawaan layout ---------- */
@@ -81,12 +81,14 @@
     <div>
         <h2>Dashboard</h2>
         <p>Ringkasan seluruh laporan tagihan susulan</p>
-        @if ($bulan && $tahun)
-            <div class="dash-period-badge">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                Menampilkan periode {{ ucfirst(strtolower($bulan)) }} {{ $tahun }}
-            </div>
-        @endif
+        <div>
+            @if ($bulan && $tahun)
+                <span class="dash-period-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    Periode {{ ucfirst(strtolower($bulan)) }} {{ $tahun }}
+                </span>
+            @endif
+        </div>
     </div>
 
     <form method="GET" action="{{ route('dashboard') }}" class="dash-filter-form">
@@ -99,6 +101,9 @@
                 </option>
             @endforeach
         </select>
+
+        <button type="submit" class="btn">Terapkan</button>
+
         @if ($bulan || $tahun)
             <a href="{{ route('dashboard') }}" class="btn btn-outline">Reset</a>
         @endif
@@ -171,12 +176,12 @@
 <div class="grid-2">
     <div class="card">
         <h3 style="margin:0 0 2px;font-size:16px;">Distribusi per Golongan Tarif</h3>
-        <p style="margin:0 0 16px;font-size:12.5px;color:#6b7690;">Total tagihan per golongan (Rp) — semua laporan</p>
+        <p style="margin:0 0 16px;font-size:12.5px;color:#6b7690;">Total tagihan per golongan (Rp) — sesuai filter aktif</p>
         <canvas id="chartGolAll" height="160"></canvas>
     </div>
     <div class="card">
         <h3 style="margin:0 0 2px;font-size:16px;">Tunai vs Angsuran</h3>
-        <p style="margin:0 0 16px;font-size:12.5px;color:#6b7690;">Proporsi pembayaran — semua laporan</p>
+        <p style="margin:0 0 16px;font-size:12.5px;color:#6b7690;">Proporsi pembayaran — sesuai filter aktif</p>
         <canvas id="chartBayarAll" height="160"></canvas>
     </div>
 </div>
@@ -200,12 +205,7 @@
         <div>
             <h3 style="margin:0 0 2px;font-size:16px;">Ringkasan Data Detail</h3>
             <p style="margin:0;font-size:12.5px;color:#6b7690;">
-                8 baris data pelanggan terbaru
-                @if ($bulan && $tahun)
-                    &mdash; {{ ucfirst(strtolower($bulan)) }} {{ $tahun }}
-                @else
-                    (semua periode)
-                @endif
+                8 baris data pelanggan terbaru sesuai filter aktif
             </p>
         </div>
         <a href="{{ route('detail-data.index') }}" class="btn btn-outline">Lihat Data Lengkap</a>
@@ -230,7 +230,12 @@
             @forelse ($detailPreview as $d)
                 <tr>
                     <td>{{ $loop->iteration }}</td>
-                    <td><strong style="color:#0b3d91">{{ $d->ulp }}</strong></td>
+                    <td>
+                        <strong style="color:#0b3d91">{{ $d->ulp }}</strong>
+                        @if ($d->ulp_nama)
+                            <div style="font-size:11px;color:#9aa4c2;">{{ $d->ulp_nama }}</div>
+                        @endif
+                    </td>
                     <td>{{ $d->tanggal_agenda?->format('d/m/Y') ?? '-' }}</td>
                     <td><strong>{{ $d->idpel }}</strong></td>
                     <td>{{ $d->nama }}</td>
@@ -245,7 +250,7 @@
                     <td colspan="10">
                         <div class="table-empty-state">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
-                            <div>Belum ada data detail.</div>
+                            <div>Belum ada data detail yang cocok dengan filter.</div>
                         </div>
                     </td>
                 </tr>

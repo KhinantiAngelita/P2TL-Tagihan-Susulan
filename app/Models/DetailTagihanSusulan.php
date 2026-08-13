@@ -14,6 +14,20 @@ class DetailTagihanSusulan extends Model
         'tanggal_sph' => 'date',
     ];
 
+    /**
+     * Peta kode ULP -> nama ULP (referensi resmi, dari daftar Kode ULP).
+     * Kalau ada ULP baru nanti, tinggal tambahin barisnya di sini.
+     */
+    public const PETA_NAMA_ULP = [
+        '53811' => 'ULP Cipayung',
+        '53821' => 'ULP Bogor Timur',
+        '53825' => 'ULP Pakuan',
+        '53831' => 'ULP Bogor Kota',
+        '53841' => 'ULP Bogor Barat',
+        '53851' => 'ULP Leuwiliang',
+        '53853' => 'ULP Jasinga',
+    ];
+
     public function laporan(): BelongsTo
     {
         return $this->belongsTo(LaporanSusulan::class, 'laporan_susulan_id');
@@ -27,6 +41,20 @@ class DetailTagihanSusulan extends Model
     {
         $parts = explode('/', (string) $this->no_agenda);
         return $parts[1] ?? null;
+    }
+
+    /**
+     * Nama ULP dari kode ULP, misal "53831" -> "ULP Bogor Kota".
+     * Null kalau kodenya gak ada di peta (ULP baru yang belum didaftarin).
+     */
+    public function getUlpNamaAttribute(): ?string
+    {
+        return self::namaUlp($this->ulp);
+    }
+
+    public static function namaUlp(?string $kode): ?string
+    {
+        return $kode ? (self::PETA_NAMA_ULP[$kode] ?? null) : null;
     }
 
     /**
@@ -49,6 +77,10 @@ class DetailTagihanSusulan extends Model
         return isset($parts[1]) ? trim($parts[1]) : null;
     }
 
+    /**
+     * Tanggal agenda diambil dari segmen ketiga no_agenda,
+     * format: P2TL/{kode}/{YYYYMMDD}/{urut} -> contoh: P2TL/53853/20260602/00011
+     */
     public function getTanggalAgendaAttribute(): ?\Carbon\Carbon
     {
         if (! $this->no_agenda) {

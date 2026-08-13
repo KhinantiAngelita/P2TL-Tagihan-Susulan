@@ -9,6 +9,21 @@ use Illuminate\Http\Request;
 class DetailDataController extends Controller
 {
     /**
+     * Ekspresi SQL buat "meniru" accessor getUlpAttribute() di level query,
+     * karena kolom `ulp` bukan kolom asli di database — dia hasil parsing
+     * dari segmen ke-2 `no_agenda` (P2TL/{ULP}/{tanggal}/{urut}).
+     */
+    private const ULP_SQL = "SUBSTRING_INDEX(SUBSTRING_INDEX(no_agenda, '/', 2), '/', -1)";
+
+    /**
+     * Ekspresi SQL buat "meniru" accessor getTanggalAgendaAttribute(),
+     * ambil segmen ke-3 no_agenda (format YYYYMMDD) sebagai string.
+     * Karena formatnya YYYYMMDD, perbandingan string >= / <= otomatis
+     * setara perbandingan tanggal asli.
+     */
+    private const TANGGAL_AGENDA_SQL = "SUBSTRING_INDEX(SUBSTRING_INDEX(no_agenda, '/', 3), '/', -1)";
+
+    /**
      * Entry point menu sidebar "Detail Laporan" (/data-detail) — TANPA
      * parameter laporan. Karena belum ada laporan spesifik yang dipilih,
      * arahkan ke laporan aktif paling baru. Kalau tidak ada laporan sama
@@ -31,9 +46,16 @@ class DetailDataController extends Controller
 
     /**
      * Halaman "Detail Laporan" — overview 1 LaporanSusulan: kartu ringkasan,
-     * 3 chart, dan tabel semua baris tagihan (DetailTagihanSusulan) dengan
-     * pencarian & filter golongan. Dipanggil dari tombol "Lihat Detail" di
-     * Daftar Laporan lewat route model binding.
+     * 5 chart (filterable lewat rentang tanggal berdasarkan tanggal_register),
+     * dan tabel semua baris tagihan (DetailTagihanSusulan) dengan pencarian
+     * & filter golongan/ULP/tanggal-agenda. Dipanggil dari tombol "Lihat
+     * Detail" di Daftar Laporan lewat route model binding.
+     *
+     * Catatan: kartu ringkasan (Total KWH, Rp. TS, Penetapan) SEKARANG ikut
+     * filter rentang tanggal juga — sumbernya sama persis dengan yang dipakai
+     * grafik ($chartBase, filter berdasarkan tanggal_register), bukan lagi
+     * dari kolom rekap $laporan->total_keseluruhan yang selalu total
+     * keseluruhan tanpa filter.
      *
      * View : resources/views/detail-data/index.blade.php
      * Route: GET /laporan/{laporan}/detail -> name('laporan.show')
@@ -41,40 +63,62 @@ class DetailDataController extends Controller
     public function show(Request $request, LaporanSusulan $laporan)
     {
         $request->validate([
-            'search'   => 'nullable|string|max:100',
-            'golongan' => 'nullable|string|max:20',
+            'search'         => 'nullable|string|max:100',
+            'golongan'       => 'nullable|string|max:20',
+            'ulp'            => 'nullable|string|max:20',
+            'tanggal_dari'   => 'nullable|date',
+            'tanggal_sampai' => 'nullable|date',
         ]);
 
-        $search   = $request->input('search');
-        $golongan = $request->input('golongan', 'semua');
+        $search         = $request->input('search');
+        $golongan       = $request->input('golongan', 'semua');
+        $ulpFilter      = $request->input('ulp', 'semua');
+        $tanggalDari    = $request->input('tanggal_dari');
+        $tanggalSampai  = $request->input('tanggal_sampai');
 
         $detailBase = fn () => DetailTagihanSusulan::where('laporan_susulan_id', $laporan->id);
 
-        // ---- Chart: distribusi KWH per golongan tarif ----
-        $distribusiGolongan = (clone $detailBase())
+        // ---- Base query buat grafik & kartu ringkasan: kefilter tanggal_dari/
+        //      tanggal_sampai berdasarkan kolom tanggal_register (kolom asli,
+        //      bukan hasil parsing no_agenda seperti filter tabel di bawah).
+        //      Dipakai oleh SEMUA 5 grafik + kartu ringkasan di halaman ini. ----
+        $chartBase = fn () => DetailTagihanSusulan::where('laporan_susulan_id', $laporan->id)
+            ->when($tanggalDari, fn ($q) => $q->whereDate('tanggal_register', '>=', $tanggalDari))
+            ->when($tanggalSampai, fn ($q) => $q->whereDate('tanggal_register', '<=', $tanggalSampai));
+
+        // ---- Chart 1: distribusi KWH per golongan tarif ----
+        $distribusiGolongan = (clone $chartBase())
             ->selectRaw('gol, SUM(kwh) as kwh')
             ->groupBy('gol')
             ->orderBy('gol')
             ->pluck('kwh', 'gol');
 
-        // ---- Chart: tren harian KWH vs TS ----
-        $trenHarian = (clone $detailBase())
+        // ---- Chart 3, 4, 5: tren harian KWH, TS, dan Tunai vs Angsuran ----
+        $trenHarian = (clone $chartBase())
             ->selectRaw('DATE(tanggal_register) as tanggal, SUM(kwh) as kwh, SUM(ts) as ts, SUM(tunai) as tunai, SUM(angsuran) as angsuran')
             ->whereNotNull('tanggal_register')
             ->groupBy('tanggal')
             ->orderBy('tanggal')
             ->get();
 
-        // ---- Kartu statistik (dari kolom rekap di laporan_susulans) ----
-        $totalBayar     = $laporan->total_tunai + $laporan->total_angsuran;
-        $persenTunai    = $totalBayar > 0 ? round($laporan->total_tunai / $totalBayar * 100) : 0;
-        $persenAngsuran = $totalBayar > 0 ? 100 - $persenTunai : 0;
+        // ---- Chart 2: donut Tunai vs Angsuran — dihitung dari baris detail
+        //      yang sudah kefilter tanggal. Dipakai ulang juga buat kartu
+        //      ringkasan "Penetapan" di bawah (total = tunai + angsuran). ----
+        $totalTunaiChart    = (clone $chartBase())->sum('tunai');
+        $totalAngsuranChart = (clone $chartBase())->sum('angsuran');
 
-        // ---- Total KWH & TS untuk kartu statistik ----
-        $totalKwh = (clone $detailBase())->sum('kwh');
-        $totalTs  = (clone $detailBase())->sum('ts');
+        // ---- Kartu statistik — SEKARANG ikut filter rentang tanggal (pakai
+        //      $chartBase, sama seperti grafik), BUKAN lagi dari detailBase()
+        //      atau kolom rekap $laporan->total_keseluruhan yang selalu total
+        //      keseluruhan tanpa filter. ----
+        $totalKwh       = (clone $chartBase())->sum('kwh');
+        $totalTs        = (clone $chartBase())->sum('ts');
+        $totalPenetapan = $totalTunaiChart + $totalAngsuranChart;
 
-        // ---- Tabel "Semua Data Detail" ----
+        $persenTunai    = $totalPenetapan > 0 ? round($totalTunaiChart / $totalPenetapan * 100) : 0;
+        $persenAngsuran = $totalPenetapan > 0 ? 100 - $persenTunai : 0;
+
+        // ---- Tabel "Semua Data Detail" (search/golongan/ulp/tanggal-agenda — terpisah dari filter grafik) ----
         $rows = (clone $detailBase())
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
@@ -83,6 +127,15 @@ class DetailDataController extends Controller
                 });
             })
             ->when($golongan && strtolower($golongan) !== 'semua', fn ($q) => $q->where('gol', $golongan))
+            ->when($ulpFilter && strtolower($ulpFilter) !== 'semua', function ($q) use ($ulpFilter) {
+                $q->whereRaw(self::ULP_SQL . ' = ?', [$ulpFilter]);
+            })
+            ->when($tanggalDari, function ($q) use ($tanggalDari) {
+                $q->whereRaw(self::TANGGAL_AGENDA_SQL . ' >= ?', [\Carbon\Carbon::parse($tanggalDari)->format('Ymd')]);
+            })
+            ->when($tanggalSampai, function ($q) use ($tanggalSampai) {
+                $q->whereRaw(self::TANGGAL_AGENDA_SQL . ' <= ?', [\Carbon\Carbon::parse($tanggalSampai)->format('Ymd')]);
+            })
             ->orderBy('no')
             ->paginate(15)
             ->withQueryString();
@@ -92,6 +145,24 @@ class DetailDataController extends Controller
             ->distinct()
             ->orderBy('gol')
             ->pluck('gol');
+
+        // Daftar kode ULP unik buat opsi dropdown filter (kode + nama).
+        // Parsing di level PHP, satu sumber logic yang sama kayak accessor
+        // getUlpAttribute() di model.
+        $daftarUlp = (clone $detailBase())
+            ->pluck('no_agenda')
+            ->map(function ($noAgenda) {
+                $parts = explode('/', (string) $noAgenda);
+                return $parts[1] ?? null;
+            })
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+            ->map(fn ($kode) => [
+                'kode' => $kode,
+                'nama' => DetailTagihanSusulan::namaUlp($kode),
+            ]);
 
         $daftarLaporanBulan = LaporanSusulan::aktif()
             ->where('unit_up3', $laporan->unit_up3)
@@ -104,6 +175,10 @@ class DetailDataController extends Controller
             'search'             => $search,
             'golonganAktif'      => $golongan,
             'daftarGolongan'     => $daftarGolongan,
+            'ulpAktif'           => $ulpFilter,
+            'daftarUlp'          => $daftarUlp,
+            'tanggalDari'        => $tanggalDari,
+            'tanggalSampai'      => $tanggalSampai,
             'daftarLaporanBulan' => $daftarLaporanBulan,
             'persenTunai'        => $persenTunai,
             'persenAngsuran'     => $persenAngsuran,
@@ -111,6 +186,9 @@ class DetailDataController extends Controller
             'trenHarian'         => $trenHarian,
             'totalKwh'           => $totalKwh,
             'totalTs'            => $totalTs,
+            'totalPenetapan'     => $totalPenetapan,
+            'totalTunaiChart'    => $totalTunaiChart,
+            'totalAngsuranChart' => $totalAngsuranChart,
         ]);
     }
 

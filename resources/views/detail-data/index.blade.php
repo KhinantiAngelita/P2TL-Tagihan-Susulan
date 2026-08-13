@@ -36,6 +36,7 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 16px;
+        margin-bottom: 16px;
     }
     @media (max-width: 900px) {
         .chart-grid-equal { grid-template-columns: 1fr; }
@@ -59,6 +60,62 @@
         font-size: 12px; font-weight: 600;
         padding: 5px 12px; border-radius: 999px;
         white-space: nowrap;
+    }
+
+    .filter-chart-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 16px 22px;
+        margin-bottom: 16px;
+    }
+
+    /* Varian aktif dari .filter-chart-card — dipakai buat filter rentang tanggal
+       di bagian paling atas, sengaja dikasih warna beda (gradient biru) biar
+       kelihatan jelas kalau filter ini berlaku juga ke kartu ringkasan di
+       bawahnya, bukan cuma ke grafik & tabel. */
+    .filter-chart-card--active {
+        background: linear-gradient(90deg, #003b94, #0f6bd9);
+        border-color: transparent;
+    }
+    .filter-chart-card--active .info-icon {
+        background: rgba(255, 255, 255, .15);
+        color: #ffce3a;
+    }
+    .filter-chart-card--active .date-input {
+        border-color: rgba(255, 255, 255, .4);
+        background: rgba(255, 255, 255, .95);
+    }
+    .filter-chart-card--active .sep-dash {
+        color: rgba(255, 255, 255, .7);
+    }
+    .filter-chart-card--active .btn-outline {
+        border-color: rgba(255, 255, 255, .5);
+        color: #fff;
+        background: transparent;
+    }
+    .filter-chart-card--active .btn-outline:hover {
+        background: rgba(255, 255, 255, .15);
+    }
+
+    .btn-export-excel {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: #1e7e46;
+        color: #fff;
+        border: 1px solid #1e7e46;
+        border-radius: 9px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: .2s;
+    }
+    .btn-export-excel:hover {
+        background: #17663a;
+        border-color: #17663a;
+        color: #fff;
     }
 
     .table-toolbar {
@@ -95,6 +152,16 @@
         background: #fff;
         appearance: none;
     }
+    .date-input {
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 8px 12px;
+        font-size: 13px;
+        background: #fff;
+        color: #1b2559;
+    }
+    .date-range-wrap { display: flex; align-items: center; gap: 6px; }
+    .date-range-wrap .sep-dash { color: #9aa4c2; font-size: 12.5px; }
 
     .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .data-table thead th {
@@ -158,6 +225,16 @@
 
     .icon-btn.danger:hover{
         background:#d11a2a;
+        color:white;
+    }
+
+    .icon-btn.warning{
+        background:#fff1e0;
+        color:#c2650a;
+    }
+
+    .icon-btn.warning:hover{
+        background:#c2650a;
         color:white;
     }
 
@@ -384,9 +461,23 @@
         <label style="display:block;font-size:11.5px;font-weight:600;color:#9aa4c2;text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px 2px;visibility:hidden;">
             &nbsp;
         </label>
-        <a href="#" class="btn btn-outline" style="padding:9px 14px;font-size:13px;white-space:nowrap;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-            Export
+        <a href="{{ route('laporan.index') }}" class="btn btn-outline" style="padding:9px 14px;font-size:13px;white-space:nowrap;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+            Kembali ke Daftar Laporan
+        </a>
+    </div>
+    <div>
+        <label style="display:block;font-size:11.5px;font-weight:600;color:#9aa4c2;text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px 2px;visibility:hidden;">
+            &nbsp;
+        </label>
+        <a href="#" class="btn btn-export-excel" style="padding:9px 14px;font-size:13px;white-space:nowrap;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path d="M14 2v6h6"/>
+                <path d="m8 13 2.5 5M10.5 13 8 18"/>
+                <path d="m14 13 2.5 5M16.5 13 14 18"/>
+            </svg>
+            Export Excel
         </a>
     </div>
     </div>
@@ -434,7 +525,52 @@
     </div>
 </div>
 
-{{-- Kartu statistik — sekarang pakai .dash-stats / .dash-stat-card, sama persis kayak dashboard --}}
+{{-- Filter rentang tanggal — DIPINDAH KE ATAS. Berlaku untuk kartu ringkasan
+     di bawah ini, 5 grafik, dan tabel "Semua Data Detail" (berdasarkan
+     tanggal_register). Dikasih warna gradient biru biar keliatan beda dari
+     card putih lainnya dan jelas "menaungi" kartu ringkasan di bawahnya. --}}
+<div class="card filter-chart-card filter-chart-card--active">
+    <div style="display:flex;align-items:center;gap:10px;">
+        <div class="info-icon" style="width:34px;height:34px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        </div>
+        <div>
+            <strong style="font-size:14px;color:#fff;">Filter Rentang Tanggal</strong>
+            <p style="margin:2px 0 0;font-size:12px;color:rgba(255,255,255,.85);">
+                @if ($tanggalDari || $tanggalSampai)
+                    Menampilkan {{ $tanggalDari ? \Carbon\Carbon::parse($tanggalDari)->format('d M Y') : 'awal' }} s/d {{ $tanggalSampai ? \Carbon\Carbon::parse($tanggalSampai)->format('d M Y') : 'akhir' }} &middot; berlaku untuk kartu ringkasan, grafik &amp; tabel di bawah
+                @else
+                    Menampilkan seluruh data laporan ini &middot; berlaku untuk kartu ringkasan, grafik &amp; tabel di bawah
+                @endif
+            </p>
+        </div>
+    </div>
+
+    <form method="GET" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <input type="hidden" name="search" value="{{ $search }}">
+        <input type="hidden" name="golongan" value="{{ $golonganAktif }}">
+        <input type="hidden" name="ulp" value="{{ $ulpAktif }}">
+
+        <div class="date-range-wrap">
+            <input type="date" name="tanggal_dari" value="{{ $tanggalDari }}" class="date-input" title="Tanggal dari">
+            <span class="sep-dash">&ndash;</span>
+            <input type="date" name="tanggal_sampai" value="{{ $tanggalSampai }}" class="date-input" title="Tanggal sampai">
+        </div>
+
+        <button type="submit" class="btn" style="background:#fff;color:#0b3d91;">Terapkan</button>
+        @if ($tanggalDari || $tanggalSampai)
+            <a href="{{ route('laporan.show', array_filter([
+                'laporan'  => $laporan->id,
+                'search'   => $search,
+                'golongan' => $golonganAktif !== 'semua' ? $golonganAktif : null,
+                'ulp'      => $ulpAktif !== 'semua' ? $ulpAktif : null,
+            ])) }}" class="btn btn-outline">Reset</a>
+        @endif
+    </form>
+</div>
+
+{{-- Kartu statistik — sekarang pakai .dash-stats / .dash-stat-card, sama persis kayak dashboard.
+     Nilainya SEKARANG ikut Filter Rentang Tanggal di atas. --}}
 <div class="dash-stats">
     <div class="dash-stat-card tone-yellow">
         <div class="dash-stat-top">
@@ -444,7 +580,7 @@
             <h3>Total KWH</h3>
         </div>
         <div class="dash-stat-value">{{ number_format($totalKwh, 0, ',', '.') }}</div>
-        <div class="dash-stat-sub">KWH seluruh baris</div>
+        <div class="dash-stat-sub">KWH sesuai rentang tanggal terpilih</div>
     </div>
 
     <div class="dash-stat-card tone-blue">
@@ -455,7 +591,7 @@
             <h3>Rp. TS</h3>
         </div>
         <div class="dash-stat-value">Rp {{ number_format($totalTs, 0, ',', '.') }}</div>
-        <div class="dash-stat-sub">Total TS seluruh baris</div>
+        <div class="dash-stat-sub">Total TS sesuai rentang tanggal terpilih</div>
     </div>
 
     <div class="dash-stat-card tone-purple">
@@ -465,8 +601,8 @@
             </div>
             <h3>Penetapan</h3>
         </div>
-        <div class="dash-stat-value">Rp {{ number_format($laporan->total_keseluruhan, 0, ',', '.') }}</div>
-        <div class="dash-stat-sub">Total tunai + angsuran</div>
+        <div class="dash-stat-value">Rp {{ number_format($totalPenetapan, 0, ',', '.') }}</div>
+        <div class="dash-stat-sub">Total tunai + angsuran sesuai rentang tanggal terpilih</div>
     </div>
 </div>
 
@@ -495,7 +631,7 @@
 </div>
 
 {{-- Chart: tren harian & tunai vs angsuran --}}
-<div class="chart-grid-equal" style="margin-bottom:22px;">
+<div class="chart-grid-equal">
     <div class="chart-card">
         <div class="chart-card-head">
             <div>
@@ -517,7 +653,7 @@
     </div>
 </div>
 
-    <div class="chart-card">
+    <div class="chart-card" style="margin-bottom:22px;">
         <div class="chart-card-head">
             <div>
                 <h4>Tren Tunai vs Angsuran</h4>
@@ -539,7 +675,12 @@
             </div>
         </div>
 
-        <form method="GET" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <form method="GET" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            {{-- Filter tanggal dikontrol dari card "Filter Rentang Tanggal" di atas, tetap
+                 dibawa lewat hidden input biar gak ke-reset saat search/golongan/ulp disubmit --}}
+            <input type="hidden" name="tanggal_dari" value="{{ $tanggalDari }}">
+            <input type="hidden" name="tanggal_sampai" value="{{ $tanggalSampai }}">
+
             <div class="search-wrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input type="text" name="search" value="{{ $search }}" placeholder="Cari IDPEL atau nama..." class="search-input">
@@ -555,7 +696,26 @@
                 </select>
             </div>
 
+            <div class="filter-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <select name="ulp" onchange="this.form.submit()" class="filter-select">
+                    <option value="semua" {{ $ulpAktif === 'semua' ? 'selected' : '' }}>Semua ULP</option>
+                    @foreach ($daftarUlp as $u)
+                        <option value="{{ $u['kode'] }}" {{ $ulpAktif === $u['kode'] ? 'selected' : '' }}>
+                            {{ $u['kode'] }}{{ $u['nama'] ? ' - '.$u['nama'] : '' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
             <button type="submit" class="btn">Cari</button>
+            @if ($search || ($golonganAktif && $golonganAktif !== 'semua') || ($ulpAktif && $ulpAktif !== 'semua'))
+                <a href="{{ route('laporan.show', array_filter([
+                    'laporan'        => $laporan->id,
+                    'tanggal_dari'   => $tanggalDari,
+                    'tanggal_sampai' => $tanggalSampai,
+                ])) }}" class="btn btn-outline">Reset</a>
+            @endif
         </form>
     </div>
 
@@ -580,7 +740,12 @@
             @forelse ($rows as $i => $row)
                 <tr>
                     <td>{{ $row->no ?? ($rows->firstItem() + $i) }}</td>
-                    <td>{{ $row->ulp ?? '-' }}</td>
+                    <td>
+                        {{ $row->ulp ?? '-' }}
+                        @if ($row->ulp_nama)
+                            <div style="font-size:11px;color:#9aa4c2;">{{ $row->ulp_nama }}</div>
+                        @endif
+                    </td>
                     <td style="color:#6b7690;">
                         {{ $row->tanggal_agenda?->format('d/m/Y') ?? '-' }}
                     </td>
@@ -604,7 +769,7 @@
                             </button>
 
                             {{-- Edit --}}
-                            <button type="button" class="icon-btn btn-edit" data-id="{{ $row->id }}" title="Edit">
+                            <button type="button" class="icon-btn warning btn-edit" data-id="{{ $row->id }}" title="Edit">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                                     <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
                                 </svg>
@@ -1114,7 +1279,7 @@
         data: {
             labels: ['Tunai', 'Angsuran'],
             datasets: [{
-                data: [{{ $laporan->total_tunai }}, {{ $laporan->total_angsuran }}],
+                data: [{{ $totalTunaiChart }}, {{ $totalAngsuranChart }}],
                 backgroundColor: ['#0b3d91', '#ffce3a'],
             }]
         },
