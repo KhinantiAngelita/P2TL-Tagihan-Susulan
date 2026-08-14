@@ -28,7 +28,14 @@
     .up-layout { display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px; align-items: stretch; }
     .up-layout > .card { height: 100%; display: flex; flex-direction: column; margin-bottom: 0; }
     .up-card-grow { flex: 1; display: flex; flex-direction: column; }
-    .up-card-footer { margin-top: auto; }
+
+    /* Footer/garis tipis selalu punya jarak minimal ke konten di atasnya,
+       gak akan mepet lagi biarpun tinggi konten kolom kiri/kanan beda-beda */
+    .up-card-footer {
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid #e7eaf3;
+    }
 
     @media (max-width: 900px) {
         .up-stats { grid-template-columns: repeat(2, 1fr); }
@@ -38,7 +45,33 @@
 </style>
 
 <h2 style="margin:0 0 4px;font-size:22px;">Upload File Excel</h2>
-<p style="color:#6b7690;margin:0 0 22px;font-size:14px;">Unggah data laporan dalam format Excel sesuai template PLN yang disediakan.</p>
+<p style="color:#6b7690;margin:0 0 22px;font-size:14px;">Unggah data laporan dalam format Excel sesuai template PLN yang disediakan. Bisa pilih beberapa file sekaligus.</p>
+
+@if (session('upload_berhasil') || session('upload_gagal'))
+    <div style="margin-bottom:20px;display:flex;flex-direction:column;gap:10px;">
+        @if (session('upload_berhasil'))
+            <div style="background:#e6f7ea;border:1px solid #bfe8c9;border-radius:12px;padding:14px 18px;">
+                <strong style="display:block;font-size:13px;color:#1a9c4a;margin-bottom:6px;">File berhasil diimport</strong>
+                <ul style="margin:0;padding-left:18px;font-size:12.5px;color:#33553d;">
+                    @foreach (session('upload_berhasil') as $item)
+                        <li>{{ $item }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if (session('upload_gagal'))
+            <div style="background:#fdecea;border:1px solid #f5c2bd;border-radius:12px;padding:14px 18px;">
+                <strong style="display:block;font-size:13px;color:#e0433d;margin-bottom:6px;">File gagal diproses</strong>
+                <ul style="margin:0;padding-left:18px;font-size:12.5px;color:#7a3330;">
+                    @foreach (session('upload_gagal') as $item)
+                        <li>{{ $item }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+    </div>
+@endif
 
 {{-- Ringkasan aktivitas upload hari ini, dipindah ke atas sebagai stat card --}}
 <div class="up-stats-header">
@@ -97,7 +130,7 @@
             </div>
             <div>
                 <h3 style="margin:0;font-size:15px;">Pilih File Excel</h3>
-                <span style="font-size:12.5px;color:#6b7690;">Format .xls / .xlsx · Maks. 20 MB</span>
+                <span style="font-size:12.5px;color:#6b7690;">Format .xls / .xlsx · Maks. 20 MB per file</span>
             </div>
         </div>
 
@@ -111,19 +144,21 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="#0b3d91" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M20 21H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h3"/><path d="M17 13h3a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1"/></svg>
                     </div>
                     <strong id="dropzoneTitle" style="font-size:15px;color:#0b3d91;">Tarik file .xls/.xlsx ke sini</strong>
-                    <span style="font-size:13px;color:#6b7690;">atau klik untuk pilih file</span>
-                    <span class="badge" style="background:#eaf1ff;">Maksimal 20 MB</span>
+                    <span style="font-size:13px;color:#6b7690;">atau klik untuk pilih beberapa file sekaligus</span>
+                    <span class="badge" style="background:#eaf1ff;">Maksimal 20 MB per file</span>
                 </label>
-                <input type="file" name="file_excel" id="fileInput" accept=".xls,.xlsx" required style="display:none;">
+                <input type="file" name="file_excel[]" id="fileInput" accept=".xls,.xlsx" multiple required style="display:none;">
 
-                <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+                <ul id="fileList" style="list-style:none;margin:10px 0 0;padding:0;display:none;flex-direction:column;gap:6px;"></ul>
+
+                <div style="display:flex;justify-content:flex-end;margin-top:20px;">
                     <button type="submit" class="btn" id="submitBtn">Upload &amp; Proses</button>
                 </div>
             </form>
         </div>
 
         @if ($lastUpload)
-            <div class="up-card-footer" style="padding-top:16px;border-top:1px solid #e7eaf3;display:flex;align-items:center;gap:8px;font-size:12.5px;color:#6b7690;">
+            <div class="up-card-footer" style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#6b7690;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;flex-shrink:0;"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
                 Upload terakhir: <strong style="color:#1b2559;">{{ $lastUpload->created_at->translatedFormat('d/m/Y') }}</strong>
                 pukul <strong style="color:#1b2559;">{{ $lastUpload->created_at->format('H:i') }}</strong>
@@ -157,7 +192,7 @@
             @endforeach
         </ul>
 
-        <div class="up-card-footer" style="padding-top:16px;border-top:1px solid #e7eaf3;">
+        <div class="up-card-footer">
             <span style="font-size:12px;color:#6b7690;">Butuh panduan?</span>
             <a href="{{ asset('templates/format-p2tl-kosong.xlsx') }}" download="Format_P2TL_Kosong.xlsx" class="btn btn-yellow" style="width:100%;justify-content:center;margin-top:8px;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M20 21H4"/></svg>
@@ -175,15 +210,42 @@
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('fileInput');
     const title = document.getElementById('dropzoneTitle');
+    const fileList = document.getElementById('fileList');
 
-    function showFileName(file) {
-        if (!file) return;
-        title.textContent = file.name;
-        dropzone.style.borderColor = '#0b3d91';
-        dropzone.style.background = '#eaf1ff';
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
-    fileInput.addEventListener('change', () => showFileName(fileInput.files[0]));
+    function renderFiles(files) {
+        fileList.innerHTML = '';
+
+        if (!files || !files.length) {
+            title.textContent = 'Tarik file .xls/.xlsx ke sini';
+            dropzone.style.borderColor = '#b9c3e6';
+            dropzone.style.background = '#f7f9fd';
+            fileList.style.display = 'none';
+            return;
+        }
+
+        title.textContent = files.length === 1
+            ? files[0].name
+            : files.length + ' file dipilih';
+
+        dropzone.style.borderColor = '#0b3d91';
+        dropzone.style.background = '#eaf1ff';
+
+        fileList.style.display = 'flex';
+        Array.from(files).forEach((file) => {
+            const li = document.createElement('li');
+            li.style.cssText = 'display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:#4b5570;background:#fff;border:1px solid #e7eaf3;border-radius:8px;padding:8px 12px;';
+            li.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${file.name}</span><span style="flex-shrink:0;color:#9aa4c2;">${formatSize(file.size)}</span>`;
+            fileList.appendChild(li);
+        });
+    }
+
+    fileInput.addEventListener('change', () => renderFiles(fileInput.files));
 
     ['dragover', 'dragenter'].forEach(evt => {
         dropzone.addEventListener(evt, (e) => {
@@ -206,7 +268,7 @@
         e.preventDefault();
         if (e.dataTransfer.files.length) {
             fileInput.files = e.dataTransfer.files;
-            showFileName(fileInput.files[0]);
+            renderFiles(fileInput.files);
         }
     });
 })();

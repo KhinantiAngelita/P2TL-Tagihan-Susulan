@@ -127,6 +127,10 @@
             @php
                 $label = $laporan->unit_up3 ?: $laporan->unit_induk ?: '?';
                 $color = $avatarPalette[crc32($label) % count($avatarPalette)];
+                // Dipaksa ke WIB di sini sebagai jaga-jaga kalau config/app.php
+                // 'timezone' belum diset ke Asia/Jakarta. Kalau config sudah benar,
+                // baris setTimezone() ini tetap aman (no-op karena sudah WIB).
+                $waktuUpload = $laporan->created_at->copy()->setTimezone('Asia/Jakarta');
             @endphp
             <div class="lap-row">
                 <div class="lap-avatar" style="background:{{ $color['bg'] }};color:{{ $color['fg'] }};">
@@ -166,9 +170,9 @@
                     <div class="lap-col-date" style="text-align:right;">
                         <span class="date-highlight">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-                            {{ $laporan->created_at->translatedFormat('d M Y') }}, {{ $laporan->created_at->format('H:i') }}
+                            {{ $waktuUpload->translatedFormat('d M Y') }}, {{ $waktuUpload->format('H:i') }} WIB
                         </span>
-                        <span style="display:block;font-size:11px;color:#9aa4c2;margin-top:4px;">{{ $laporan->created_at->diffForHumans() }}</span>
+                        <span style="display:block;font-size:11px;color:#9aa4c2;margin-top:4px;">{{ $waktuUpload->diffForHumans() }}</span>
                     </div>
 
                     <div class="lap-actions">

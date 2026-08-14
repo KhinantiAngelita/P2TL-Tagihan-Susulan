@@ -24,37 +24,94 @@ class LaporanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'file_excel' => 'required|file|mimes:xls,xlsx|max:20480',
+            'file_excel' => 'required|array|min:1',
+            'file_excel.*' => 'file|mimes:xls,xlsx|max:20480',
         ]);
 
-        $file = $request->file('file_excel');
-        $storedPath = $file->store('laporan-excel');
+        $files = $request->file('file_excel');
 
-        DB::beginTransaction();
-        try {
-            $import = new TagihanSusulanImport($file->getClientOriginalName(), $storedPath);
-            Excel::import($import, $file);
-            DB::commit();
+        $berhasil = [];
+        $gagal = [];
+        $laporanTerakhir = null;
 
-            // Kabarin user lain yang aktif (selain yang barusan upload) lewat notifikasi
-            // di topbar. Ditaruh di luar transaksi DB supaya kalau gagal kirim notif,
-            // data laporan yang sudah tersimpan tidak ikut ke-rollback.
-            $penerima = User::where('id', '!=', auth()->id())->aktif()->get();
-            if ($penerima->isNotEmpty()) {
-                Notification::send($penerima, new LaporanBaruDiupload($import->laporan, auth()->user()));
+        // Setiap file diproses dalam transaksi masing-masing supaya satu file
+        // yang gagal tidak ikut me-rollback file lain yang sudah berhasil diimport.
+        foreach ($files as $file) {
+            $namaAsli = $file->getClientOriginalName();
+
+            DB::beginTransaction();
+            try {
+                $storedPath = $file->store('laporan-excel');
+
+                $import = new TagihanSusulanImport($namaAsli, $storedPath);
+                Excel::import($import, $file);
+                DB::commit();
+
+                $laporanTerakhir = $import->laporan;
+                $berhasil[] = [
+                    'nama_file' => $namaAsli,
+                    'laporan' => $import->laporan,
+                ];
+
+                // Kabarin user lain yang aktif (selain yang barusan upload) lewat notifikasi
+                // di topbar. Ditaruh di luar transaksi DB supaya kalau gagal kirim notif,
+                // data laporan yang sudah tersimpan tidak ikut ke-rollback.
+                $penerima = User::where('id', '!=', auth()->id())->aktif()->get();
+                if ($penerima->isNotEmpty()) {
+                    Notification::send($penerima, new LaporanBaruDiupload($import->laporan, auth()->user()));
+                }
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                $gagal[] = [
+                    'nama_file' => $namaAsli,
+                    'pesan' => $e->getMessage(),
+                ];
             }
+        }
 
-            $pesan = $import->laporan->versi > 1
-                ? "File berhasil diimport sebagai versi {$import->laporan->versi} ({$import->laporan->jumlah_baris} baris). Versi sebelumnya otomatis dipindah ke riwayat."
-                : "File berhasil diimport: {$import->laporan->jumlah_baris} baris data.";
+        return $this->redirectHasilUpload($berhasil, $gagal, $laporanTerakhir);
+    }
+
+    /**
+     * Susun pesan hasil upload (berhasil/gagal) lalu redirect.
+     * Kalau cuma 1 file dan berhasil, langsung ke halaman detail laporan seperti semula.
+     * Kalau banyak file atau ada yang gagal, balik ke form upload dengan ringkasan.
+     */
+    private function redirectHasilUpload(array $berhasil, array $gagal, ?LaporanSusulan $laporanTerakhir)
+    {
+        if (count($berhasil) === 1 && count($gagal) === 0) {
+            $laporan = $berhasil[0]['laporan'];
+            $pesan = $laporan->versi > 1
+                ? "File berhasil diimport sebagai versi {$laporan->versi} ({$laporan->jumlah_baris} baris). Versi sebelumnya otomatis dipindah ke riwayat."
+                : "File berhasil diimport: {$laporan->jumlah_baris} baris data.";
 
             return redirect()
-                ->route('laporan.show', $import->laporan->id)
+                ->route('laporan.show', $laporan->id)
                 ->with('success', $pesan);
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return back()->withErrors(['file_excel' => 'Gagal memproses file: ' . $e->getMessage()]);
         }
+
+        $ringkasanBerhasil = collect($berhasil)->map(function ($item) {
+            $laporan = $item['laporan'];
+            return "{$item['nama_file']} ({$laporan->jumlah_baris} baris, versi {$laporan->versi})";
+        })->all();
+
+        $ringkasanGagal = collect($gagal)->map(function ($item) {
+            return "{$item['nama_file']}: {$item['pesan']}";
+        })->all();
+
+        $redirect = back();
+
+        if (count($berhasil) > 0) {
+            $pesanSukses = count($berhasil) . ' dari ' . (count($berhasil) + count($gagal)) . ' file berhasil diimport.';
+            $redirect->with('success', $pesanSukses)->with('upload_berhasil', $ringkasanBerhasil);
+        }
+
+        if (count($gagal) > 0) {
+            $redirect->withErrors(['file_excel' => count($gagal) . ' file gagal diproses.'])
+                ->with('upload_gagal', $ringkasanGagal);
+        }
+
+        return $redirect;
     }
 
     public function index(Request $request)

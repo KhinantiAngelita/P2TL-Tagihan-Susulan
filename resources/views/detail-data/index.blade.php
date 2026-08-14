@@ -220,11 +220,11 @@
 
     .icon-btn.danger{
         background:#ffe8e8;
-        color:#d11a2a;
+        color:#e0433d;
     }
 
     .icon-btn.danger:hover{
-        background:#d11a2a;
+        background:#e0433d;
         color:white;
     }
 
@@ -265,7 +265,7 @@
         max-height:85vh;
         margin:0 auto;
         background:white;
-        border-radius:20px;
+        border-radius:16px;
         overflow:hidden;
         display:flex;
         flex-direction:column;
@@ -325,7 +325,7 @@
 
     .modal-header-blue{
 
-    padding:20px 25px;
+    padding:20px 22px;
 
     background:linear-gradient(90deg,#003b94,#0f6bd9);
 
@@ -418,7 +418,7 @@
 
     }
     .modal-header-blue .header-icon{
-    width:44px;height:44px;border-radius:12px;
+    width:42px;height:42px;border-radius:12px;
     background:rgba(255,255,255,.15);
     display:flex;align-items:center;justify-content:center;
     margin-right:14px;flex-shrink:0;
@@ -427,6 +427,18 @@
     .modal-header-blue .header-text{display:flex;align-items:center;}
     .modal-header-blue h3{margin:0 0 2px;font-size:17px;}
     .modal-header-blue p{margin:0;font-size:12.5px;opacity:.85;}
+
+    /* Varian merah — dipakai untuk modal yang bersifat destruktif (hapus),
+       supaya konsisten dengan modal konfirmasi hapus di halaman Daftar Laporan. */
+    .modal-header-danger{
+        background:#e0433d;
+    }
+    .modal-header-danger .header-icon{
+        background:rgba(255,255,255,.18);
+    }
+    .modal-header-danger .header-icon svg{
+        color:#fff;
+    }
 
     .form-group.full{grid-column:1 / -1;}
     .form-group .field-wrap{
@@ -1085,13 +1097,14 @@
 </div>
 
 {{-- ================= MODAL DELETE ================= --}}
-{{-- ================= MODAL DELETE ================= --}}
+{{-- Diseragamkan dengan modal konfirmasi hapus di halaman Daftar Laporan:
+     header merah solid (bukan gradient), icon putih, layout & teks senada. --}}
 <div id="deleteModal" class="custom-modal">
-    <div class="custom-modal-content" style="width:440px;">
+    <div class="custom-modal-content" style="width:420px;">
 
-        <div class="modal-header-blue" style="background:linear-gradient(90deg,#a30d1a,#d11a2a);">
+        <div class="modal-header-blue modal-header-danger">
             <div class="header-text">
-                <div class="header-icon" style="background:rgba(255,255,255,.18);">
+                <div class="header-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                         <path d="M3 6h18"/>
                         <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -1106,24 +1119,24 @@
             <button class="close-modal" type="button">&times;</button>
         </div>
 
-        <div class="modal-body" style="text-align:center;padding:28px;">
-            <p style="margin:0 0 4px;font-size:13.5px;color:#6b7690;line-height:1.5;">
+        <div class="modal-body" style="text-align:center;padding:24px 22px 18px;">
+            <p style="margin:0 0 8px;font-size:13.5px;color:#6b7690;">
                 Kamu akan menghapus data pelanggan
             </p>
-            <p style="margin:0;font-size:14.5px;font-weight:700;color:#1b2559;">
+            <strong style="display:block;font-size:15px;color:#1b2559;">
                 <span id="del_nama"></span>
                 <span style="font-weight:500;color:#9aa4c2;"> &middot; </span>
                 <span id="del_idpel" style="color:#6b7690;font-weight:500;"></span>
-            </p>
+            </strong>
         </div>
 
-        <div class="modal-footer">
+        <div class="modal-footer" style="padding:14px 22px;">
             <button type="button" class="btn btn-outline close-modal">Batal</button>
 
             <form id="deleteForm" action="" method="POST" style="display:inline">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn" style="background:#d11a2a;">
+                <button type="submit" class="btn" style="background:#e0433d;border-color:#e0433d;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;">
                         <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="m19 6-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                     </svg>

@@ -221,6 +221,7 @@
             <form action="{{ route('admin.users.toggle', $user->id) }}" method="POST"
                   onsubmit="return confirm('{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }} akun {{ $user->name }}?')">
                 @csrf
+                @method('PATCH')
                 <label class="ud-switch" title="{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }} akun">
                     <input type="checkbox" {{ $user->is_active ? 'checked' : '' }} onchange="this.form.submit()">
                     <span class="slider"></span>
