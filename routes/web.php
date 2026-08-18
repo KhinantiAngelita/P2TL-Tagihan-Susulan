@@ -8,6 +8,7 @@ use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\P2tlController;
+use App\Http\Controllers\TrendController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -45,7 +46,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'read'])->name('notifications.read');
     Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.readAll');
 
-    
+    /*
+    |----------------------------------------------------------------------
+    | Trend — Trend kWh & Trend Rp TS (filter Tahun/ULP, mode Bulanan/Kumulatif)
+    |----------------------------------------------------------------------
+    */
+    Route::prefix('trend')->name('trend.')->group(function () {
+        Route::get('/kwh', [TrendController::class, 'kwh'])->name('kwh');
+        Route::get('/ts', [TrendController::class, 'ts'])->name('ts');
+    });
+
     Route::prefix('laporan')->name('laporan.')->group(function () {
         Route::get('/', [LaporanController::class, 'index'])->name('index');
         Route::get('/upload', [LaporanController::class, 'create'])->name('create');

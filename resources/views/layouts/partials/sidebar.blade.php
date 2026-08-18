@@ -2,14 +2,21 @@
     Sidebar navigasi utama.
     Item tanpa route asli (Analitik) masih diarahkan ke "#" — tinggal ganti
     route('nama.route') begitu halamannya jadi.
+
+    Responsive: di layar <= 980px sidebar ini jadi off-canvas (digeser keluar
+    layar via CSS transform di layouts/app.blade.php) dan dibuka lewat tombol
+    hamburger di topbar. Tombol X di bawah cuma tampil di mobile untuk nutup.
 --}}
-<aside class="sidebar">
+<aside class="sidebar" id="mainSidebar">
     <div class="sidebar-brand">
         <div class="brand-logo">PLN</div>
         <div class="brand-text">
             <strong>PT PLN (Persero)</strong>
             <span>Sistem Laporan</span>
         </div>
+        <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" title="Tutup Menu" aria-label="Tutup Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
     </div>
 
     <div class="sidebar-label">Menu Utama</div>
@@ -39,12 +46,23 @@
             @if(request()->routeIs('laporan.index', 'laporan.show'))<span class="nav-chevron">›</span>@endif
         </a>
 
-        <!-- <a href="#" class="nav-item">
-            <span class="nav-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
-            </span>
-            <span class="nav-text">Analitik</span>
-        </a> -->
+        <div class="nav-group">
+            <button type="button"
+                    class="nav-item nav-item-toggle {{ request()->routeIs('trend.*') ? 'active' : '' }}"
+                    id="trendMenuToggle"
+                    aria-controls="trendSubmenu"
+                    aria-expanded="{{ request()->routeIs('trend.*') ? 'true' : 'false' }}">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+                </span>
+                <span class="nav-text">Trend</span>
+                <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="nav-submenu {{ request()->routeIs('trend.*') ? 'is-open' : '' }}" id="trendSubmenu">
+                <a href="{{ route('trend.kwh') }}" class="nav-subitem {{ request()->routeIs('trend.kwh') ? 'active' : '' }}">Trend kWh</a>
+                <a href="{{ route('trend.ts') }}" class="nav-subitem {{ request()->routeIs('trend.ts') ? 'active' : '' }}">Trend Rp TS</a>
+            </div>
+        </div>
 
         @if (auth()->check() && auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.users.index') }}" class="nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">

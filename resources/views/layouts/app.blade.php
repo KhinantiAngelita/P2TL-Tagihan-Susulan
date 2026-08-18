@@ -29,7 +29,7 @@
 
         /* ===== Layout shell ===== */
         .app-shell{display:flex;min-height:100vh;}
-        .main-area{flex:1;margin-left:260px;display:flex;flex-direction:column;min-height:100vh;}
+        .main-area{flex:1;margin-left:260px;display:flex;flex-direction:column;min-height:100vh;transition:margin-left .2s ease;}
         .main-content{padding:28px 32px;flex:1;}
 
         /* ===== Sidebar ===== */
@@ -37,6 +37,8 @@
             width:260px;background:linear-gradient(180deg,#03045e 0%,#023e8a 100%);color:#fff;
             position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;
             padding:20px 16px;overflow-y:auto;
+            z-index:100;
+            transition:transform .25s ease;
         }
         .sidebar-brand{display:flex;align-items:center;gap:12px;padding:6px 8px 20px;}
         .brand-logo{
@@ -47,6 +49,12 @@
         .brand-text{display:flex;flex-direction:column;line-height:1.3;}
         .brand-text strong{font-size:14px;}
         .brand-text span{font-size:11px;color:#93a0c9;}
+
+        .sidebar-close-btn{
+            display:none;margin-left:auto;background:none;border:none;color:#c3ccec;
+            cursor:pointer;padding:6px;border-radius:8px;
+        }
+        .sidebar-close-btn svg{width:20px;height:20px;}
 
         .sidebar-label{font-size:11px;letter-spacing:.08em;color:#6a78a8;text-transform:uppercase;padding:14px 10px 8px;font-weight:600;}
 
@@ -61,6 +69,29 @@
         .nav-icon svg{width:20px;height:20px;}
         .nav-text{flex:1;}
         .nav-chevron{font-size:16px;}
+
+        /* ---------- Menu dengan submenu (contoh: Trend) ---------- */
+        .nav-group{display:flex;flex-direction:column;}
+        .nav-item-toggle{
+            width:100%;background:none;border:none;cursor:pointer;font-family:inherit;
+            text-align:left;
+        }
+        .nav-caret{width:15px;height:15px;margin-left:auto;flex-shrink:0;transition:transform .18s ease;}
+        .nav-item-toggle[aria-expanded="true"] .nav-caret{transform:rotate(180deg);}
+        .nav-item-toggle.active{background:var(--yellow);color:var(--navy-900);}
+        .nav-item-toggle.active .nav-caret{color:var(--navy-900);}
+
+        .nav-submenu{
+            display:none;flex-direction:column;gap:2px;
+            padding:4px 0 4px 34px;margin-bottom:2px;
+        }
+        .nav-submenu.is-open{display:flex;}
+        .nav-subitem{
+            padding:9px 14px;border-radius:8px;text-decoration:none;
+            color:#a9b3d6;font-size:13.5px;font-weight:600;
+        }
+        .nav-subitem:hover{background:rgba(255,255,255,.07);color:#fff;}
+        .nav-subitem.active{background:rgba(255,199,0,.16);color:var(--yellow);}
 
         .sidebar-user{
             display:flex;align-items:center;gap:10px;padding:14px 10px;margin-top:10px;
@@ -78,18 +109,35 @@
         .user-logout svg{width:18px;height:18px;}
         .user-logout:hover{color:#fff;}
 
+        /* Overlay backdrop untuk sidebar mobile */
+        .sidebar-overlay{
+            display:none;position:fixed;inset:0;background:rgba(7,18,51,.5);
+            z-index:90;
+        }
+
+        /* Tombol hamburger — hanya tampil di layar sempit */
+        .hamburger-btn{
+            display:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);
+            background:#fff;align-items:center;justify-content:center;cursor:pointer;color:var(--text-dark);
+            flex-shrink:0;
+        }
+        .hamburger-btn svg{width:20px;height:20px;}
+
         /* ===== Topbar ===== */
         .topbar{
             height:74px;background:#fff;border-bottom:1px solid var(--border);
             display:flex;align-items:center;justify-content:space-between;
             padding:0 32px;position:sticky;top:0;z-index:20;
+            gap:12px;
         }
-        .topbar-breadcrumb{font-size:14px;color:var(--text-muted);display:flex;align-items:center;gap:8px;}
+        .topbar-breadcrumb{font-size:14px;color:var(--text-muted);display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
         .topbar-breadcrumb a{text-decoration:none;color:var(--text-muted);}
         .topbar-breadcrumb strong{color:var(--text-dark);font-weight:700;}
         .topbar-breadcrumb .sep{color:#c2c9de;}
 
-        .topbar-right{display:flex;align-items:center;gap:20px;}
+        .topbar-left{display:flex;align-items:center;gap:14px;min-width:0;}
+
+        .topbar-right{display:flex;align-items:center;gap:20px;flex-shrink:0;}
         .topbar-date{display:flex;flex-direction:column;text-align:right;line-height:1.3;}
         .topbar-date strong{font-size:13px;color:var(--text-dark);}
         .topbar-date span{font-size:11px;color:var(--text-muted);}
@@ -150,11 +198,42 @@
 
         .table-empty-state{text-align:center;padding:26px 0;color:#9aa4c2;font-size:13.5px;}
         .table-empty-state svg{width:26px;height:26px;margin-bottom:8px;opacity:.6;}
+
+        /* Wrapper generik biar tabel bisa discroll horizontal di layar sempit
+           tanpa merusak layout tabel itu sendiri */
+        .table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 980px){
+            .main-area{margin-left:0;}
+            .sidebar{transform:translateX(-100%);box-shadow:0 0 40px rgba(0,0,0,.3);}
+            .sidebar.is-open{transform:translateX(0);}
+            .sidebar-close-btn{display:flex;align-items:center;justify-content:center;}
+            .sidebar-overlay.is-open{display:block;}
+            .hamburger-btn{display:flex;}
+            .topbar{padding:0 20px;}
+            .main-content{padding:22px 20px;}
+        }
+
+        @media (max-width: 640px){
+            .topbar{height:64px;padding:0 14px;}
+            .main-content{padding:16px 14px;}
+            .topbar-date{display:none;}
+            .topbar-right{gap:12px;}
+            .card{padding:16px;}
+            .dash-stat-value{font-size:21px;}
+        }
+
+        @media (max-width: 420px){
+            .topbar-user span{display:none;}
+            .topbar-user svg{display:none;}
+        }
     </style>
     @stack('styles')
 </head>
 <body>
     <div class="app-shell">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         @include('layouts.partials.sidebar')
 
         <div class="main-area">
@@ -174,5 +253,42 @@
     </div>
 
     @stack('scripts')
+
+    <script>
+        (function () {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const openBtn = document.getElementById('sidebarToggleBtn');
+            const closeBtn = document.getElementById('sidebarCloseBtn');
+
+            function openSidebar() {
+                sidebar.classList.add('is-open');
+                overlay.classList.add('is-open');
+            }
+            function closeSidebar() {
+                sidebar.classList.remove('is-open');
+                overlay.classList.remove('is-open');
+            }
+
+            if (openBtn) openBtn.addEventListener('click', openSidebar);
+            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+            overlay.addEventListener('click', closeSidebar);
+
+            // Tutup sidebar otomatis kalau resize ke desktop
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 980) closeSidebar();
+            });
+
+            // Expand/collapse menu yang punya submenu (mis. "Trend")
+            document.querySelectorAll('.nav-item-toggle').forEach(function (toggle) {
+                toggle.addEventListener('click', function () {
+                    const submenu = document.getElementById(toggle.getAttribute('aria-controls'));
+                    if (!submenu) return;
+                    const isOpen = submenu.classList.toggle('is-open');
+                    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                });
+            });
+        })();
+    </script>
 </body>
 </html>
