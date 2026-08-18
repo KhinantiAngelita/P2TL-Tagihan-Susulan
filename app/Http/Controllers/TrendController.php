@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DetailTagihanSusulan;
 use App\Models\LaporanSusulan;
+use App\Models\TargetBulanan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -48,10 +49,31 @@ class TrendController extends Controller
      */
     private function hitungTargetBulanan(string $metric, int $tahunAktif, string $ulpAktif): array
     {
-        // Contoh kalau nanti target-nya konstan per bulan, tinggal isi array ini:
-        // return array_fill(0, 12, 1000); // ganti 1000 sesuai nilai target sebenarnya
+        $ulpUntukQuery = ($ulpAktif && strtolower($ulpAktif) !== 'semua') ? $ulpAktif : null;
 
-        return array_fill(0, 12, 0);
+        $targetSpesifik = TargetBulanan::where('tahun', $tahunAktif)
+            ->where('jenis', $metric)
+            ->where('ulp', $ulpUntukQuery)
+            ->pluck('nilai_target', 'bulan');
+
+        $targetGlobal = TargetBulanan::where('tahun', $tahunAktif)
+            ->where('jenis', $metric)
+            ->whereNull('ulp')
+            ->pluck('nilai_target', 'bulan');
+
+        $hasil = [];
+        for ($bulan = 1; $bulan <= 12; $bulan++) {
+            // Kalau lagi filter ULP tertentu dan target spesifik ULP itu ada, pakai itu.
+            // Kalau enggak (baik karena filter "Semua ULP", atau ULP itu belum diisi
+            // target-nya sendiri), fallback ke target global.
+            $nilai = $ulpUntukQuery
+                ? ($targetSpesifik->get($bulan) ?? $targetGlobal->get($bulan, 0))
+                : $targetGlobal->get($bulan, 0);
+
+            $hasil[] = (float) $nilai;
+        }
+
+        return $hasil;
     }
 
     /**

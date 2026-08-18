@@ -9,6 +9,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\P2tlController;
 use App\Http\Controllers\TrendController;
+use App\Http\Controllers\EditTargetController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -82,4 +83,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{user}', [UserManagementController::class, 'show'])->name('show');
         Route::patch('/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('toggle');
     });
+
+    Route::get('/edit-target', [EditTargetController::class, 'index'])->name('edit-target.index');
+    Route::post('/edit-target', [EditTargetController::class, 'update'])->name('edit-target.update');           
 });
