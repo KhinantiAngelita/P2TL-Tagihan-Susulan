@@ -4,7 +4,7 @@
 @section('content')
 <style>
     .dash-header { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; }
-    .dash-header h2 { margin: 0 0 4px; font-size: 22px; }
+    .dash-header h2 { margin: 0 0 4px; font-size: clamp(18px, 4.2vw, 22px); }
     .dash-header p { margin: 0; color: #6b7690; font-size: 14px; }
     .dash-period-badge {
         display: inline-flex; align-items: center; gap: 6px; margin: 8px 8px 0 0;
@@ -26,6 +26,7 @@
         box-shadow: 0 1px 4px rgba(20,30,80,.05);
         overflow: hidden;
         transition: box-shadow .18s, transform .18s;
+        min-width: 0;
     }
     .dash-stat-card:hover { box-shadow: 0 8px 20px rgba(20,30,80,.09); transform: translateY(-2px); }
     .dash-stat-card::before {
@@ -45,8 +46,8 @@
     .tone-purple .dash-stat-icon { background: #f1ecff; color: #7c4dff; }
     .dash-stat-top h3 { margin: 0; font-size: 13px; color: #6b7690; font-weight: 700; }
 
-    .dash-stat-value { font-size: 25px; font-weight: 800; color: #1b2559; letter-spacing: -.2px; }
-    .dash-stat-sub { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: #8a93ad; }
+    .dash-stat-value { font-size: 25px; font-weight: 800; color: #1b2559; letter-spacing: -.2px; word-break: break-word; }
+    .dash-stat-sub { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: #8a93ad; flex-wrap: wrap; }
     .dash-stat-sub svg { width: 13px; height: 13px; flex-shrink: 0; }
 
     .dash-mini-insight {
@@ -55,6 +56,7 @@
         padding: 10px 14px; margin-bottom: 18px; font-size: 13px; color: #4b5570;
     }
     .dash-mini-insight strong { color: #1b2559; }
+    .dash-mini-insight span { min-width: 0; overflow-wrap: break-word; }
     .dash-mini-insight .dash-mini-icon {
         width: 30px; height: 30px; border-radius: 8px; background: #fff6da; color: #b98600;
         display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -75,6 +77,52 @@
         color: #0b3d91; text-decoration: none;
     }
     .um-view-btn svg { width: 13px; height: 13px; }
+
+    /* ---------- Header kartu (judul + tombol aksi) dipakai berkali-kali di
+       bawah — dibikin wrap biar tombolnya gak numpuk/kepotong di HP. ---------- */
+    .dash-card-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+    }
+
+    /* ---------- Wrapper canvas Chart.js — dikasih tinggi pasti biar konsisten
+       & gak melar/gepeng, dan dikecilin dikit di layar sempit. ---------- */
+    .dash-chart-wrap { position: relative; width: 100%; height: 220px; }
+    .dash-chart-wrap.is-trend { height: 260px; }
+
+    /* ---------- Wrapper KHUSUS buat donut "Tunai vs Angsuran" ----------
+       Donut sengaja TIDAK dipaksa ngisi seluruh lebar card (beda dari bar
+       chart di sebelahnya) karena kalau kotaknya lebar-pendek (maintainAspectRatio:
+       false), Chart.js ngegambar lingkarannya menyesuaikan sisi terpendek
+       (tinggi) terus nyisain banyak ruang kosong di kiri/kanan — itu yang
+       bikin tampilannya "berantakan"/nyempil ke kanan kayak di screenshot.
+       Solusinya: kasih kotak persegi (aspect-ratio 1/1) yang di-center pakai
+       margin:auto, biar Chart.js selalu punya kanvas persegi yang pas dan
+       gak perlu nebak-nebak ukuran. */
+    .dash-donut-wrap { position: relative; width: 100%; max-width: 260px; aspect-ratio: 1 / 1; margin: 0 auto; }
+    @media (max-width: 640px) {
+        .dash-donut-wrap { max-width: 210px; }
+    }
+
+    @media (max-width: 900px) {
+        .dash-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 640px) {
+        .dash-header { align-items: stretch; }
+        .dash-filter-form { width: 100%; }
+        .dash-filter-form select { flex: 1; min-width: 0; }
+        .dash-chart-wrap { height: 200px; }
+        .dash-chart-wrap.is-trend { height: 220px; }
+        .dash-stat-value { font-size: 21px; }
+    }
+
+    @media (max-width: 420px) {
+        .dash-stats { grid-template-columns: 1fr; }
+        .dash-filter-form { flex-direction: column; align-items: stretch; }
+        .dash-filter-form select { width: 100%; }
+        .dash-filter-form .btn, .dash-filter-form .btn-outline { width: 100%; justify-content: center; }
+    }
 </style>
 
 <div class="dash-header">
@@ -177,12 +225,16 @@
     <div class="card">
         <h3 style="margin:0 0 2px;font-size:16px;">Distribusi per Golongan Tarif</h3>
         <p style="margin:0 0 16px;font-size:12.5px;color:#6b7690;">Total tagihan per golongan (Rp) — sesuai filter aktif</p>
-        <canvas id="chartGolAll" height="160"></canvas>
+        <div class="dash-chart-wrap">
+            <canvas id="chartGolAll"></canvas>
+        </div>
     </div>
     <div class="card">
         <h3 style="margin:0 0 2px;font-size:16px;">Tunai vs Angsuran</h3>
         <p style="margin:0 0 16px;font-size:12.5px;color:#6b7690;">Proporsi pembayaran — sesuai filter aktif</p>
-        <canvas id="chartBayarAll" height="160"></canvas>
+        <div class="dash-donut-wrap">
+            <canvas id="chartBayarAll"></canvas>
+        </div>
     </div>
 </div>
 
@@ -197,11 +249,13 @@
             Total keseluruhan (Rp) tiap periode bulan/tahun laporan — pilih 1 periode di filter atas buat lihat rincian per hari
         @endif
     </p>
-    <canvas id="chartTrenBulanan" height="90"></canvas>
+    <div class="dash-chart-wrap is-trend">
+        <canvas id="chartTrenBulanan"></canvas>
+    </div>
 </div>
 
 <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div class="dash-card-head">
         <div>
             <h3 style="margin:0 0 2px;font-size:16px;">Ringkasan Data Detail</h3>
             <p style="margin:0;font-size:12.5px;color:#6b7690;">
@@ -210,7 +264,7 @@
         </div>
         <a href="{{ route('detail-data.index') }}" class="btn btn-outline">Lihat Data Lengkap</a>
     </div>
-    <div style="overflow-x:auto;">
+    <div class="table-scroll">
         <table>
             <thead>
                 <tr>
@@ -261,45 +315,57 @@
 </div>
 
 <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div class="dash-card-head">
         <h3 style="margin:0;font-size:16px;">Laporan Terbaru</h3>
         <a href="{{ route('laporan.index') }}" class="btn btn-outline">Lihat Semua</a>
     </div>
-    <table>
-        <thead>
-            <tr><th>Unit UP3</th><th>Bulan/Tahun</th><th>Baris</th><th>Total</th><th>Aksi</th></tr>
-        </thead>
-        <tbody>
-        @forelse ($laporanTerbaru as $l)
-            <tr>
-                <td>{{ $l->unit_up3 }}</td>
-                <td>{{ $l->bulan }} {{ $l->tahun }}</td>
-                <td>{{ $l->jumlah_baris }}</td>
-                <td>Rp {{ number_format($l->total_keseluruhan,0,',','.') }}</td>
-                <td>
-                    <a href="{{ route('laporan.show', $l->id) }}" class="um-view-btn" title="Lihat Detail">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </a>
-                </td>
-            </tr>
-        @empty
-            <tr>
-                <td colspan="5">
-                    <div class="table-empty-state">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/></svg>
-                        <div>Belum ada laporan.</div>
-                    </div>
-                </td>
-            </tr>
-        @endforelse
-        </tbody>
-    </table>
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Unit UP3</th><th>Bulan/Tahun</th><th>Baris</th><th>Total</th><th>Aksi</th></tr>
+            </thead>
+            <tbody>
+            @forelse ($laporanTerbaru as $l)
+                <tr>
+                    <td>{{ $l->unit_up3 }}</td>
+                    <td>{{ $l->bulan }} {{ $l->tahun }}</td>
+                    <td>{{ $l->jumlah_baris }}</td>
+                    <td>Rp {{ number_format($l->total_keseluruhan,0,',','.') }}</td>
+                    <td>
+                        <a href="{{ route('laporan.show', $l->id) }}" class="um-view-btn" title="Lihat Detail">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </a>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5">
+                        <div class="table-empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/></svg>
+                            <div>Belum ada laporan.</div>
+                        </div>
+                    </td>
+                </tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
 </div>
 @endsection
 
+{{--
+    CATATAN responsive chart:
+    Sebelumnya canvas cuma dikasih atribut height="160"/"90" doang, jadi
+    tingginya gampang gepeng/melar tergantung lebar container (default
+    Chart.js maintainAspectRatio:true itung tinggi dari lebar). Sekarang
+    tiap canvas dibungkus .dash-chart-wrap yang punya tinggi pasti (beda
+    dikit per breakpoint lewat media query di atas) + maintainAspectRatio:
+    false di options, biar tingginya konsisten di semua lebar layar sama
+    kayak pola yang dipakai di trend/index & trend/pencapaian.
+--}}
 @push('scripts')
 <script>
-new Chart(document.getElementById('chartGolAll'), {
+var chartGolAll = new Chart(document.getElementById('chartGolAll'), {
     type: 'bar',
     data: {
         labels: @json($perGol->pluck('gol')),
@@ -310,10 +376,14 @@ new Chart(document.getElementById('chartGolAll'), {
             borderRadius: 6,
         }]
     },
-    options: { plugins: { legend: { display: false } } }
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+    }
 });
 
-new Chart(document.getElementById('chartBayarAll'), {
+var chartBayarAll = new Chart(document.getElementById('chartBayarAll'), {
     type: 'doughnut',
     data: {
         labels: ['Tunai', 'Angsuran'],
@@ -322,10 +392,17 @@ new Chart(document.getElementById('chartBayarAll'), {
             backgroundColor: ['#0b3d91', '#ffc700'],
         }]
     },
-    options: { cutout: '65%' }
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 16 } }
+        }
+    }
 });
 
-new Chart(document.getElementById('chartTrenBulanan'), {
+var chartTrenBulanan = new Chart(document.getElementById('chartTrenBulanan'), {
     type: 'line',
     data: {
         labels: @json($trenLabels),
@@ -340,7 +417,22 @@ new Chart(document.getElementById('chartTrenBulanan'), {
             pointRadius: 4,
         }]
     },
-    options: { plugins: { legend: { display: false } } }
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+    }
+});
+
+// Fix defensif: kalau lebar kartu (terutama yang di dalam .grid-2) belum
+// "settle" pas Chart.js pertama kali ngukur containernya (misal karena
+// web font atau reflow lain yang telat), chart bisa kegambar dengan
+// ukuran/posisi yang keliru (donut nyempil ke kanan, dsb). Manggil
+// resize() sekali lagi setelah window 'load' penuh beresin itu.
+window.addEventListener('load', function () {
+    [chartGolAll, chartBayarAll, chartTrenBulanan].forEach(function (c) {
+        if (c) c.resize();
+    });
 });
 </script>
 @endpush

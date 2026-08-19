@@ -85,5 +85,12 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/edit-target', [EditTargetController::class, 'index'])->name('edit-target.index');
-    Route::post('/edit-target', [EditTargetController::class, 'update'])->name('edit-target.update');           
+    Route::post('/edit-target', [EditTargetController::class, 'update'])->name('edit-target.update');
+    
+    Route::prefix('trend')->name('trend.')->group(function () {
+    Route::get('/kwh', [TrendController::class, 'kwh'])->name('kwh');
+    Route::get('/ts', [TrendController::class, 'ts'])->name('ts');
+    Route::get('/pencapaian', [TrendController::class, 'pencapaian'])->name('pencapaian');
+    });
 });
+

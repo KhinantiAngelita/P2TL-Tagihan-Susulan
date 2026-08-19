@@ -17,6 +17,8 @@
             --text-muted:#6b7690;
             --border:#e7eaf3;
             --radius:12px;
+            --sidebar-w:260px;
+            --sidebar-w-collapsed:78px;
         }
         *{box-sizing:border-box;}
         body{
@@ -28,17 +30,36 @@
         a{color:inherit;}
 
         /* ===== Layout shell ===== */
-        .app-shell{display:flex;min-height:100vh;}
-        .main-area{flex:1;margin-left:260px;display:flex;flex-direction:column;min-height:100vh;transition:margin-left .2s ease;}
-        .main-content{padding:28px 32px;flex:1;}
+        .app-shell{display:flex;min-height:100vh;max-width:100vw;overflow-x:hidden;}
+        /*
+            PENTING: .sidebar itu position:fixed, artinya dia udah KELUAR dari
+            flow flex .app-shell. Kalau .main-area dikasih flex:1, dia bakal
+            dihitung mengisi SELURUH lebar .app-shell (bukan sisa setelah
+            sidebar), terus margin-left di bawah ini nambahin 260px lagi di
+            atas itu → totalnya kelebihan lebar sejumlah lebar sidebar dan
+            bikin body horizontal-scroll (kepotong di kanan). Makanya di sini
+            sengaja pakai width: calc(100% - var(--sidebar-w)) yang eksplisit,
+            BUKAN flex:1, biar lebarnya emang sisa viewport dikurangi sidebar.
+        */
+        .main-area{
+            width:calc(100% - var(--sidebar-w));
+            margin-left:var(--sidebar-w);
+            display:flex;flex-direction:column;min-height:100vh;min-width:0;
+            transition:margin-left .2s ease,width .2s ease;
+        }
+        .main-area.is-collapsed{
+            width:calc(100% - var(--sidebar-w-collapsed));
+            margin-left:var(--sidebar-w-collapsed);
+        }
+        .main-content{padding:28px 32px;flex:1;min-width:0;overflow-x:hidden;}
 
         /* ===== Sidebar ===== */
         .sidebar{
-            width:260px;background:linear-gradient(180deg,#03045e 0%,#023e8a 100%);color:#fff;
+            width:var(--sidebar-w);background:linear-gradient(180deg,#03045e 0%,#023e8a 100%);color:#fff;
             position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;
-            padding:20px 16px;overflow-y:auto;
+            padding:20px 16px;overflow-x:hidden;overflow-y:auto;
             z-index:100;
-            transition:transform .25s ease;
+            transition:transform .25s ease,width .2s ease,padding .2s ease;
         }
         .sidebar-brand{display:flex;align-items:center;gap:12px;padding:6px 8px 20px;}
         .brand-logo{
@@ -46,28 +67,40 @@
             border-radius:10px;display:flex;align-items:center;justify-content:center;
             font-weight:800;font-size:13px;flex-shrink:0;
         }
-        .brand-text{display:flex;flex-direction:column;line-height:1.3;}
+        .brand-text{display:flex;flex-direction:column;line-height:1.3;white-space:nowrap;}
         .brand-text strong{font-size:14px;}
         .brand-text span{font-size:11px;color:#93a0c9;}
 
         .sidebar-close-btn{
             display:none;margin-left:auto;background:none;border:none;color:#c3ccec;
-            cursor:pointer;padding:6px;border-radius:8px;
+            cursor:pointer;padding:6px;border-radius:8px;flex-shrink:0;
         }
         .sidebar-close-btn svg{width:20px;height:20px;}
 
-        .sidebar-label{font-size:11px;letter-spacing:.08em;color:#6a78a8;text-transform:uppercase;padding:14px 10px 8px;font-weight:600;}
+        /* Tombol minimize/expand — cuma tampil di desktop (lihat media query
+           di bawah). Ditaro sebelah brand text, geser ke pojok kanan kalau
+           sidebar lagi diperlebar, geser ke tengah kalau lagi diciutkan. */
+        .sidebar-collapse-btn{
+            display:flex;align-items:center;justify-content:center;margin-left:auto;
+            width:30px;height:30px;flex-shrink:0;background:rgba(255,255,255,.08);border:none;
+            color:#c3ccec;cursor:pointer;border-radius:8px;transition:background .15s,transform .2s ease;
+        }
+        .sidebar-collapse-btn:hover{background:rgba(255,255,255,.16);color:#fff;}
+        .sidebar-collapse-btn svg{width:16px;height:16px;transition:transform .2s ease;}
+
+        .sidebar-label{font-size:11px;letter-spacing:.08em;color:#6a78a8;text-transform:uppercase;padding:14px 10px 8px;font-weight:600;white-space:nowrap;}
 
         .sidebar-nav{display:flex;flex-direction:column;gap:4px;flex:1;}
         .nav-item{
             display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;
             text-decoration:none;color:#c3ccec;font-size:14px;font-weight:600;transition:background .15s;
+            white-space:nowrap;overflow:hidden;
         }
         .nav-item:hover{background:rgba(255,255,255,.06);}
         .nav-item.active{background:var(--yellow);color:var(--navy-900);}
         .nav-icon{width:20px;height:20px;flex-shrink:0;display:flex;}
         .nav-icon svg{width:20px;height:20px;}
-        .nav-text{flex:1;}
+        .nav-text{flex:1;overflow:hidden;text-overflow:ellipsis;}
         .nav-chevron{font-size:16px;}
 
         /* ---------- Menu dengan submenu (contoh: Trend) ---------- */
@@ -88,7 +121,7 @@
         .nav-submenu.is-open{display:flex;}
         .nav-subitem{
             padding:9px 14px;border-radius:8px;text-decoration:none;
-            color:#a9b3d6;font-size:13.5px;font-weight:600;
+            color:#a9b3d6;font-size:13.5px;font-weight:600;white-space:nowrap;
         }
         .nav-subitem:hover{background:rgba(255,255,255,.07);color:#fff;}
         .nav-subitem.active{background:rgba(255,199,0,.16);color:var(--yellow);}
@@ -102,12 +135,27 @@
             display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;
         }
         .user-avatar.small{width:30px;height:30px;font-size:12px;}
-        .user-info{display:flex;flex-direction:column;flex:1;line-height:1.3;min-width:0;}
-        .user-info strong{font-size:13px;color:#fff;}
-        .user-info span{font-size:11px;color:#93a0c9;}
-        .user-logout{color:#93a0c9;display:flex;}
+        .user-info{display:flex;flex-direction:column;flex:1;line-height:1.3;min-width:0;white-space:nowrap;}
+        .user-info strong{font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;}
+        .user-info span{font-size:11px;color:#93a0c9;overflow:hidden;text-overflow:ellipsis;}
+        .user-logout{color:#93a0c9;display:flex;flex-shrink:0;}
         .user-logout svg{width:18px;height:18px;}
         .user-logout:hover{color:#fff;}
+
+        /* ===== Sidebar diciutkan (desktop only) ===== */
+        .sidebar.is-collapsed{width:var(--sidebar-w-collapsed);padding-left:10px;padding-right:10px;}
+        .sidebar.is-collapsed .sidebar-brand{justify-content:center;padding-left:0;padding-right:0;}
+        .sidebar.is-collapsed .brand-text,
+        .sidebar.is-collapsed .sidebar-label,
+        .sidebar.is-collapsed .nav-text,
+        .sidebar.is-collapsed .nav-chevron,
+        .sidebar.is-collapsed .nav-caret,
+        .sidebar.is-collapsed .nav-submenu,
+        .sidebar.is-collapsed .user-info{display:none;}
+        .sidebar.is-collapsed .sidebar-collapse-btn{margin-left:0;transform:rotate(180deg);}
+        .sidebar.is-collapsed .nav-item,
+        .sidebar.is-collapsed .nav-item-toggle{justify-content:center;padding:11px 0;gap:0;}
+        .sidebar.is-collapsed .sidebar-user{justify-content:center;padding:14px 0;}
 
         /* Overlay backdrop untuk sidebar mobile */
         .sidebar-overlay{
@@ -179,8 +227,8 @@
         .tone-purple .dash-stat-icon{background:#f1ecff;color:#7c4dff;}
         .dash-stat-top h3{margin:0;font-size:13px;color:var(--text-muted);font-weight:700;}
 
-        .dash-stat-value{font-size:25px;font-weight:800;color:var(--text-dark);letter-spacing:-.2px;}
-        .dash-stat-sub{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--text-muted);}
+        .dash-stat-value{font-size:25px;font-weight:800;color:var(--text-dark);letter-spacing:-.2px;word-break:break-word;}
+        .dash-stat-sub{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;}
         .dash-stat-sub svg{width:13px;height:13px;flex-shrink:0;}
 
         table{width:100%;border-collapse:collapse;}
@@ -204,11 +252,28 @@
         .table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 
         /* ============ RESPONSIVE ============ */
+        @media (min-width: 981px){
+            /* Tombol minimize cuma relevan di desktop — di mobile sidebar
+               sudah off-canvas jadi minimize gak diperlukan. */
+            .sidebar-collapse-btn{display:flex;}
+        }
+
         @media (max-width: 980px){
-            .main-area{margin-left:0;}
-            .sidebar{transform:translateX(-100%);box-shadow:0 0 40px rgba(0,0,0,.3);}
+            .main-area,.main-area.is-collapsed{margin-left:0 !important;width:100% !important;}
+            .sidebar{transform:translateX(-100%);box-shadow:0 0 40px rgba(0,0,0,.3);width:var(--sidebar-w) !important;padding:20px 16px !important;}
             .sidebar.is-open{transform:translateX(0);}
+            .sidebar.is-collapsed .brand-text,
+            .sidebar.is-collapsed .sidebar-label,
+            .sidebar.is-collapsed .nav-text,
+            .sidebar.is-collapsed .nav-chevron,
+            .sidebar.is-collapsed .nav-caret,
+            .sidebar.is-collapsed .user-info{display:revert;}
+            .sidebar.is-collapsed .nav-submenu.is-open{display:flex;}
+            .sidebar.is-collapsed .nav-item,
+            .sidebar.is-collapsed .nav-item-toggle{justify-content:flex-start;padding:11px 14px;gap:12px;}
+            .sidebar.is-collapsed .sidebar-user{justify-content:flex-start;padding:14px 10px;}
             .sidebar-close-btn{display:flex;align-items:center;justify-content:center;}
+            .sidebar-collapse-btn{display:none;}
             .sidebar-overlay.is-open{display:block;}
             .hamburger-btn{display:flex;}
             .topbar{padding:0 20px;}
@@ -236,7 +301,7 @@
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
         @include('layouts.partials.sidebar')
 
-        <div class="main-area">
+        <div class="main-area" id="mainArea">
             @include('layouts.partials.topbar')
 
             <div class="main-content">
@@ -257,9 +322,12 @@
     <script>
         (function () {
             const sidebar = document.querySelector('.sidebar');
+            const mainArea = document.getElementById('mainArea');
             const overlay = document.getElementById('sidebarOverlay');
             const openBtn = document.getElementById('sidebarToggleBtn');
             const closeBtn = document.getElementById('sidebarCloseBtn');
+            const collapseBtn = document.getElementById('sidebarCollapseBtn');
+            const STORAGE_KEY = 'sidebar-collapsed';
 
             function openSidebar() {
                 sidebar.classList.add('is-open');
@@ -279,9 +347,35 @@
                 if (window.innerWidth > 980) closeSidebar();
             });
 
+            // ===== Minimize/expand sidebar (desktop) =====
+            function applyCollapsed(isCollapsed) {
+                sidebar.classList.toggle('is-collapsed', isCollapsed);
+                mainArea.classList.toggle('is-collapsed', isCollapsed);
+                if (collapseBtn) collapseBtn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+            }
+
+            // Terapkan preferensi tersimpan sebelum user sempat interaksi
+            try {
+                applyCollapsed(window.innerWidth > 980 && localStorage.getItem(STORAGE_KEY) === '1');
+            } catch (e) { /* localStorage gak tersedia — abaikan, default expanded */ }
+
+            if (collapseBtn) {
+                collapseBtn.addEventListener('click', function () {
+                    const next = !sidebar.classList.contains('is-collapsed');
+                    applyCollapsed(next);
+                    try { localStorage.setItem(STORAGE_KEY, next ? '1' : '0'); } catch (e) {}
+                });
+            }
+
             // Expand/collapse menu yang punya submenu (mis. "Trend")
             document.querySelectorAll('.nav-item-toggle').forEach(function (toggle) {
                 toggle.addEventListener('click', function () {
+                    // Kalau sidebar lagi diciutkan, buka dulu sidebarnya
+                    // biar submenu-nya keliatan, baru toggle submenu-nya.
+                    if (sidebar.classList.contains('is-collapsed')) {
+                        applyCollapsed(false);
+                        try { localStorage.setItem(STORAGE_KEY, '0'); } catch (e) {}
+                    }
                     const submenu = document.getElementById(toggle.getAttribute('aria-controls'));
                     if (!submenu) return;
                     const isOpen = submenu.classList.toggle('is-open');
