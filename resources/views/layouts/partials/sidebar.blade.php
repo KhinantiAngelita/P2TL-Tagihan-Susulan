@@ -59,6 +59,25 @@
 
         <div class="nav-group">
             <button type="button"
+                    class="nav-item nav-item-toggle {{ request()->routeIs('laporan.gol-tarif', 'laporan.komposisi-temuan') ? 'active' : '' }}"
+                    id="laporanMenuToggle"
+                    aria-controls="laporanSubmenu"
+                    aria-expanded="{{ request()->routeIs('laporan.gol-tarif', 'laporan.komposisi-temuan') ? 'true' : 'false' }}">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+                </span>
+                <span class="nav-text">Laporan</span>
+                <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="nav-submenu {{ request()->routeIs('laporan.gol-tarif', 'laporan.komposisi-temuan') ? 'is-open' : '' }}" id="laporanSubmenu">
+                <a href="{{ route('laporan.target-realisasi') }}" class="nav-subitem {{ request()->routeIs('laporan.target-realisasi') ? 'active' : '' }}">Target vs Realisasi</a>
+                <a href="{{ route('laporan.gol-tarif') }}" class="nav-subitem {{ request()->routeIs('laporan.gol-tarif') ? 'active' : '' }}">Gol Tarif</a>
+                <a href="{{ route('laporan.komposisi-temuan') }}" class="nav-subitem {{ request()->routeIs('laporan.komposisi-temuan') ? 'active' : '' }}">Komposisi Temuan</a>
+            </div>
+        </div>
+
+        <div class="nav-group">
+            <button type="button"
                     class="nav-item nav-item-toggle {{ request()->routeIs('trend.*') ? 'active' : '' }}"
                     id="trendMenuToggle"
                     title="Trend"

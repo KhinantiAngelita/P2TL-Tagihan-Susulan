@@ -10,6 +10,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\P2tlController;
 use App\Http\Controllers\TrendController;
 use App\Http\Controllers\EditTargetController;
+use App\Http\Controllers\LaporanGolTarifController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -47,6 +48,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'read'])->name('notifications.read');
     Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.readAll');
 
+    Route::get('/laporan/gol-tarif', [LaporanGolTarifController::class, 'golTarif'])->name('laporan.gol-tarif');
+    Route::get('/laporan/komposisi-temuan', [App\Http\Controllers\LaporanGolTarifController::class, 'komposisiTemuan'])
+    ->name('laporan.komposisi-temuan');
+    Route::get('/laporan/target-realisasi', [App\Http\Controllers\LaporanGolTarifController::class, 'targetRealisasi'])
+    ->name('laporan.target-realisasi');
     /*
     |----------------------------------------------------------------------
     | Trend — Trend kWh & Trend Rp TS (filter Tahun/ULP, mode Bulanan/Kumulatif)
@@ -92,5 +98,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/ts', [TrendController::class, 'ts'])->name('ts');
     Route::get('/pencapaian', [TrendController::class, 'pencapaian'])->name('pencapaian');
     });
+    
 });
 
