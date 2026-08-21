@@ -88,14 +88,30 @@ class TrendController extends Controller
         // jadi bisa langsung dipakai buat filter target di bawah.
         $jenis = $metric;
 
-        $perBulan = DetailTagihanSusulan::query()
+        // Query dasar (join + filter status/tahun/ULP) dipakai ulang buat
+        // dua agregasi terpisah di bawah (SUM metrik & COUNT pelanggan
+        // unik), jadi filternya dijamin selalu sinkron kalau nanti ada
+        // filter baru ditambahkan.
+        $baseQuery = fn () => DetailTagihanSusulan::query()
             ->join('laporan_susulans', 'laporan_susulans.id', '=', 'detail_tagihan_susulans.laporan_susulan_id')
             ->where('laporan_susulans.status', 'aktif')
             ->when($tahunAktif, fn ($q) => $q->where('laporan_susulans.tahun', $tahunAktif))
             ->when($ulpAktif && strtolower($ulpAktif) !== 'semua', function ($q) use ($ulpAktif) {
                 $q->whereRaw(self::ULP_SQL . ' = ?', [$ulpAktif]);
-            })
+            });
+
+        $perBulan = $baseQuery()
             ->select('laporan_susulans.bulan', DB::raw("SUM(detail_tagihan_susulans.{$kolom}) as total"))
+            ->groupBy('laporan_susulans.bulan')
+            ->get()
+            ->keyBy(fn ($row) => self::URUTAN_BULAN[$row->bulan] ?? 0);
+
+        // ===== JUMLAH PELANGGAN =====
+        // Dihitung dari idpel UNIK per bulan (bukan jumlah baris), biar
+        // pelanggan yang muncul lebih dari sekali dalam bulan yang sama
+        // (misal ada revisi/duplikat entri) tetap terhitung 1.
+        $pelangganPerBulan = $baseQuery()
+            ->select('laporan_susulans.bulan', DB::raw('COUNT(DISTINCT detail_tagihan_susulans.idpel) as jumlah'))
             ->groupBy('laporan_susulans.bulan')
             ->get()
             ->keyBy(fn ($row) => self::URUTAN_BULAN[$row->bulan] ?? 0);
@@ -127,6 +143,7 @@ class TrendController extends Controller
         $labels = [];
         $data = [];
         $targetData = [];
+        $jumlahPelangganData = [];
         $tabelBulanan = [];
         $kumulatif = 0;
         $kumulatifTarget = 0;
@@ -137,6 +154,7 @@ class TrendController extends Controller
 
         foreach (self::NAMA_BULAN_SINGKAT as $angka => $label) {
             $nilaiBulanIni = (float) ($perBulan[$angka]->total ?? 0);
+            $jumlahPelangganBulanIni = (int) ($pelangganPerBulan[$angka]->jumlah ?? 0);
 
             $targetBulanIni = (float) ($targetPerUlp[$angka] ?? 0);
             if ($targetBulanIni <= 0) {
@@ -163,10 +181,18 @@ class TrendController extends Controller
             $data[] = $mode === 'kumulatif' ? $kumulatif : $nilaiBulanIni;
             $targetData[] = $mode === 'kumulatif' ? $kumulatifTarget : $targetBulanIni;
 
+            // Jumlah pelanggan SENGAJA gak ikut diakumulasi walau mode
+            // "Komulatif" dipilih — angka pelanggan itu jumlah entitas per
+            // bulan (snapshot), bukan nilai yang wajar dijumlah lintas
+            // bulan (satu pelanggan bisa saja muncul di bulan berbeda,
+            // jadi diakumulasi malah bikin dobel hitung & menyesatkan).
+            $jumlahPelangganData[] = $jumlahPelangganBulanIni;
+
             $tabelBulanan[] = [
                 'label'     => $label,
                 'nilai'     => $nilaiBulanIni,
                 'kumulatif' => $kumulatif,
+                'pelanggan' => $jumlahPelangganBulanIni,
             ];
         }
 
@@ -182,6 +208,7 @@ class TrendController extends Controller
             'labels'              => $labels,
             'data'                => $data,
             'targetData'          => $targetData,
+            'jumlahPelangganData' => $jumlahPelangganData,
             'tabelBulanan'        => $tabelBulanan,
             'totalTahunIni'       => $totalTahunIni,
             'rataRataBulanan'     => $rataRataBulanan,

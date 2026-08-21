@@ -6,6 +6,7 @@ use App\Imports\TagihanSusulanImport;
 use App\Models\LaporanSusulan;
 use App\Models\User;
 use App\Notifications\LaporanBaruDiupload;
+use App\Services\RingkasanGolTarifService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -13,6 +14,11 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
 {
+    public function __construct(
+        private readonly RingkasanGolTarifService $ringkasanGolTarifService
+    ) {
+    }
+
     public function create()
     {
         $lastUpload = LaporanSusulan::latest()->first();
@@ -67,6 +73,21 @@ class LaporanController extends Controller
                     'pesan' => $e->getMessage(),
                 ];
             }
+        }
+
+        // ---- Hitung ulang ringkasan Gol Tarif untuk tiap tahun yang kena
+        // dampak upload di request ini. Dedupe dulu (bisa saja beberapa file
+        // punya tahun yang sama) supaya hitungUlang() tidak jalan berkali-kali
+        // untuk tahun yang sama dalam satu request. Ditaruh di luar loop &
+        // di luar transaksi per-file supaya tidak ikut ke-rollback kalau ada
+        // file lain yang gagal setelahnya. ----
+        $tahunTerdampak = collect($berhasil)
+            ->pluck('laporan.tahun')
+            ->filter()
+            ->unique();
+
+        foreach ($tahunTerdampak as $tahun) {
+            $this->ringkasanGolTarifService->hitungUlang((int) $tahun);
         }
 
         return $this->redirectHasilUpload($berhasil, $gagal, $laporanTerakhir);
@@ -171,6 +192,11 @@ class LaporanController extends Controller
             $laporan->update(['status' => 'aktif']);
         });
 
+        // ---- Status "aktif" berpindah versi -> baris DetailTagihanSusulan yang
+        // ikut dihitung RingkasanGolTarif berubah (query di service difilter
+        // status='aktif'). Hitung ulang ringkasan tahun ini supaya konsisten. ----
+        $this->ringkasanGolTarifService->hitungUlang((int) $laporan->tahun);
+
         return redirect()
             ->route('laporan.show', $laporan->id)
             ->with('success', "Versi {$laporan->versi} sekarang jadi versi aktif.");
@@ -178,7 +204,14 @@ class LaporanController extends Controller
 
     public function destroy(LaporanSusulan $laporan)
     {
+        $tahun = $laporan->tahun;
+
         $laporan->delete();
+
+        // ---- Baris detail ikut terhapus (asumsi cascade / dihapus manual di
+        // model event) -> ringkasan tahun ini harus dihitung ulang. ----
+        $this->ringkasanGolTarifService->hitungUlang((int) $tahun);
+
         return redirect()->route('laporan.index')->with('success', 'Laporan dihapus.');
     }
 }

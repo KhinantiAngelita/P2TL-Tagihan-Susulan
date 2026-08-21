@@ -70,13 +70,34 @@
 
     /* ===== Chart card ===== */
     .trend-chart-card { padding: 22px; margin-bottom: 20px; }
-    .trend-chart-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .trend-chart-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
     .trend-chart-head h3 { margin: 0 0 2px; font-size: 16px; color: #1b2559; }
     .trend-chart-head p { margin: 0; font-size: 12.5px; color: #6b7690; }
 
-    .trend-chart-canvas-wrap { position: relative; height: 320px; width: 100%; }
+    /* Catatan kecil di bawah judul chart, jelasin arti label yang
+       digambar langsung di atas tiap bar (% pencapaian & jumlah
+       pelanggan per bulan) — biar gak butuh legend terpisah. */
+    .trend-chart-note {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 11.5px; color: #9aa4c2; margin: 0 0 14px;
+    }
+    .trend-chart-note svg { width: 13px; height: 13px; flex-shrink: 0; }
 
-    /* ===== Tabel horizontal (bulan = kolom, Target/Realisasi = baris) ===== */
+    /* Tinggi ditambah dikit dari sebelumnya (320 -> 350) buat kasih
+       ruang label % & jumlah pelanggan di atas tiap bar biar gak
+       kepotong/nabrak sama bagian atas card. */
+    .trend-chart-canvas-wrap { position: relative; height: 350px; width: 100%; }
+
+    .persen-badge {
+        display: inline-flex; align-items: center; padding: 3px 10px;
+        border-radius: 999px; font-size: 12.5px; font-weight: 700;
+    }
+    .persen-badge.tone-hijau { background: #e5f7ec; color: #16803c; }
+    .persen-badge.tone-merah { background: #fdeaea; color: #c62828; }
+    .persen-badge.tone-abu   { background: #eef0f6; color: #6b7690; }
+
+    /* ===== Tabel horizontal (bulan = kolom, Target/Realisasi/%/Pelanggan
+       = baris) ===== */
     .trend-hz-table-wrap { padding: 0; overflow: hidden; }
     .trend-hz-table { width: 100%; border-collapse: collapse; }
     .trend-hz-table th, .trend-hz-table td {
@@ -93,8 +114,9 @@
     }
     .trend-hz-table tbody tr:last-child td { border-bottom: none; }
     .trend-hz-table tbody td { color: var(--text-dark); font-weight: 500; }
-    .trend-hz-table tbody tr:first-child td { color: #c0246b; } /* baris Target */
-    .trend-hz-table tbody tr:last-child td:not(:first-child) { color: #1a9c4a; } /* baris Realisasi */
+    .trend-hz-table tbody tr:nth-child(1) td { color: #c0246b; } /* baris Target */
+    .trend-hz-table tbody tr:nth-child(2) td:not(:first-child) { color: #1a9c4a; } /* baris Realisasi */
+    .trend-hz-table tbody tr:nth-child(4) td:not(:first-child) { color: #0f6bd9; font-weight: 600; } /* baris Jumlah Pelanggan */
 
     /* ===== Card "Selisih dari Target" — sengaja dibikin ringkas =====
        Detail lengkap (persen per bulan, ranking bulan tertinggi/
@@ -134,14 +156,14 @@
         .trend-filter-form select { flex: 1; min-width: 0; }
         .trend-mode-toggle { width: 100%; justify-content: center; }
         .trend-mode-toggle a { flex: 1; text-align: center; }
-        .trend-chart-canvas-wrap { height: 260px; }
+        .trend-chart-canvas-wrap { height: 300px; }
         .trend-chart-head { flex-direction: column; align-items: flex-start; }
         .chart-badge { align-self: flex-start; }
 
-        /* Tabel horizontal (Target/Realisasi per bulan) — tetap
-           discroll ke samping di HP (udah dibungkus .table-scroll),
-           tapi padding & font dikecilin dikit biar lebih banyak
-           kolom bulan yang keliatan sekali swipe. */
+        /* Tabel horizontal (Target/Realisasi/%/Pelanggan per bulan) —
+           tetap discroll ke samping di HP (udah dibungkus .table-scroll),
+           tapi padding & font dikecilin dikit biar lebih banyak kolom
+           bulan yang keliatan sekali swipe. */
         .trend-hz-table th, .trend-hz-table td { padding: 10px 12px; font-size: 12px; }
     }
 
@@ -149,7 +171,7 @@
         .dash-stats { grid-template-columns: 1fr; }
         .trend-filter-form { flex-direction: column; align-items: stretch; }
         .trend-filter-form select { width: 100%; }
-        .trend-chart-canvas-wrap { height: 220px; }
+        .trend-chart-canvas-wrap { height: 260px; }
         .trend-hz-table th, .trend-hz-table td { padding: 8px 10px; font-size: 11.5px; }
     }
 </style>
@@ -159,6 +181,12 @@
     // Fallback sementara: kalau controller belum kirim $targetData,
     // isi 0 semua biar chart & tabel tetap render tanpa error.
     $targetData = $targetData ?? array_fill(0, count($labels), 0);
+
+    // Fallback: kalau controller belum kirim $jumlahPelangganData (array
+    // jumlah pelanggan unik per bulan, urutan sama kayak $labels), isi
+    // null semua biar tabel/chart tetap render dengan tampilan "-"
+    // daripada error undefined variable.
+    $jumlahPelangganData = $jumlahPelangganData ?? array_fill(0, count($labels), null);
 
     // Total target tahun berjalan, disesuaikan sama mode tampilan:
     // - mode kumulatif -> $targetData udah berupa angka akumulasi, jadi
@@ -173,6 +201,27 @@
     // target (kurang bagus buat metrik susut/TS), negatif berarti masih
     // di bawah target.
     $selisihTahunIni = $totalTahunIni - $totalTargetTahunIni;
+
+    // % Pencapaian PER BULAN — ini yang ditampilkan langsung di atas
+    // tiap bar chart & di baris tabel, BUKAN angka total setahun.
+    // Dihitung dari $data & $targetData mentah (nilai per bulan asli,
+    // sebelum ikut mode kumulatif), makanya dihitung ulang di sini pakai
+    // pembagian aktual-per-bulan / target-per-bulan yang konsisten
+    // walau mode tampilan lagi "Komulatif".
+    $persenPerBulanMentah = collect($labels)->map(function ($label, $i) use ($tabelBulanan, $targetData, $mode, $data) {
+        // Ambil nilai & target PER BULAN (bukan versi kumulatif), biar
+        // %-nya tetap benar walau toggle mode di URL lagi "kumulatif".
+        $nilaiBulanIni  = $tabelBulanan[$i]['nilai'] ?? ($mode === 'kumulatif' ? null : ($data[$i] ?? 0));
+        $targetBulanIni = $mode === 'kumulatif'
+            ? ($i === 0 ? ($targetData[0] ?? 0) : ($targetData[$i] - $targetData[$i - 1]))
+            : ($targetData[$i] ?? 0);
+
+        if ($nilaiBulanIni === null) {
+            return null;
+        }
+
+        return $targetBulanIni > 0 ? round($nilaiBulanIni / $targetBulanIni * 100, 1) : null;
+    });
 @endphp
 
 @section('content')
@@ -312,6 +361,14 @@
         </div>
         <span class="chart-badge" style="background:#eaf0fb;color:#0b3d91;">{{ $ulpAktif === 'semua' ? 'Semua ULP' : (($daftarUlp->firstWhere('kode', $ulpAktif)['nama'] ?? null) ? $ulpAktif . ' - ' . $daftarUlp->firstWhere('kode', $ulpAktif)['nama'] : $ulpAktif) }}</span>
     </div>
+
+    {{-- Keterangan singkat: label di atas tiap bar = % pencapaian &
+         jumlah pelanggan BULAN ITU, digambar langsung di chart. --}}
+    <p class="trend-chart-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        Angka di atas tiap batang = % pencapaian &amp; jumlah pelanggan bulan itu.
+    </p>
+
     <div class="trend-chart-canvas-wrap">
         <canvas id="trendChart"></canvas>
     </div>
@@ -319,7 +376,7 @@
 
 <div class="card trend-hz-table-wrap">
     <div style="padding:18px 22px;border-bottom:1px solid var(--border);">
-        <strong style="font-size:14.5px;color:#1b2559;">Rincian per Bulan — Target vs Realisasi</strong>
+        <strong style="font-size:14.5px;color:#1b2559;">Rincian per Bulan — Target, Realisasi, % Pencapaian &amp; Jumlah Pelanggan</strong>
     </div>
     <div class="table-scroll">
         <table class="trend-hz-table">
@@ -344,6 +401,24 @@
                         <td>{{ number_format($nilaiRealisasi, 2, ',', '.') }}</td>
                     @endforeach
                 </tr>
+                <tr>
+                    <td>% Pencapaian</td>
+                    @foreach ($persenPerBulanMentah as $persen)
+                        <td>
+                            @if ($persen === null)
+                                <span class="persen-badge tone-abu">-</span>
+                            @else
+                                <span class="persen-badge {{ $persen >= 100 ? 'tone-hijau' : 'tone-merah' }}">{{ $persen }}%</span>
+                            @endif
+                        </td>
+                    @endforeach
+                </tr>
+                <tr>
+                    <td>Jumlah Pelanggan</td>
+                    @foreach ($jumlahPelangganData as $jmlPelanggan)
+                        <td>{{ $jmlPelanggan !== null ? number_format($jmlPelanggan, 0, ',', '.') : '-' }}</td>
+                    @endforeach
+                </tr>
             </tbody>
         </table>
     </div>
@@ -362,6 +437,19 @@
        {!! !!}, BUKAN {{ }} — karena {{ }} otomatis nge-htmlspecialchars
        tanda kutip jadi &#039; dan bikin JS-nya gagal di-parse browser
        (Unexpected token '&').
+    5. Model chart DISAMAIN sama trend/pencapaian.blade.php: mixed chart
+       (bar buat nilai realisasi + line buat target), BUKAN dua garis
+       seperti sebelumnya. Dataset diberi label "Realisasi" (bukan
+       "Aktual") biar konsisten sama istilah yang dipakai di tabel
+       "Rincian per Bulan" dan card statistik di halaman ini.
+    6. % Pencapaian & Jumlah Pelanggan PER BULAN ditampilkan LANGSUNG di
+       atas tiap batang chart (custom plugin drawBarLabels, ctx.fillText
+       manual — bukan lewat tooltip hover, dan bukan angka total/agregat
+       setahun). Info yang sama juga ada di baris tabel "Rincian per
+       Bulan" sebagai referensi lengkap yang bisa discroll.
+    7. Custom plugin drawBarLabels dipakai (bukan library eksternal
+       kayak chartjs-plugin-datalabels) biar gak nambah dependency CDN
+       baru — cukup pakai Chart.js API bawaan (afterDatasetsDraw).
 --}}
 @push('scripts')
 <script>
@@ -377,39 +465,93 @@
     var existing = Chart.getChart(canvas);
     if (existing) existing.destroy();
 
+    // Data per bulan buat label di atas tiap bar — dikirim dari PHP,
+    // urutannya sejajar sama $labels/$data.
+    var persenPerBulan = @json($persenPerBulanMentah);
+    var jumlahPelangganPerBulan = @json($jumlahPelangganData);
+
+    // ===== Custom plugin: gambar teks "% pencapaian" & "jumlah
+    // pelanggan" langsung di atas tiap batang Realisasi, permanen di
+    // canvas (bukan tooltip hover). =====
+    var drawBarLabelsPlugin = {
+        id: 'drawBarLabels',
+        afterDatasetsDraw: function (chart) {
+            var ctx = chart.ctx;
+            var barDataset = chart.getDatasetMeta(0); // dataset 0 = Realisasi (bar)
+            if (!barDataset || !barDataset.data) return;
+
+            ctx.save();
+
+            barDataset.data.forEach(function (bar, i) {
+                var persen = persenPerBulan[i];
+                var jumlahPelanggan = jumlahPelangganPerBulan[i];
+
+                // Skip kalau dua-duanya gak ada data, biar canvas gak
+                // penuh teks "- • -" buat bulan yang kosong.
+                if (persen === null && (jumlahPelanggan === null || jumlahPelanggan === undefined)) {
+                    return;
+                }
+
+                var teksPersen = persen === null ? '-' : persen + '%';
+                var teksPelanggan = (jumlahPelanggan === null || jumlahPelanggan === undefined)
+                    ? '-'
+                    : Number(jumlahPelanggan).toLocaleString('id-ID') + ' plg';
+
+                var x = bar.x;
+                var y = bar.y - 8; // sedikit di atas ujung batang
+
+                ctx.font = '700 10.5px inherit';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'alphabetic';
+
+                // Baris 1: % pencapaian (warna ijo/merah sesuai capaian)
+                ctx.fillStyle = (persen !== null && persen >= 100) ? '#16803c' : (persen === null ? '#9aa4c2' : '#c62828');
+                ctx.fillText(teksPersen, x, y);
+
+                // Baris 2: jumlah pelanggan (warna biru netral)
+                ctx.font = '600 9.5px inherit';
+                ctx.fillStyle = '#0f6bd9';
+                ctx.fillText(teksPelanggan, x, y - 12);
+            });
+
+            ctx.restore();
+        }
+    };
+
     new Chart(canvas, {
-        type: 'line',
         data: {
             labels: @json($labels),
             datasets: [
                 {
-                    label: 'Target',
-                    data: @json($targetData),
-                    borderColor: '#d81b60',
-                    backgroundColor: 'rgba(216,27,96,.08)',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.3,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
+                    type: 'bar',
+                    label: 'Realisasi',
+                    data: @json($data),
+                    backgroundColor: 'rgba(11,61,145,.75)',
+                    borderRadius: 6,
+                    order: 2,
                 },
                 {
-                    label: {!! json_encode($metric === 'kwh' ? 'KWH' : 'Rp TS') !!},
-                    data: @json($data),
-                    borderColor: '#0b3d91',
-                    backgroundColor: 'rgba(11,61,145,.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.3,
-                    pointBackgroundColor: '#ffce3a',
+                    type: 'line',
+                    label: 'Target',
+                    data: @json($targetData),
+                    borderColor: '#ffce3a',
+                    backgroundColor: '#ffce3a',
+                    borderWidth: 2.5,
                     pointRadius: 4,
-                }
+                    pointBackgroundColor: '#ffce3a',
+                    tension: 0.3,
+                    order: 1,
+                },
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
+            // Ruang ekstra di atas biar label % & jumlah pelanggan gak
+            // kepotong sama batas atas canvas pas nilainya mendekati
+            // puncak sumbu Y.
+            layout: { padding: { top: 26 } },
             plugins: {
                 legend: {
                     display: true,
@@ -420,9 +562,9 @@
                     callbacks: {
                         label: function (ctx) {
                             var val = Number(ctx.raw).toLocaleString('id-ID');
-                            var unit = {!! json_encode($metric === 'kwh' ? ' KWH' : '') !!};
-                            var prefix = {!! json_encode($metric === 'ts' ? 'Rp ' : '') !!};
-                            return ctx.dataset.label + ': ' + prefix + val + unit;
+                            var prefix = {!! json_encode($metric === 'kwh' ? '' : 'Rp ') !!};
+                            var suffix = {!! json_encode($metric === 'kwh' ? ' KWH' : '') !!};
+                            return ctx.dataset.label + ': ' + prefix + val + suffix;
                         }
                     }
                 }
@@ -433,11 +575,14 @@
                     beginAtZero: true,
                     grid: { color: '#eef0f6' },
                     ticks: {
-                        callback: function (v) { return Number(v).toLocaleString('id-ID'); }
+                        callback: function (v) {
+                            return Number(v).toLocaleString('id-ID');
+                        }
                     }
                 }
             }
-        }
+        },
+        plugins: [drawBarLabelsPlugin]
     });
 })();
 </script>

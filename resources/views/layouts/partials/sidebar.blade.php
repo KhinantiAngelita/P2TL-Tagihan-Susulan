@@ -90,7 +90,7 @@
                 <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <div class="nav-submenu {{ request()->routeIs('trend.*') ? 'is-open' : '' }}" id="trendSubmenu">
-                <a href="{{ route('trend.pencapaian') }}" class="nav-subitem {{ request()->routeIs('trend.pencapaian') ? 'active' : '' }}">Presentase Pencapaian</a>
+                <a href="{{ route('trend.pencapaian') }}" class="nav-subitem {{ request()->routeIs('trend.pencapaian') ? 'active' : '' }}">Data Pencapaian</a>
                 <a href="{{ route('trend.kwh') }}" class="nav-subitem {{ request()->routeIs('trend.kwh') ? 'active' : '' }}">Trend kWh</a>
                 <a href="{{ route('trend.ts') }}" class="nav-subitem {{ request()->routeIs('trend.ts') ? 'active' : '' }}">Trend Rp TS</a>
             </div>

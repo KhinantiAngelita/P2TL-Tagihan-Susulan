@@ -4,10 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\DetailTagihanSusulan;
 use App\Models\LaporanSusulan;
+use App\Services\RingkasanGolTarifService;
 use Illuminate\Http\Request;
 
 class DetailDataController extends Controller
 {
+    public function __construct(
+        private readonly RingkasanGolTarifService $ringkasanGolTarifService
+    ) {
+    }
+
     /**
      * Ekspresi SQL buat "meniru" accessor getUlpAttribute() di level query,
      * karena kolom `ulp` bukan kolom asli di database — dia hasil parsing
@@ -257,6 +263,15 @@ class DetailDataController extends Controller
 
         $detail->update($validated);
 
+        // ---- gol/daya/ts bisa berubah lewat form ini -> ringkasan Gol Tarif
+        // tahun terkait harus dihitung ulang. Ambil tahun lewat laporan
+        // induknya (bukan relasi Eloquent, biar tidak bergantung nama
+        // relasi yang mungkin belum/tidak didefinisikan di model). ----
+        $tahun = LaporanSusulan::where('id', $detail->laporan_susulan_id)->value('tahun');
+        if ($tahun) {
+            $this->ringkasanGolTarifService->hitungUlang((int) $tahun);
+        }
+
         return redirect()
             ->route('detail-data.show', $detail->laporan_susulan_id)
             ->with('success', 'Data pelanggan berhasil diperbarui.');
@@ -294,7 +309,15 @@ class DetailDataController extends Controller
     public function destroy(DetailTagihanSusulan $detail)
     {
         $laporanId = $detail->laporan_susulan_id;
+        $tahun = LaporanSusulan::where('id', $laporanId)->value('tahun');
+
         $detail->delete();
+
+        // ---- Baris ini ikut kontribusi ke ringkasan Gol Tarif tahun terkait
+        // -> hitung ulang setelah dihapus. ----
+        if ($tahun) {
+            $this->ringkasanGolTarifService->hitungUlang((int) $tahun);
+        }
 
         return redirect()
             ->route('detail-data.show', $laporanId)

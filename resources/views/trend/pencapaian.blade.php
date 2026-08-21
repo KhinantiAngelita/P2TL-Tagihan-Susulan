@@ -4,7 +4,7 @@
 @section('breadcrumb')
     <a href="{{ route('dashboard') }}">Beranda</a>
     <span class="sep">›</span>
-    <strong>Presentase Pencapaian</strong>
+    <strong>Data Pencapaian</strong>
 @endsection
 
 @push('styles')
@@ -40,10 +40,6 @@
         min-width: 140px;
     }
 
-    /* Icon bulat di filter card — samain sama fix di trend/index.blade:
-       class ini sebelumnya gak ke-define, cuma inline style
-       width/height/background/color, jadi svg-nya gak center dan
-       kotaknya gak rounded. */
     .trend-filter-left .info-icon {
         display: flex;
         align-items: center;
@@ -51,32 +47,6 @@
         border-radius: 10px;
         flex-shrink: 0;
     }
-
-    /* Badge ULP di pojok kanan atas card chart — samain juga sama
-       index.blade, biar keliatan sebagai pill/badge bukan teks polos.
-       max-width + ellipsis biar nama ULP panjang gak dorong layout
-       melebar di layar sempit. */
-    .chart-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 12.5px;
-        font-weight: 700;
-        white-space: nowrap;
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .trend-chart-card { padding: 22px; margin-bottom: 20px; }
-    .trend-chart-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-    .trend-chart-head h3 { margin: 0 0 2px; font-size: 16px; color: #1b2559; }
-    .trend-chart-head p { margin: 0; font-size: 12.5px; color: #6b7690; }
-
-    /* Wrapper tinggi pasti buat canvas, samain sama index.blade —
-       biar tingginya konsisten & bisa pakai maintainAspectRatio:false. */
-    .trend-chart-canvas-wrap { position: relative; height: 320px; width: 100%; }
 
     /* ===== Card "Rincian per Bulan" ===== */
     .trend-table-card { padding: 0; overflow: hidden; }
@@ -98,6 +68,32 @@
     .trend-table-legend i { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
     .trend-table-legend .dot-best  { background: #16803c; }
     .trend-table-legend .dot-worst { background: #c62828; }
+
+    /* ===== Bar ringkasan di dalam card (pengganti 4 kartu statistik
+       yang dihapus) — nampilin Pencapaian Total, Rata-rata, Bulan
+       Tertinggi & Terendah sebagai chip ringkas, biar informasinya
+       tetap ada tanpa nambah card terpisah. ===== */
+    .trend-summary-bar {
+        display: flex; flex-wrap: wrap; gap: 10px;
+        padding: 16px 22px; background: #fafbfe; border-bottom: 1px solid var(--border);
+    }
+    .trend-summary-chip {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 14px; border-radius: 12px; background: #fff;
+        border: 1px solid var(--border); min-width: 168px; flex: 1 1 168px;
+    }
+    .trend-summary-chip-icon {
+        width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .trend-summary-chip-icon svg { width: 15px; height: 15px; }
+    .trend-summary-chip.tone-blue   .trend-summary-chip-icon { background: #eaf0fb; color: #0b3d91; }
+    .trend-summary-chip.tone-yellow .trend-summary-chip-icon { background: #fff6df; color: #b8860b; }
+    .trend-summary-chip.tone-green  .trend-summary-chip-icon { background: #e5f7ec; color: #16803c; }
+    .trend-summary-chip.tone-red    .trend-summary-chip-icon { background: #fdeaea; color: #c62828; }
+    .trend-summary-chip-label { font-size: 11px; color: #9aa4c2; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+    .trend-summary-chip-value { font-size: 14.5px; font-weight: 800; color: #1b2559; line-height: 1.25; }
+    .trend-summary-chip-sub { font-size: 11px; color: #6b7690; margin-top: 1px; }
 
     .trend-table { width: 100%; border-collapse: collapse; }
     .trend-table thead th {
@@ -136,23 +132,18 @@
     .persen-badge.tone-merah { background: #fdeaea; color: #c62828; }
     .persen-badge.tone-abu   { background: #eef0f6; color: #6b7690; }
 
-    @media (max-width: 900px) {
-        .dash-stats { grid-template-columns: repeat(2, 1fr); }
-    }
-
     @media (max-width: 640px) {
         .trend-filter-card { padding: 14px 16px; flex-direction: column; align-items: stretch; }
         .trend-filter-left { width: 100%; }
         .trend-filter-form { width: 100%; }
         .trend-filter-form select { flex: 1; min-width: 0; }
-        .trend-chart-canvas-wrap { height: 260px; }
-        .trend-chart-head { flex-direction: column; align-items: flex-start; }
-        .chart-badge { align-self: flex-start; }
 
         /* Tabel "Rincian per Bulan" jadi tumpukan card per-bulan di HP,
            daripada tabel lebar yang harus discroll ke samping. */
         .trend-table-head { padding: 16px; }
         .trend-table-legend { width: 100%; order: 3; }
+        .trend-summary-bar { padding: 12px 16px; }
+        .trend-summary-chip { min-width: 100%; }
         .trend-table thead { display: none; }
         .trend-table, .trend-table tbody, .trend-table tr, .trend-table td { display: block; width: 100%; }
         .trend-table tbody { padding: 10px; }
@@ -188,10 +179,8 @@
     }
 
     @media (max-width: 420px) {
-        .dash-stats { grid-template-columns: 1fr; }
         .trend-filter-form { flex-direction: column; align-items: stretch; }
         .trend-filter-form select { width: 100%; }
-        .trend-chart-canvas-wrap { height: 220px; }
     }
 </style>
 @endpush
@@ -200,7 +189,7 @@
 
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
     <div>
-        <h2 class="trend-page-title">Presentase Pencapaian</h2>
+        <h2 class="trend-page-title">Data Pencapaian</h2>
         <p style="color:#6b7690;margin:0;font-size:14px;">Perbandingan nilai aktual terhadap target bulanan yang diinput di Edit Target.</p>
     </div>
 </div>
@@ -210,7 +199,7 @@
     paling depan karena itu yang paling sering dicek duluan.
 --}}
 <div class="trend-tabs">
-    <a href="{{ route('trend.pencapaian', request()->only('tahun', 'ulp', 'jenis')) }}" class="active">Presentase Pencapaian</a>
+    <a href="{{ route('trend.pencapaian', request()->only('tahun', 'ulp', 'jenis')) }}" class="active">Data Pencapaian</a>
     <a href="{{ route('trend.kwh', request()->only('tahun', 'ulp')) }}">Trend kWh</a>
     <a href="{{ route('trend.ts', request()->only('tahun', 'ulp')) }}">Trend Rp TS</a>
 </div>
@@ -253,75 +242,6 @@
     </form>
 </div>
 
-<div class="dash-stats">
-    <div class="dash-stat-card tone-blue">
-        <div class="dash-stat-top">
-            <div class="dash-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-            </div>
-            <h3>Pencapaian Total {{ $tahunAktif ?: '-' }}</h3>
-        </div>
-        <div class="dash-stat-value">
-            {{ $persenTotal !== null ? $persenTotal . '%' : 'Target belum diisi' }}
-        </div>
-        <div class="dash-stat-sub">
-            {{ $jenis === 'kwh' ? number_format($totalAktual, 0, ',', '.') . ' / ' . number_format($totalTarget, 0, ',', '.') . ' KWH' : 'Rp ' . number_format($totalAktual, 0, ',', '.') . ' / Rp ' . number_format($totalTarget, 0, ',', '.') }}
-        </div>
-    </div>
-
-    <div class="dash-stat-card tone-yellow">
-        <div class="dash-stat-top">
-            <div class="dash-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            </div>
-            <h3>Rata-rata Pencapaian</h3>
-        </div>
-        <div class="dash-stat-value">{{ $rataRataPersen !== null ? $rataRataPersen . '%' : '-' }}</div>
-        <div class="dash-stat-sub">Rata-rata dari bulan yang sudah ada targetnya</div>
-    </div>
-
-    <div class="dash-stat-card tone-green">
-        <div class="dash-stat-top">
-            <div class="dash-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 8.5 9 9 5-.5 9-4 9-9V7l-9-5Z"/></svg>
-            </div>
-            <h3>Bulan Tertinggi</h3>
-        </div>
-        <div class="dash-stat-value">{{ $bulanTertinggiLabel ?? '-' }}</div>
-        <div class="dash-stat-sub">{{ $bulanTertinggiPersen !== null ? $bulanTertinggiPersen . '% dari target' : 'Belum ada target' }}</div>
-    </div>
-
-    <div class="dash-stat-card tone-red">
-        <div class="dash-stat-top">
-            <div class="dash-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22 3 17V7l9-5 9 5v10Z"/><path d="M12 12v.01"/></svg>
-            </div>
-            <h3>Bulan Terendah</h3>
-        </div>
-        <div class="dash-stat-value">{{ $bulanTerendahLabel ?? '-' }}</div>
-        <div class="dash-stat-sub">{{ $bulanTerendahPersen !== null ? $bulanTerendahPersen . '% dari target' : 'Belum ada target' }}</div>
-    </div>
-</div>
-
-<div class="card trend-chart-card">
-    <div class="trend-chart-head">
-        <div>
-            <h3>Aktual vs Target — {{ $jenisOptions[$jenis] }}</h3>
-            <p>Batang = aktual, garis = target &mdash; Tahun {{ $tahunAktif ?: '-' }}</p>
-        </div>
-        <span class="chart-badge" style="background:#eaf0fb;color:#0b3d91;">{{ $ulpAktif === 'semua' ? 'Semua ULP' : (($daftarUlp->firstWhere('kode', $ulpAktif)['nama'] ?? null) ? $ulpAktif . ' - ' . $daftarUlp->firstWhere('kode', $ulpAktif)['nama'] : $ulpAktif) }}</span>
-    </div>
-    <div class="trend-chart-canvas-wrap">
-        <canvas id="pencapaianChart"></canvas>
-    </div>
-</div>
-
-@php
-    // Total selisih setahun (buat baris footer tabel) — cuma dihitung
-    // kalau targetnya udah diisi, biar gak nampilin angka yang salah.
-    $totalSelisihTahun = $totalTarget > 0 ? ($totalAktual - $totalTarget) : null;
-@endphp
-
 <div class="card trend-table-card">
     <div class="trend-table-head">
         <div class="trend-table-head-left">
@@ -338,6 +258,65 @@
             <span><i class="dot-worst"></i> Bulan terendah</span>
         </div>
     </div>
+
+    {{-- ===== Bar ringkasan — pengganti 4 kartu statistik yang dihapus
+         (Pencapaian Total, Rata-rata, Bulan Tertinggi, Bulan Terendah),
+         supaya info-nya tetap ada tanpa nambah card terpisah di luar
+         "Rincian per Bulan". ===== --}}
+    <div class="trend-summary-bar">
+        <div class="trend-summary-chip tone-blue">
+            <div class="trend-summary-chip-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <div>
+                <div class="trend-summary-chip-label">Pencapaian Total</div>
+                <div class="trend-summary-chip-value">{{ $persenTotal !== null ? $persenTotal . '%' : 'Target belum diisi' }}</div>
+                <div class="trend-summary-chip-sub">
+                    {{ $jenis === 'kwh' ? number_format($totalAktual, 0, ',', '.') . ' / ' . number_format($totalTarget, 0, ',', '.') . ' KWH' : 'Rp ' . number_format($totalAktual, 0, ',', '.') . ' / Rp ' . number_format($totalTarget, 0, ',', '.') }}
+                </div>
+            </div>
+        </div>
+
+        <div class="trend-summary-chip tone-yellow">
+            <div class="trend-summary-chip-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </div>
+            <div>
+                <div class="trend-summary-chip-label">Rata-rata Pencapaian</div>
+                <div class="trend-summary-chip-value">{{ $rataRataPersen !== null ? $rataRataPersen . '%' : '-' }}</div>
+                <div class="trend-summary-chip-sub">Dari bulan yang sudah ada targetnya</div>
+            </div>
+        </div>
+
+        <div class="trend-summary-chip tone-green">
+            <div class="trend-summary-chip-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 8.5 9 9 5-.5 9-4 9-9V7l-9-5Z"/></svg>
+            </div>
+            <div>
+                <div class="trend-summary-chip-label">Bulan Tertinggi</div>
+                <div class="trend-summary-chip-value">{{ $bulanTertinggiLabel ?? '-' }}</div>
+                <div class="trend-summary-chip-sub">{{ $bulanTertinggiPersen !== null ? $bulanTertinggiPersen . '% dari target' : 'Belum ada target' }}</div>
+            </div>
+        </div>
+
+        <div class="trend-summary-chip tone-red">
+            <div class="trend-summary-chip-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22 3 17V7l9-5 9 5v10Z"/><path d="M12 12v.01"/></svg>
+            </div>
+            <div>
+                <div class="trend-summary-chip-label">Bulan Terendah</div>
+                <div class="trend-summary-chip-value">{{ $bulanTerendahLabel ?? '-' }}</div>
+                <div class="trend-summary-chip-sub">{{ $bulanTerendahPersen !== null ? $bulanTerendahPersen . '% dari target' : 'Belum ada target' }}</div>
+            </div>
+        </div>
+    </div>
+
+    @php
+        // Total selisih setahun (buat baris footer tabel) — cuma dihitung
+        // kalau targetnya udah diisi, biar gak nampilin angka yang salah.
+        $totalSelisihTahun = $totalTarget > 0 ? ($totalAktual - $totalTarget) : null;
+    @endphp
+
     <div class="table-scroll">
         <table class="trend-table">
             <thead>
@@ -419,97 +398,3 @@
     </div>
 </div>
 @endsection
-
-{{--
-    CATATAN (biar konsisten sama trend/index.blade.php):
-    1. Chart.js udah di-load sekali di layouts/app.blade.php, jadi TIDAK
-       di-load ulang di sini lagi (sebelumnya ada <script src=".../chart.js@4">
-       double di file ini, sekarang dihapus).
-    2. Canvas dibungkus div ber-tinggi pasti (.trend-chart-canvas-wrap) +
-       maintainAspectRatio:false, biar tingginya konsisten kayak di
-       trend/index (sebelumnya pakai atribut height="100" doang, jadi
-       gampang gepeng/melar tergantung container).
-    3. Chart.getChart() dipakai buat destroy instance lama sebelum bikin
-       yang baru — cegah error "Canvas is already in use".
-    4. Semua string JS yang disisipkan dari Blade pakai @json() atau
-       {!! !!}, BUKAN {{ }} — karena {{ }} otomatis nge-htmlspecialchars
-       tanda kutip jadi &#039; dan bikin JS-nya gagal di-parse browser.
---}}
-@push('scripts')
-<script>
-(function () {
-    var canvas = document.getElementById('pencapaianChart');
-    if (!canvas) return;
-
-    if (typeof Chart === 'undefined') {
-        console.error('Chart.js belum termuat — cek Network tab, kemungkinan CDN diblokir.');
-        return;
-    }
-
-    var existing = Chart.getChart(canvas);
-    if (existing) existing.destroy();
-
-    new Chart(canvas, {
-        data: {
-            labels: @json($labels),
-            datasets: [
-                {
-                    type: 'bar',
-                    label: 'Aktual',
-                    data: @json($dataAktual),
-                    backgroundColor: 'rgba(11,61,145,.75)',
-                    borderRadius: 6,
-                    order: 2,
-                },
-                {
-                    type: 'line',
-                    label: 'Target',
-                    data: @json($dataTarget),
-                    borderColor: '#ffce3a',
-                    backgroundColor: '#ffce3a',
-                    borderWidth: 2.5,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#ffce3a',
-                    tension: 0.3,
-                    order: 1,
-                },
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 18 }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function (ctx) {
-                            var val = Number(ctx.raw).toLocaleString('id-ID');
-                            var prefix = {!! json_encode($jenis === 'kwh' ? '' : 'Rp ') !!};
-                            var suffix = {!! json_encode($jenis === 'kwh' ? ' KWH' : '') !!};
-                            return ctx.dataset.label + ': ' + prefix + val + suffix;
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: { grid: { display: false } },
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#eef0f6' },
-                    ticks: {
-                        callback: function (v) {
-                            return Number(v).toLocaleString('id-ID');
-                        }
-                    }
-                }
-            }
-        }
-    });
-})();
-</script>
-@endpush
