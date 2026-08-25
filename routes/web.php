@@ -12,6 +12,7 @@ use App\Http\Controllers\TrendController;
 use App\Http\Controllers\EditTargetController;
 use App\Http\Controllers\LaporanGolTarifController;
 use App\Http\Controllers\PelangganController;
+use App\Http\Controllers\ExportPdfController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,10 +51,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.readAll');
 
     Route::get('/laporan/gol-tarif', [LaporanGolTarifController::class, 'golTarif'])->name('laporan.gol-tarif');
-    Route::get('/laporan/komposisi-temuan', [App\Http\Controllers\LaporanGolTarifController::class, 'komposisiTemuan'])
-    ->name('laporan.komposisi-temuan');
-    Route::get('/laporan/target-realisasi', [App\Http\Controllers\LaporanGolTarifController::class, 'targetRealisasi'])
-    ->name('laporan.target-realisasi');
+    Route::get('/laporan/komposisi-temuan', [LaporanGolTarifController::class, 'komposisiTemuan'])->name('laporan.komposisi-temuan');
+    Route::get('/laporan/target-realisasi', [LaporanGolTarifController::class, 'targetRealisasi'])->name('laporan.target-realisasi');
+
     /*
     |----------------------------------------------------------------------
     | Trend — Trend kWh & Trend Rp TS (filter Tahun/ULP, mode Bulanan/Kumulatif)
@@ -62,6 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('trend')->name('trend.')->group(function () {
         Route::get('/kwh', [TrendController::class, 'kwh'])->name('kwh');
         Route::get('/ts', [TrendController::class, 'ts'])->name('ts');
+        Route::get('/pencapaian', [TrendController::class, 'pencapaian'])->name('pencapaian');
     });
 
     Route::prefix('laporan')->name('laporan.')->group(function () {
@@ -93,21 +94,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/edit-target', [EditTargetController::class, 'index'])->name('edit-target.index');
     Route::post('/edit-target', [EditTargetController::class, 'update'])->name('edit-target.update');
-    
-    Route::prefix('trend')->name('trend.')->group(function () {
-    Route::get('/kwh', [TrendController::class, 'kwh'])->name('kwh');
-    Route::get('/ts', [TrendController::class, 'ts'])->name('ts');
-    Route::get('/pencapaian', [TrendController::class, 'pencapaian'])->name('pencapaian');
-    });
 
-    Route::middleware(['auth'])->group(function () {
-    // Menu Daftar Laporan (Sudah ada)
-    // Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
-
-    // Menu Daftar Pelanggan Baru (Sejajar)
     Route::get('/pelanggan', [PelangganController::class, 'index'])->name('pelanggan.index');
     Route::get('/pelanggan/{id}/json', [PelangganController::class, 'show'])->name('pelanggan.show.json');
-    });
-    
-});
 
+    Route::get('/export-pdf', [ExportPdfController::class, 'index'])->name('export-pdf.index');
+    Route::post('/export-pdf', [ExportPdfController::class, 'generate'])->name('export-pdf.generate');
+});

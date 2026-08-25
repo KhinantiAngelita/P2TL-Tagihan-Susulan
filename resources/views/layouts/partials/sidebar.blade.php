@@ -41,6 +41,15 @@
             @if(request()->routeIs('laporan.create'))<span class="nav-chevron">›</span>@endif
         </a>
 
+        {{-- Export PDF --}}
+        <a href="{{ route('export-pdf.index') }}" class="nav-item {{ request()->routeIs('export-pdf.*') ? 'active' : '' }}" title="Export PDF">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M12 11v6m0 0-2.5-2.5M12 17l2.5-2.5"/></svg>
+            </span>
+            <span class="nav-text">Export PDF</span>
+            @if(request()->routeIs('export-pdf.*'))<span class="nav-chevron">›</span>@endif
+        </a>
+
         {{-- Daftar Laporan (Ikon Dokumen/Arsip) --}}
         <a href="{{ route('laporan.index') }}" class="nav-item {{ request()->routeIs('laporan.index', 'laporan.show') ? 'active' : '' }}" title="Daftar Laporan">
             <span class="nav-icon">
