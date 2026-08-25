@@ -117,24 +117,24 @@ class TrendController extends Controller
             ->keyBy(fn ($row) => self::URUTAN_BULAN[$row->bulan] ?? 0);
 
         // ===== TARGET =====
-        // Sebelumnya method ini gak pernah query TargetBulanan sama
-        // sekali, jadi $targetData selalu ke-fallback 0 semua di blade
-        // (lihat trend/index.blade.php). Logic-nya disamain persis
-        // kayak di pencapaian(): target per-ULP dipakai duluan, kalau
-        // kosong/0 fallback ke target global (ulp = null).
-        $ulpUntukTarget = ($ulpAktif && strtolower($ulpAktif) !== 'semua') ? $ulpAktif : null;
+        // Sejak "Semua ULP" di Edit Target mendistribusikan nilai yang
+        // sama ke SETIAP kode ULP (bukan lagi tersimpan sebagai satu baris
+        // ulp=null), setiap ULP seharusnya sudah punya target sendiri.
+        // Jadi tidak ada lagi fallback ke target "global" (ulp=null) di
+        // sini — kalau ULP tertentu belum diisi targetnya sama sekali,
+        // target-nya memang 0 (bukan di-fallback ke angka lain). Kalau
+        // filter "Semua ULP" dipilih di halaman ini (bukan satu ULP
+        // spesifik), target dijumlah dari SEMUA ULP yang ada.
+        $targetQuery = TargetBulanan::where('tahun', $tahunAktif)->where('jenis', $jenis);
 
-        $targetPerUlp = $ulpUntukTarget
-            ? TargetBulanan::where('tahun', $tahunAktif)
-                ->where('jenis', $jenis)
-                ->where('ulp', $ulpUntukTarget)
-                ->pluck('nilai_target', 'bulan')
-            : collect();
-
-        $targetGlobal = TargetBulanan::where('tahun', $tahunAktif)
-            ->where('jenis', $jenis)
-            ->whereNull('ulp')
-            ->pluck('nilai_target', 'bulan');
+        if ($ulpAktif && strtolower($ulpAktif) !== 'semua') {
+            $targetQuery->where('ulp', $ulpAktif);
+            $targetPerBulan = $targetQuery->pluck('nilai_target', 'bulan');
+        } else {
+            $targetPerBulan = $targetQuery->get()
+                ->groupBy('bulan')
+                ->map(fn ($rows) => $rows->sum('nilai_target'));
+        }
 
         // Susun 12 bulan penuh (Jan-Des) supaya grafik & tabel tetap
         // konsisten bentuknya walau ada bulan yang belum ada laporannya,
@@ -155,11 +155,7 @@ class TrendController extends Controller
         foreach (self::NAMA_BULAN_SINGKAT as $angka => $label) {
             $nilaiBulanIni = (float) ($perBulan[$angka]->total ?? 0);
             $jumlahPelangganBulanIni = (int) ($pelangganPerBulan[$angka]->jumlah ?? 0);
-
-            $targetBulanIni = (float) ($targetPerUlp[$angka] ?? 0);
-            if ($targetBulanIni <= 0) {
-                $targetBulanIni = (float) ($targetGlobal[$angka] ?? 0);
-            }
+            $targetBulanIni = (float) ($targetPerBulan[$angka] ?? 0);
 
             $labels[] = $label;
             $totalTahunIni += $nilaiBulanIni;
@@ -222,8 +218,7 @@ class TrendController extends Controller
      *
      * Bandingkan nilai aktual (dari laporan aktif, sumber sama seperti
      * render()) terhadap target manual yang diinput lewat halaman Edit
-     * Target, per bulan. Kalau ULP tertentu dipilih tapi targetnya untuk
-     * bulan itu belum diisi (0), fallback ke target global ("Semua ULP").
+     * Target, per bulan.
      */
     public function pencapaian(Request $request)
     {
@@ -267,22 +262,20 @@ class TrendController extends Controller
             ->get()
             ->keyBy(fn ($row) => self::URUTAN_BULAN[$row->bulan] ?? 0);
 
-        $ulpUntukTarget = ($ulpAktif && strtolower($ulpAktif) !== 'semua') ? $ulpAktif : null;
+        // ---- Target: sejak "Semua ULP" mendistribusikan nilai ke setiap
+        // ULP, tidak ada lagi fallback ke target "global" (ulp=null). Kalau
+        // ULP spesifik dipilih, ambil target ULP itu saja. Kalau "Semua
+        // ULP" dipilih, jumlahkan target dari SEMUA ULP per bulan. ----
+        $targetQuery = TargetBulanan::where('tahun', $tahunAktif)->where('jenis', $jenis);
 
-        // Target per-ULP (kalau ULP tertentu dipilih) & target global
-        // (ulp = null). Per-ULP dipakai duluan; kalau kosong/0, fallback
-        // ke global supaya bulan itu tetap ada pembandingnya.
-        $targetPerUlp = $ulpUntukTarget
-            ? TargetBulanan::where('tahun', $tahunAktif)
-                ->where('jenis', $jenis)
-                ->where('ulp', $ulpUntukTarget)
-                ->pluck('nilai_target', 'bulan')
-            : collect();
-
-        $targetGlobal = TargetBulanan::where('tahun', $tahunAktif)
-            ->where('jenis', $jenis)
-            ->whereNull('ulp')
-            ->pluck('nilai_target', 'bulan');
+        if ($ulpAktif && strtolower($ulpAktif) !== 'semua') {
+            $targetQuery->where('ulp', $ulpAktif);
+            $targetPerBulan = $targetQuery->pluck('nilai_target', 'bulan');
+        } else {
+            $targetPerBulan = $targetQuery->get()
+                ->groupBy('bulan')
+                ->map(fn ($rows) => $rows->sum('nilai_target'));
+        }
 
         $labels = [];
         $dataAktual = [];
@@ -301,11 +294,7 @@ class TrendController extends Controller
 
         foreach (self::NAMA_BULAN_SINGKAT as $angka => $label) {
             $aktual = (float) ($perBulanAktual[$angka]->total ?? 0);
-
-            $targetBulanIni = (float) ($targetPerUlp[$angka] ?? 0);
-            if ($targetBulanIni <= 0) {
-                $targetBulanIni = (float) ($targetGlobal[$angka] ?? 0);
-            }
+            $targetBulanIni = (float) ($targetPerBulan[$angka] ?? 0);
 
             $persen = $targetBulanIni > 0 ? round(($aktual / $targetBulanIni) * 100, 1) : null;
 

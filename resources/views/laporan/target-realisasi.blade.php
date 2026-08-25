@@ -9,40 +9,73 @@
 
 @push('styles')
 <style>
-    .tr-card {
-        padding: 24px;
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        box-sizing: border-box;
-    }
-    .tr-table-scroll { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
-    .tr-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
-    .tr-table th, .tr-table td {
-        padding: 10px 14px;
-        text-align: center;
-        border-bottom: 1px solid #eef0f6;
-        border-right: 1px solid #eef0f6;
-        white-space: nowrap;
-    }
-    .tr-table thead th {
-        background: #0b3d91;
-        color: #fff;
-        font-weight: 700;
-        font-size: 11px;
-        text-transform: uppercase;
-        vertical-align: middle;
-    }
-    .tr-table th.col-no, .tr-table td.col-no { width: 42px; }
-    .tr-table th.col-up, .tr-table td.col-up { text-align: left; font-weight: 700; color: #1b2559; min-width: 170px; }
-    .tr-table thead th.col-up { color: #fff; }
-    .tr-table tbody tr:nth-child(even) { background: #f8f9fc; }
-    .tr-table tbody tr:hover { background: #eef2fb; }
-    .tr-table td.col-persen { font-weight: 800; color: #fff; }
-    .tr-table td.persen-hijau { background: #34c77b; }
-    .tr-table td.persen-kuning { background: #ffce3a; color: #1b2559; }
-    .tr-table tfoot td { font-weight: 800; background: #0b3d91; color: #fff; border-bottom: none; }
+    /* Styling Kartu & Tabel disamakan dengan Menu Pencapaian */
+    .trend-page-title { font-size: clamp(18px, 4.2vw, 22px); margin: 0 0 4px; color: #1b2559; font-weight: 700; }
 
+    .trend-table-card { padding: 0; overflow: hidden; background: #fff; border: 1px solid var(--border); border-radius: 14px; box-sizing: border-box; }
+    .trend-table-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 18px 22px; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .trend-table-head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .trend-table-head-icon {
+        width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: #eaf0fb; color: #0b3d91;
+    }
+    .trend-table-head-icon svg { width: 16px; height: 16px; }
+    .trend-table-head h3 { margin: 0; font-size: 14.5px; color: #1b2559; }
+    .trend-table-head p { margin: 2px 0 0; font-size: 12px; color: #6b7690; }
+
+    .copy-btn {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: #0b3d91;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .15s, color .15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .copy-btn:hover { background: #eaf0fb; }
+    .copy-btn:disabled { color: #16803c; border-color: #16803c; background: #e5f7ec; cursor: default; }
+
+    .trend-table { width: 100%; border-collapse: collapse; }
+    .trend-table thead th {
+        white-space: nowrap; text-align: left; padding: 11px 22px; font-size: 11.5px;
+        text-transform: uppercase; letter-spacing: .03em; color: #6b7690; font-weight: 700;
+        background: #fafbfe; border-bottom: 1px solid var(--border);
+        position: sticky; top: 0; z-index: 1;
+    }
+    /* Kolom No dan Unit Pelaksana rata kiri, sisanya rata kanan agar rapi */
+    .trend-table thead th:nth-child(n+3) { text-align: right; }
+    .trend-table tbody td { padding: 13px 22px; font-size: 13.5px; color: var(--text-dark, #1b2559); border-bottom: 1px solid var(--border); }
+    .trend-table tbody td:nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
+    .trend-table tbody tr:last-child td { border-bottom: none; }
+    .trend-table tbody tr:hover td { background: #f6f8fd; }
+
+    .trend-table tfoot td {
+        padding: 13px 22px; font-size: 13px; font-weight: 700; color: #1b2559;
+        background: #fafbfe; border-top: 2px solid var(--border);
+    }
+    .trend-table tfoot td:nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* Badge Persentase Lembut (Soft Palette) ala Menu Pencapaian */
+    .persen-badge {
+        display: inline-flex; align-items: center; padding: 3px 10px;
+        border-radius: 999px; font-size: 12.5px; font-weight: 700;
+    }
+    .persen-badge.tone-hijau { background: #e5f7ec; color: #16803c; }
+    .persen-badge.tone-kuning { background: #fff6df; color: #b8860b; }
+    .persen-badge.tone-merah  { background: #fdeaea; color: #c62828; }
+    .persen-badge.tone-abu    { background: #eef0f6; color: #6b7690; font-weight: 500; font-size: 11px; }
+
+    /* Filter Tahun Header */
     .filter-wrap { position: relative; }
     .filter-wrap svg {
         position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
@@ -53,30 +86,60 @@
         border-radius: 9px;
         padding: 8px 14px 8px 34px;
         font-size: 13px;
+        font-weight: 600;
         background: #fff;
+        color: #1b2559;
         appearance: none;
+        cursor: pointer;
+    }
+    .filter-select:focus { outline: none; border-color: var(--blue-primary, #0b3d91); }
+
+    /* Responsif HP */
+    @media (max-width: 640px) {
+        .trend-table-head { padding: 16px; flex-direction: column; align-items: stretch; }
+        .trend-table thead { display: none; }
+        .trend-table, .trend-table tbody, .trend-table tr, .trend-table td { display: block; width: 100%; }
+        .trend-table tbody { padding: 10px; }
+        .trend-table tbody tr {
+            margin-bottom: 10px; border: 1px solid var(--border); border-radius: 12px;
+            padding: 4px 14px; background: #fff;
+        }
+        .trend-table tbody tr:last-child { margin-bottom: 0; }
+        .trend-table tbody td {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 9px 0; border-bottom: 1px dashed var(--border); text-align: right;
+        }
+        .trend-table tbody td:first-child { display: flex; font-size: 14px; }
+        .trend-table tbody tr td:last-child { border-bottom: none; }
+        .trend-table tbody td::before {
+            content: attr(data-label); font-size: 11px; font-weight: 700; color: #9aa4c2;
+            text-transform: uppercase; letter-spacing: .03em; text-align: left;
+        }
+        .trend-table tbody td:first-child::before { content: none; }
+        .trend-table tfoot { display: block; }
+        .trend-table tfoot tr { display: block; margin: 4px 10px 10px; border-radius: 12px; background: #fafbfe; }
+        .trend-table tfoot td {
+            display: flex; align-items: center; justify-content: space-between; text-align: right;
+            border-top: none; padding: 8px 14px;
+        }
+        .trend-table tfoot td::before {
+            content: attr(data-label); font-size: 11px; font-weight: 700; color: #6b7690;
+            text-transform: uppercase; letter-spacing: .03em; text-align: left;
+        }
+        .trend-table tfoot td:first-child::before { content: none; }
     }
 </style>
 @endpush
 
 @section('content')
 
-<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
     <div>
-        <h2 style="margin:0 0 4px;font-size:22px;">Target vs Realisasi KWH Per ULP</h2>
-        <p style="color:#6b7690;margin:0;font-size:14px;">TW {{ ['I','II','III','IV'][$twAktif - 1] }} {{ $tahunAktif }}</p>
+        <h2 class="trend-page-title">Target vs Realisasi KWH Per ULP</h2>
+        <p style="color:#6b7690;margin:0;font-size:14px;">{{ $filterInfoText }}</p>
     </div>
 
-    <form method="GET" style="display:flex;gap:8px;flex-wrap:wrap;">
-        <div class="filter-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            <select name="tw" onchange="this.form.submit()" class="filter-select">
-                <option value="1" {{ $twAktif === 1 ? 'selected' : '' }}>Triwulan I</option>
-                <option value="2" {{ $twAktif === 2 ? 'selected' : '' }}>Triwulan II</option>
-                <option value="3" {{ $twAktif === 3 ? 'selected' : '' }}>Triwulan III</option>
-                <option value="4" {{ $twAktif === 4 ? 'selected' : '' }}>Triwulan IV</option>
-            </select>
-        </div>
+    <form method="GET">
         <div class="filter-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
             <select name="tahun" onchange="this.form.submit()" class="filter-select">
@@ -90,48 +153,102 @@
     </form>
 </div>
 
-<div class="tr-card">
-    <div class="tr-table-scroll">
+{{-- Komponen Filter Periode & ULP Terpadu --}}
+@include('laporan.partials.filter-periode-ulp')
+
+<div class="card trend-table-card">
+    <div class="trend-table-head">
+        <div class="trend-table-head-left">
+            <div class="trend-table-head-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+            </div>
+            <div>
+                <h3>Rincian ULP</h3>
+                <p>Target vs Realisasi KWH per Unit Pelaksana</p>
+            </div>
+        </div>
+        <div>
+            <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-target-realisasi', this, 'Target vs Realisasi KWH Per ULP')">
+                📷 Salin Gambar
+            </button>
+        </div>
+    </div>
+
+    <div id="capture-target-realisasi">
+    <div class="table-scroll">
         @if (count($rows) > 0)
-            <table class="tr-table">
+            <table class="trend-table" id="tabel-target-realisasi">
                 <thead>
                     <tr>
-                        <th class="col-no" rowspan="2">No</th>
-                        <th class="col-up" rowspan="2">Unit Pelaksana</th>
-                        <th colspan="3">TW {{ ['I','II','III','IV'][$twAktif - 1] }}</th>
+                        <th rowspan="2" style="width: 50px;">No</th>
+                        <th rowspan="2" style="text-align: left;">Unit Pelaksana</th>
+                        <th colspan="3" style="text-align: center;">Periode Terpilih</th>
                     </tr>
                     <tr>
-                        <th>Target</th><th>Realisasi</th><th>%</th>
+                        <th style="text-align: right;">Target</th>
+                        <th style="text-align: right;">Realisasi</th>
+                        <th style="text-align: right;">%</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($rows as $i => $row)
+                        @php
+                            // Logika Warna Badge Persentase (Soft Palette)
+                            // <70 Merah, 70-99.99 Kuning, >=100 Hijau
+                            if ($row['target'] <= 0) {
+                                $classPersen = 'tone-abu';
+                            } elseif ($row['persen'] < 70) {
+                                $classPersen = 'tone-merah';
+                            } elseif ($row['persen'] < 100) {
+                                $classPersen = 'tone-kuning';
+                            } else {
+                                $classPersen = 'tone-hijau';
+                            }
+                        @endphp
                         <tr>
-                            <td class="col-no">{{ $i + 1 }}</td>
-                            <td class="col-up">{{ $row['nama'] }}</td>
-                            <td>{{ number_format($row['target'], 0, ',', '.') }}</td>
-                            <td>{{ number_format($row['realisasi'], 0, ',', '.') }}</td>
-                            <td class="col-persen {{ $row['persen'] >= 100 ? 'persen-hijau' : 'persen-kuning' }}">
-                                {{ number_format($row['persen'], 2, ',', '.') }}%
+                            <td data-label="No">{{ $i + 1 }}</td>
+                            <td data-label="Unit Pelaksana" style="text-align: left; font-weight: 600;">{{ $row['nama'] }}</td>
+                            <td data-label="Target">{{ number_format($row['target'], 0, ',', '.') }}</td>
+                            <td data-label="Realisasi">{{ number_format($row['realisasi'], 0, ',', '.') }}</td>
+                            <td data-label="% Pencapaian">
+                                @if ($row['target'] <= 0)
+                                    <span class="persen-badge tone-abu">Belum ada target</span>
+                                @else
+                                    <span class="persen-badge {{ $classPersen }}">{{ number_format($row['persen'], 2, ',', '.') }}%</span>
+                                @endif
                             </td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
+                    @php
+                        if ($totalPersen < 70) {
+                            $classTotalPersen = 'tone-merah';
+                        } elseif ($totalPersen < 100) {
+                            $classTotalPersen = 'tone-kuning';
+                        } else {
+                            $classTotalPersen = 'tone-hijau';
+                        }
+                    @endphp
                     <tr>
-                        <td colspan="2">UID JABAR</td>
-                        <td>{{ number_format($totalTarget, 0, ',', '.') }}</td>
-                        <td>{{ number_format($totalRealisasi, 0, ',', '.') }}</td>
-                        <td class="col-persen {{ $totalPersen >= 100 ? 'persen-hijau' : 'persen-kuning' }}">
-                            {{ number_format($totalPersen, 2, ',', '.') }}%
+                        <td data-label="Total" colspan="2" style="text-align: left;">UID JABAR</td>
+                        <td data-label="Target">{{ number_format($totalTarget, 0, ',', '.') }}</td>
+                        <td data-label="Realisasi">{{ number_format($totalRealisasi, 0, ',', '.') }}</td>
+                        <td data-label="% Pencapaian">
+                            <span class="persen-badge {{ $classTotalPersen }}">{{ number_format($totalPersen, 2, ',', '.') }}%</span>
                         </td>
                     </tr>
                 </tfoot>
             </table>
         @else
-            <p style="text-align:center;color:#9aa4c2;padding:32px;font-size:13px;">Belum ada data target/realisasi untuk periode ini.</p>
+            <p style="text-align:center;color:#9aa4c2;padding:32px;font-size:13px;">Belum ada data target/realisasi untuk filter ini.</p>
         @endif
+    </div>
     </div>
 </div>
 
 @endsection
+
+@push('scripts')
+@include('laporan.partials.copy-image-script')
+@endpush

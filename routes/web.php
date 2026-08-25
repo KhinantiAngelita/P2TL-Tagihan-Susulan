@@ -11,6 +11,7 @@ use App\Http\Controllers\P2tlController;
 use App\Http\Controllers\TrendController;
 use App\Http\Controllers\EditTargetController;
 use App\Http\Controllers\LaporanGolTarifController;
+use App\Http\Controllers\PelangganController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -97,6 +98,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/kwh', [TrendController::class, 'kwh'])->name('kwh');
     Route::get('/ts', [TrendController::class, 'ts'])->name('ts');
     Route::get('/pencapaian', [TrendController::class, 'pencapaian'])->name('pencapaian');
+    });
+
+    Route::middleware(['auth'])->group(function () {
+    // Menu Daftar Laporan (Sudah ada)
+    // Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+
+    // Menu Daftar Pelanggan Baru (Sejajar)
+    Route::get('/pelanggan', [PelangganController::class, 'index'])->name('pelanggan.index');
+    Route::get('/pelanggan/{id}/json', [PelangganController::class, 'show'])->name('pelanggan.show.json');
     });
     
 });

@@ -16,6 +16,26 @@
         border-radius: 14px;
         box-sizing: border-box;
     }
+    .komposisi-card-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 12px;
+    }
+    .copy-btn {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: #0b3d91;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .15s, color .15s;
+    }
+    .copy-btn:hover { background: #eaf0fb; }
+    .copy-btn:disabled { color: #1a9c4a; border-color: #1a9c4a; cursor: default; }
+
     .komposisi-table-scroll {
         overflow-x: auto;
         border-radius: 10px;
@@ -109,10 +129,17 @@
     </form>
 </div>
 
+@include('laporan.partials.filter-periode-ulp')
+
 <div class="komposisi-card">
+    <div class="komposisi-card-actions">
+        <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-komposisi', this, 'Komposisi Temuan Gol P & K Per UP3')">📷 Salin Gambar</button>
+    </div>
+
+    <div id="capture-komposisi">
     <div class="komposisi-table-scroll">
         @if (count($rows) > 0)
-            <table class="komposisi-table">
+            <table class="komposisi-table" id="tabel-komposisi">
                 <thead>
                     <tr>
                         <th rowspan="2" class="col-no">No</th>
@@ -169,9 +196,14 @@
                 </tfoot>
             </table>
         @else
-            <p style="text-align:center;color:#9aa4c2;padding:32px;font-size:13px;">Belum ada data untuk tahun ini.</p>
+            <p style="text-align:center;color:#9aa4c2;padding:32px;font-size:13px;">Belum ada data untuk filter ini.</p>
         @endif
+    </div>
     </div>
 </div>
 
 @endsection
+
+@push('scripts')
+@include('laporan.partials.copy-image-script')
+@endpush
