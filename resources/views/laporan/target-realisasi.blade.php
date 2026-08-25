@@ -45,7 +45,12 @@
     .copy-btn:hover { background: #eaf0fb; }
     .copy-btn:disabled { color: #16803c; border-color: #16803c; background: #e5f7ec; cursor: default; }
 
+    /* ===== Garis pemisah kolom soft — border-right tipis di semua
+       th/td, dihilangkan di kolom terakhir supaya gak nempel tepi. ===== */
     .trend-table { width: 100%; border-collapse: collapse; }
+    .trend-table th, .trend-table td { border-right: 1px solid #eef0f6; }
+    .trend-table th:last-child, .trend-table td:last-child { border-right: none; }
+
     .trend-table thead th {
         white-space: nowrap; text-align: left; padding: 11px 22px; font-size: 11.5px;
         text-transform: uppercase; letter-spacing: .03em; color: #6b7690; font-weight: 700;
@@ -54,6 +59,18 @@
     }
     /* Kolom No dan Unit Pelaksana rata kiri, sisanya rata kanan agar rapi */
     .trend-table thead th:nth-child(n+3) { text-align: right; }
+
+    /* ===== Warna soft di header kolom Target & Realisasi (sub-row
+       kedua saja) — biru lembut untuk Target, hijau lembut untuk
+       Realisasi, teks di-bold lebih tegas biar menonjol. Kolom %
+       dibiarkan netral karena badge-nya sendiri sudah berwarna. ===== */
+    .trend-table thead tr.sub-row th.col-target {
+        background: #e4ebfb; color: #1d4ed8; font-weight: 800; border-right-color: rgba(255,255,255,.6);
+    }
+    .trend-table thead tr.sub-row th.col-realisasi {
+        background: #e3f6ea; color: #15803d; font-weight: 800; border-right-color: rgba(255,255,255,.6);
+    }
+
     .trend-table tbody td { padding: 13px 22px; font-size: 13.5px; color: var(--text-dark, #1b2559); border-bottom: 1px solid var(--border); }
     .trend-table tbody td:nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
     .trend-table tbody tr:last-child td { border-bottom: none; }
@@ -98,7 +115,7 @@
     @media (max-width: 640px) {
         .trend-table-head { padding: 16px; flex-direction: column; align-items: stretch; }
         .trend-table thead { display: none; }
-        .trend-table, .trend-table tbody, .trend-table tr, .trend-table td { display: block; width: 100%; }
+        .trend-table, .trend-table tbody, .trend-table tr, .trend-table td { display: block; width: 100%; border-right: none; }
         .trend-table tbody { padding: 10px; }
         .trend-table tbody tr {
             margin-bottom: 10px; border: 1px solid var(--border); border-radius: 12px;
@@ -184,9 +201,9 @@
                         <th rowspan="2" style="text-align: left;">Unit Pelaksana</th>
                         <th colspan="3" style="text-align: center;">Periode Terpilih</th>
                     </tr>
-                    <tr>
-                        <th style="text-align: right;">Target</th>
-                        <th style="text-align: right;">Realisasi</th>
+                    <tr class="sub-row">
+                        <th class="col-target" style="text-align: right;">Target</th>
+                        <th class="col-realisasi" style="text-align: right;">Realisasi</th>
                         <th style="text-align: right;">%</th>
                     </tr>
                 </thead>

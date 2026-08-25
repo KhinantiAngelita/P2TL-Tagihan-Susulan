@@ -20,15 +20,50 @@
         --plg-blue-bg: #eaf1ff;
     }
 
-    .plg-card { padding: 0; overflow: hidden; }
+    .plg-page-title { font-size: clamp(18px, 4.2vw, 22px); margin: 0 0 4px; color: #1b2559; font-weight: 700; }
 
+    .plg-card {
+        padding: 0; overflow: hidden; background: #fff;
+        border: 1px solid var(--border); border-radius: 16px; box-sizing: border-box;
+        box-shadow: 0 1px 2px rgba(16,24,64,.04);
+    }
+
+    /* ===== Header card — ikon + judul + deskripsi + badge jumlah,
+       senada pola trend-table-head di halaman lain. ===== */
+    .plg-card-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 20px 22px; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .plg-card-head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .plg-card-head-icon {
+        width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: #eaf0fb; color: #0b3d91;
+    }
+    .plg-card-head-icon svg { width: 17px; height: 17px; }
+    .plg-card-head h3 { margin: 0; font-size: 14.5px; color: #1b2559; font-weight: 700; }
+    .plg-card-head p { margin: 2px 0 0; font-size: 12px; color: #8892a8; }
+
+    .plg-count-badge {
+        background: #eaf0fb;
+        color: var(--blue-primary);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 999px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* ===== Toolbar pencarian & filter ===== */
     .plg-toolbar {
         display: flex;
         align-items: center;
         gap: 12px;
         flex-wrap: wrap;
-        padding: 18px 22px;
+        padding: 16px 22px;
         border-bottom: 1px solid var(--border);
+        background: #fbfcfe;
     }
     .plg-search-wrap { position: relative; flex: 1 1 240px; min-width: 200px; }
     .plg-search-wrap svg {
@@ -39,7 +74,7 @@
         width: 100%;
         box-sizing: border-box;
         border: 1px solid var(--border);
-        border-radius: 9px;
+        border-radius: 10px;
         padding: 9px 14px 9px 36px;
         font-size: 13px;
         background: #fff;
@@ -53,32 +88,37 @@
     }
     .filter-select {
         border: 1px solid var(--border);
-        border-radius: 9px;
+        border-radius: 10px;
         padding: 8px 14px 8px 34px;
         font-size: 13px;
+        font-weight: 600;
+        color: #1b2559;
         background: #fff;
         appearance: none;
         min-width: 140px;
+        cursor: pointer;
     }
+    .filter-select:focus { outline: none; border-color: var(--blue-primary, #0b3d91); }
 
-    .plg-count-badge {
-        background: #eaf0fb;
-        color: var(--blue-primary);
-        font-size: 12px;
-        font-weight: 700;
-        padding: 5px 12px;
-        border-radius: 999px;
-        white-space: nowrap;
+    .plg-search-btn {
+        background: #0b3d91; color: #fff; border: none; border-radius: 10px;
+        padding: 9px 20px; font-size: 13px; font-weight: 700; cursor: pointer;
+        transition: background .15s;
     }
+    .plg-search-btn:hover { background: #092f70; }
 
+    /* ===== Tabel — garis pemisah kolom soft di semua sel ===== */
     .plg-table-scroll { overflow-x: auto; }
     .plg-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 780px; }
     .plg-table th, .plg-table td {
         padding: 12px 16px;
         text-align: left;
         border-bottom: 1px solid #eef0f6;
+        border-right: 1px solid #eef0f6;
         white-space: nowrap;
     }
+    .plg-table th:last-child, .plg-table td:last-child { border-right: none; }
+
     .plg-table thead th {
         background: #0b3d91;
         color: #fff;
@@ -86,6 +126,7 @@
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: .03em;
+        border-right-color: rgba(255,255,255,.18);
     }
     .plg-table tbody tr:nth-child(even) { background: #f8f9fc; }
     .plg-table tbody tr:hover { background: #eef2fb; }
@@ -109,6 +150,7 @@
         border-radius: 999px;
         cursor: pointer;
         white-space: nowrap;
+        transition: background .15s;
     }
     .plg-detail-btn:hover { background: #eaf0fb; }
 
@@ -288,8 +330,10 @@
     @media (max-width: 640px) {
         .plg-modal-grid { grid-template-columns: 1fr; }
         .plg-modal-field.span-2 { grid-column: span 1; }
-        .plg-toolbar { flex-direction: column; align-items: stretch; }
+        .plg-card-head { padding: 16px; }
+        .plg-toolbar { flex-direction: column; align-items: stretch; padding: 14px 16px; }
         .plg-search-wrap { flex: 1 1 100%; }
+        .plg-search-btn { width: 100%; }
         .plg-pagination nav { justify-content: center; }
     }
 </style>
@@ -297,15 +341,25 @@
 
 @section('content')
 
-<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
-    <div>
-        <h2 style="margin:0 0 4px;font-size:22px;">Daftar Pelanggan</h2>
-        <p style="color:#6b7690;margin:0;font-size:14px;">Seluruh pelanggan dari dokumen yang sudah diupload</p>
-    </div>
-    <span class="plg-count-badge">{{ number_format($totalPelanggan, 0, ',', '.') }} Pelanggan</span>
+<div style="margin-bottom:16px;">
+    <h2 class="plg-page-title">Daftar Pelanggan</h2>
+    <p style="color:#6b7690;margin:0;font-size:14px;">Seluruh pelanggan dari dokumen yang sudah diupload</p>
 </div>
 
 <div class="card plg-card">
+    <div class="plg-card-head">
+        <div class="plg-card-head-left">
+            <div class="plg-card-head-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+                <h3>Daftar Pelanggan</h3>
+                <p>Cari & filter pelanggan dari seluruh laporan aktif</p>
+            </div>
+        </div>
+        <span class="plg-count-badge">{{ number_format($totalPelanggan, 0, ',', '.') }} Pelanggan</span>
+    </div>
+
     <form method="GET" class="plg-toolbar">
         <div class="plg-search-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -332,7 +386,7 @@
             </select>
         </div>
 
-        <button type="submit" class="btn" style="padding:9px 18px;border-radius:9px;">Cari</button>
+        <button type="submit" class="plg-search-btn">Cari</button>
     </form>
 
     <div class="plg-table-scroll">

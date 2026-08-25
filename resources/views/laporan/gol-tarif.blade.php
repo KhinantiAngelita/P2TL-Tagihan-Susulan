@@ -9,6 +9,8 @@
 
 @push('styles')
 <style>
+    .trend-page-title { font-size: clamp(18px, 4.2vw, 22px); margin: 0 0 4px; color: #1b2559; font-weight: 700; }
+
     .goltarif-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
@@ -16,234 +18,121 @@
         margin-bottom: 22px;
         align-items: stretch;
     }
-
-    @media (max-width: 1200px) {
-        .goltarif-grid { gap: 14px; }
-    }
-
+    @media (max-width: 1200px) { .goltarif-grid { gap: 14px; } }
     @media (max-width: 900px) {
-        .goltarif-grid {
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
+        .goltarif-grid { grid-template-columns: 1fr; gap: 16px; }
         .goltarif-card { height: auto !important; }
     }
 
+    /* ===== Card Prabayar/Paskabayar — bentuk original dipertahankan
+       (chart di atas, tabel scroll box di bawah dengan header & footer
+       bar penuh warna + kolom pertama sticky), warnanya diganti jadi
+       SOFT/PASTEL, bukan navy/orange solid kuat seperti sebelumnya. ===== */
     .goltarif-card {
         padding: 24px;
         background: #fff;
         border: 1px solid var(--border);
-        border-radius: 14px;
+        border-radius: 16px;
         box-sizing: border-box;
         min-width: 0;
         display: flex;
         flex-direction: column;
         height: 100%;
+        box-shadow: 0 1px 2px rgba(16,24,64,.04);
     }
 
     .goltarif-card-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
-        padding-bottom: 14px;
-        border-bottom: 1px solid #f1f3f9;
-        flex-shrink: 0;
-        gap: 12px;
-        flex-wrap: wrap;
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 18px; padding-bottom: 14px;
+        border-bottom: 1px solid #f1f3f9; flex-shrink: 0; gap: 12px; flex-wrap: wrap;
     }
     .goltarif-card h3 {
-        margin: 0 0 3px;
-        font-size: 15.5px;
-        color: #1b2559;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        margin: 0 0 3px; font-size: 15.5px; color: #1b2559;
+        display: flex; align-items: center; gap: 8px;
     }
-    .goltarif-card h3 .dot {
-        width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
-    }
-    .goltarif-card h3 .dot.prabayar   { background: #0b3d91; }
-    .goltarif-card h3 .dot.paskabayar { background: #e07a1f; }
+    .goltarif-card h3 .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .goltarif-card h3 .dot.prabayar   { background: #5a7fd6; }
+    .goltarif-card h3 .dot.paskabayar { background: #e6a15a; }
     .goltarif-card .sub { margin: 0; font-size: 12.5px; color: #6b7690; }
 
     .goltarif-year-badge {
-        background: #eaf0fb;
-        color: var(--blue-primary);
-        font-size: 12px;
-        font-weight: 700;
-        padding: 5px 12px;
-        border-radius: 999px;
-        white-space: nowrap;
-        flex-shrink: 0;
+        background: #eaf0fb; color: var(--blue-primary);
+        font-size: 12px; font-weight: 700; padding: 5px 12px;
+        border-radius: 999px; white-space: nowrap; flex-shrink: 0;
     }
-
-    .goltarif-head-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-shrink: 0;
-        margin-left: auto;
-        flex-wrap: wrap;
-    }
+    .goltarif-head-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; flex-wrap: wrap; }
 
     .copy-btn {
-        border: 1px solid var(--border);
-        background: #fff;
-        color: #0b3d91;
-        font-size: 12px;
-        font-weight: 700;
-        padding: 6px 12px;
-        border-radius: 999px;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: background .15s, color .15s;
+        border: 1px solid var(--border); background: #fff; color: #0b3d91;
+        font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px;
+        cursor: pointer; white-space: nowrap; transition: background .15s, color .15s;
     }
     .copy-btn:hover { background: #eaf0fb; }
     .copy-btn:disabled { color: #1a9c4a; border-color: #1a9c4a; cursor: default; }
 
-    .goltarif-chart-wrap {
-        position: relative;
-        height: 300px;
-        margin-bottom: 20px;
-        flex-shrink: 0;
-    }
-    @media (max-width: 900px) {
-        .goltarif-chart-wrap { height: 260px; }
-    }
+    .goltarif-chart-wrap { position: relative; height: 300px; margin-bottom: 20px; flex-shrink: 0; }
+    @media (max-width: 900px) { .goltarif-chart-wrap { height: 260px; } }
 
     .goltarif-table-scroll {
-        overflow-x: auto;
-        overflow-y: auto;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        flex: 1 1 auto;
-        min-height: 0;
+        overflow-x: auto; overflow-y: auto;
+        border-radius: 12px; border: 1px solid var(--border);
+        flex: 1 1 auto; min-height: 0;
     }
-    @media (min-width: 901px) {
-        .goltarif-table-scroll { max-height: 320px; }
+    @media (min-width: 901px) { .goltarif-table-scroll { max-height: 320px; } }
+
+    .goltarif-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 480px; }
+    .goltarif-table th, .goltarif-table td {
+        padding: 10px 12px; text-align: right; border-bottom: 1px solid #f1f3f9; white-space: nowrap;
     }
 
-    .goltarif-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12.5px;
-        min-width: 480px;
+    /* Kolom pertama (Tarif) sticky, background solid putih + garis pemisah */
+    .goltarif-table th:first-child, .goltarif-table td:first-child {
+        text-align: left; position: sticky; left: 0; z-index: 2; background: #fff; padding-right: 16px;
     }
-    .goltarif-table th,
-    .goltarif-table td {
-        padding: 10px 12px;
-        text-align: right;
-        border-bottom: 1px solid #f1f3f9;
-        white-space: nowrap;
+    .goltarif-table th:first-child::after, .goltarif-table td:first-child::after {
+        content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 2px; background: #dde3f5; z-index: 3;
     }
-
-    .goltarif-table th:first-child,
-    .goltarif-table td:first-child {
-        text-align: left;
-        position: sticky;
-        left: 0;
-        z-index: 2;
-        background: #fff;
-        padding-right: 16px;
-    }
-
-    .goltarif-table th:first-child::after,
-    .goltarif-table td:first-child::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: 2px;
-        background: #b9c2de;
-        z-index: 3;
-    }
-
-    .goltarif-table thead th:first-child::after,
-    .goltarif-table tfoot td:first-child::after {
-        background: rgba(255,255,255,0.4);
-    }
-    .goltarif-table tbody tr:nth-child(even) td:first-child {
-        background: #f8f9fc;
-    }
-    .goltarif-table thead th:first-child {
-        background: #0b3d91;
-        z-index: 3;
-    }
-    .goltarif-table tfoot td:first-child {
-        background: #0b3d91;
-        z-index: 3;
-    }
-
-    /* ===== Header: biru tua khas aplikasi, teks putih bold ===== */
-    .goltarif-table thead th {
-        background: #0b3d91;
-        color: #fff;
-        font-weight: 700;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: .03em;
-        white-space: nowrap;
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-    .goltarif-table tbody tr:nth-child(even) { background: #f8f9fc; }
-    .goltarif-table tbody tr:hover { background: #eef2fb; }
+    .goltarif-table tbody tr:nth-child(even) td:first-child { background: #f8f9fc; }
     .goltarif-table tbody td:first-child { font-weight: 700; color: #1b2559; }
 
-    /* ===== Baris TOTAL: biru tua sama seperti header (konsisten dgn
-       tabel lain di aplikasi), teks putih bold ===== */
-    .goltarif-table tfoot td {
-        font-weight: 800;
-        background: #0b3d91;
-        color: #fff;
-        border-bottom: none;
-        position: sticky;
-        bottom: 0;
+    /* ===== Header bar & footer bar — soft/pastel, teks putih tetap
+       terbaca karena warnanya masih cukup medium (bukan pucat banget). ===== */
+    .goltarif-table thead th {
+        color: #fff; font-weight: 700; font-size: 11px; text-transform: uppercase;
+        letter-spacing: .03em; white-space: nowrap; position: sticky; top: 0; z-index: 1;
     }
+    .goltarif-table tfoot td { font-weight: 800; color: #fff; border-bottom: none; position: sticky; bottom: 0; }
 
-    .goltarif-empty {
-        text-align: center;
-        color: #9aa4c2;
-        padding: 32px;
-        font-size: 13px;
-    }
+    .goltarif-card.tone-prabayar .goltarif-table thead th,
+    .goltarif-card.tone-prabayar .goltarif-table thead th:first-child,
+    .goltarif-card.tone-prabayar .goltarif-table tfoot td,
+    .goltarif-card.tone-prabayar .goltarif-table tfoot td:first-child { background: #6488dd; }
+
+    .goltarif-card.tone-paskabayar .goltarif-table thead th,
+    .goltarif-card.tone-paskabayar .goltarif-table thead th:first-child,
+    .goltarif-card.tone-paskabayar .goltarif-table tfoot td,
+    .goltarif-card.tone-paskabayar .goltarif-table tfoot td:first-child { background: #e6a15a; }
+
+    .goltarif-table thead th:first-child::after,
+    .goltarif-table tfoot td:first-child::after { background: rgba(255,255,255,.35); }
+
+    .goltarif-table tbody tr:nth-child(even) { background: #f8f9fc; }
+    .goltarif-table tbody tr:hover { background: #eef2fb; }
+
+    .goltarif-empty { text-align: center; color: #9aa4c2; padding: 32px; font-size: 13px; }
 
     .filter-wrap { position: relative; }
-    .filter-wrap svg {
-        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-        width: 14px; height: 14px; color: #9aa4c2; pointer-events: none;
-    }
+    .filter-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: #9aa4c2; pointer-events: none; }
     .filter-select {
-        border: 1px solid var(--border);
-        border-radius: 9px;
-        padding: 8px 14px 8px 34px;
-        font-size: 13px;
-        background: #fff;
-        appearance: none;
-        min-width: 110px;
+        border: 1px solid var(--border); border-radius: 9px; padding: 8px 14px 8px 34px;
+        font-size: 13px; background: #fff; appearance: none; min-width: 110px;
     }
 
-    .goltarif-title-select-wrap {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-    }
+    .goltarif-title-select-wrap { position: relative; display: inline-flex; align-items: center; }
     .goltarif-title-select {
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        border: none;
-        background: transparent;
-        color: #1b2559;
-        font: inherit;
-        font-weight: 700;
-        padding: 0 18px 0 0;
-        margin: 0;
-        cursor: pointer;
-        max-width: 240px;
+        appearance: none; -webkit-appearance: none; -moz-appearance: none;
+        border: none; background: transparent; color: #1b2559; font: inherit; font-weight: 700;
+        padding: 0 18px 0 0; margin: 0; cursor: pointer; max-width: 240px;
     }
     .goltarif-title-select:hover { color: #0b3d91; }
     .goltarif-title-select:focus { outline: none; color: #0b3d91; }
@@ -252,116 +141,67 @@
         width: 11px; height: 11px; color: #9aa4c2; pointer-events: none;
     }
 
+    /* ===== Card Rekap KWH per ULP — tetap struktur & warna pastel per
+       golongan seperti sudah disepakati sebelumnya. ===== */
     .ulp-card {
-        padding: 24px;
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        box-sizing: border-box;
-        margin-bottom: 20px;
+        padding: 24px; background: #fff; border: 1px solid var(--border);
+        border-radius: 16px; box-sizing: border-box; margin-bottom: 20px;
+        box-shadow: 0 1px 2px rgba(16,24,64,.04);
     }
     .ulp-card-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
-        padding-bottom: 14px;
-        border-bottom: 1px solid #f1f3f9;
-        gap: 12px;
-        flex-wrap: wrap;
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #f1f3f9; gap: 12px; flex-wrap: wrap;
     }
     .ulp-card h3 { margin: 0 0 3px; font-size: 15.5px; color: #1b2559; }
     .ulp-card .sub { margin: 0; font-size: 12.5px; color: #6b7690; }
 
-    .ulp-table-scroll {
-        overflow-x: auto;
-        border-radius: 10px;
-        border: 1px solid var(--border);
+    .ulp-table-scroll { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+    .ulp-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1180px; }
+    .ulp-table th, .ulp-table td {
+        padding: 9px 10px; text-align: center; border-bottom: 1px solid #eef0f6; border-right: 1px solid #eef0f6; white-space: nowrap;
     }
 
-    .ulp-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-        min-width: 1180px;
-    }
-    .ulp-table th,
-    .ulp-table td {
-        padding: 8px 10px;
-        text-align: center;
-        border-bottom: 1px solid #eef0f6;
-        border-right: 1px solid #eef0f6;
-        white-space: nowrap;
-    }
+    .ulp-table thead th { font-weight: 800; font-size: 10.5px; text-transform: uppercase; letter-spacing: .02em; }
+    .ulp-table thead tr.grp-row th { padding-top: 10px; padding-bottom: 8px; text-align: center; border-bottom: none; }
+    .ulp-table thead tr.sub-row th { font-size: 9.5px; font-weight: 700; padding-top: 6px; padding-bottom: 9px; }
 
-    .ulp-table thead th {
-        color: #fff;
-        font-weight: 700;
-        font-size: 10.5px;
-        text-transform: uppercase;
-        letter-spacing: .02em;
-    }
     .ulp-table thead tr:first-child th.col-no,
-    .ulp-table thead tr:first-child th.col-ulp {
-        background: #0b3d91;
-        vertical-align: middle;
-    }
-    .ulp-table thead th.grp-p1 { background: #1a7a3c; }
-    .ulp-table thead th.grp-p2 { background: #0b3d91; }
-    .ulp-table thead th.grp-p3 { background: #8a3d1f; }
-    .ulp-table thead th.grp-p4 { background: #b3001f; }
-    .ulp-table thead th.grp-k1 { background: #6a4fe0; }
-    .ulp-table thead th.grp-k2 { background: #0f6bd9; }
-    .ulp-table thead th.grp-k3 { background: #17803c; }
-    .ulp-table thead th.grp-total { background: #0b1f4d; }
+    .ulp-table thead tr:first-child th.col-ulp { background: #eef0f6; color: #1b2559; vertical-align: middle; }
 
-    /* Kolom PLG (jumlah pelanggan) dibedakan dikit dari kolom KWH/%
-       di grup yang sama, biar gampang dipisahin secara visual */
-    .ulp-table td.cell-plg { font-weight: 700; color: #1b2559; }
+    .ulp-table thead th.grp-p1 { background: #e3f6ea; color: #15803d; }
+    .ulp-table thead th.grp-p2 { background: #e4ebfb; color: #1d4ed8; }
+    .ulp-table thead th.grp-p3 { background: #fbedd9; color: #b45309; }
+    .ulp-table thead th.grp-p4 { background: #fbe2e2; color: #b91c1c; }
+    .ulp-table thead th.grp-k1 { background: #ece5fc; color: #6d28d9; }
+    .ulp-table thead th.grp-k2 { background: #dcf1fc; color: #0369a1; }
+    .ulp-table thead th.grp-k3 { background: #dcf6e5; color: #15803d; }
+    .ulp-table thead th.grp-total { background: #eef0f6; color: #1b2559; }
+
+    .ulp-table thead th.grp-p1, .ulp-table thead th.grp-p2, .ulp-table thead th.grp-p3, .ulp-table thead th.grp-p4,
+    .ulp-table thead th.grp-k1, .ulp-table thead th.grp-k2, .ulp-table thead th.grp-k3, .ulp-table thead th.grp-total {
+        border-left: 1px solid rgba(255,255,255,.7);
+    }
 
     .ulp-table th.col-no, .ulp-table td.col-no { position: sticky; left: 0; z-index: 2; width: 42px; }
     .ulp-table th.col-ulp, .ulp-table td.col-ulp { position: sticky; left: 42px; z-index: 2; text-align: left; font-weight: 700; min-width: 150px; }
-
     .ulp-table td.col-ulp { color: #1b2559; }
-    .ulp-table th.col-ulp { color: #fff; }
-    .ulp-table tbody tr:nth-child(even) td.col-no,
-    .ulp-table tbody tr:nth-child(even) td.col-ulp { background: #f8f9fc; }
+    .ulp-table th.col-ulp { color: #1b2559; }
+    .ulp-table tbody tr:nth-child(even) td.col-no, .ulp-table tbody tr:nth-child(even) td.col-ulp { background: #f8f9fc; }
+    .ulp-table th.col-no, .ulp-table td.col-no { background: #fff; }
 
     .ulp-table tbody tr:nth-child(even) { background: #f8f9fc; }
     .ulp-table tbody tr:hover { background: #eef2fb; }
 
-    .ulp-table td.cell-persen {
-        position: relative;
-        text-align: right;
-        padding-right: 10px;
-    }
+    .ulp-table td.cell-persen { position: relative; text-align: right; padding-right: 10px; }
     .persen-bar {
-        position: absolute;
-        left: 4px; top: 4px; bottom: 4px;
-        width: calc(var(--pct) * 0.01 * 30px);
-        max-width: 30px;
-        background: #34c77b;
-        border-radius: 3px;
-        opacity: .8;
+        position: absolute; left: 4px; top: 4px; bottom: 4px;
+        width: calc(var(--pct) * 0.01 * 30px); max-width: 30px;
+        background: #a7e0bf; border-radius: 3px; opacity: .8;
     }
-    .persen-text {
-        position: relative;
-        z-index: 1;
-    }
+    .persen-text { position: relative; z-index: 1; }
 
-    /* ===== Baris TOTAL tabel ULP: sama gaya biru tua konsisten ===== */
-    .ulp-table tfoot td {
-        font-weight: 800;
-        background: #0b3d91;
-        color: #fff;
-        border-bottom: none;
-    }
-    .ulp-table tfoot td:first-child,
-    .ulp-table tfoot td:nth-child(2) {
-        position: sticky;
-        left: 0;
-        z-index: 3;
-    }
+    .ulp-table tfoot td { font-weight: 800; background: #f7f8fc; color: #1b2559; border-top: 1px solid var(--border); border-bottom: none; }
+    .ulp-table tfoot td:first-child, .ulp-table tfoot td:nth-child(2) { position: sticky; left: 0; z-index: 3; }
 </style>
 @endpush
 
@@ -373,10 +213,8 @@
 
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
     <div>
-        <h2 style="margin:0 0 4px;font-size:22px;">Laporan Gol Tarif</h2>
-        <p style="color:#6b7690;margin:0;font-size:14px;">
-            Distribusi Rp TS berdasarkan golongan tarif &mdash; Prabayar vs Paskabayar
-        </p>
+        <h2 class="trend-page-title">Laporan Gol Tarif</h2>
+        <p style="color:#6b7690;margin:0;font-size:14px;">Distribusi Rp TS berdasarkan golongan tarif &mdash; Prabayar vs Paskabayar</p>
     </div>
 
     <form method="GET">
@@ -398,7 +236,7 @@
 <div class="goltarif-grid">
 
     {{-- ===== PRABAYAR ===== --}}
-    <div class="goltarif-card">
+    <div class="goltarif-card tone-prabayar">
         <div class="goltarif-card-head">
             <div>
                 <h3>
@@ -521,7 +359,7 @@
     </div>
 
     {{-- ===== PASKABAYAR ===== --}}
-    <div class="goltarif-card">
+    <div class="goltarif-card tone-paskabayar">
         <div class="goltarif-card-head">
             <div>
                 <h3><span class="dot paskabayar"></span> Gol Tarif Paskabayar</h3>
@@ -587,7 +425,7 @@
     <div class="ulp-card-head">
         <div>
             <h3>Rekap KWH per ULP — Golongan P</h3>
-            <p class="sub">Breakdown Jumlah Pelanggan, KWH, dan persentase &mdash; UID Jawa Barat</p>
+            <p class="sub">Jumlah Pelanggan, KWH, dan persentase &mdash; UID Jawa Barat</p>
         </div>
         <div class="goltarif-head-actions">
             <span class="goltarif-year-badge">{{ $tahunAktif ?: '-' }}</span>
@@ -600,17 +438,19 @@
             @if (count($ulpRowsP) > 0)
                 <table class="ulp-table" id="tabel-ulp-p">
                     <thead>
-                        <tr>
+                        <tr class="grp-row">
                             <th rowspan="2" class="col-no">No</th>
                             <th rowspan="2" class="col-ulp">ULP</th>
                             @foreach ($kolomUlpP as $g)
-                                <th colspan="3" class="grp-{{ strtolower($g) }}">{{ $g }}</th>
+                                @php $key = strtolower($g); @endphp
+                                <th colspan="3" class="grp-{{ $key }}">{{ $g }}</th>
                             @endforeach
                             <th colspan="3" class="grp-total">Total</th>
                         </tr>
-                        <tr>
+                        <tr class="sub-row">
                             @foreach ($kolomUlpP as $g)
-                                <th class="grp-{{ strtolower($g) }}">PLG</th><th class="grp-{{ strtolower($g) }}">KWH</th><th class="grp-{{ strtolower($g) }}">%</th>
+                                @php $key = strtolower($g); @endphp
+                                <th class="grp-{{ $key }}">PLG</th><th class="grp-{{ $key }}">KWH</th><th class="grp-{{ $key }}">%</th>
                             @endforeach
                             <th class="grp-total">PLG</th><th class="grp-total">KWH</th><th class="grp-total">%</th>
                         </tr>
@@ -623,17 +463,17 @@
 
                                 @foreach ($kolomUlpP as $g)
                                     @php $key = strtolower($g); @endphp
-                                    <td class="grp-{{ $key }} cell-plg">{{ number_format($row[$key]['plg'], 0, ',', '.') }}</td>
-                                    <td class="grp-{{ $key }}">{{ number_format($row[$key]['kwh'], 0, ',', '.') }}</td>
-                                    <td class="grp-{{ $key }} cell-persen">
+                                    <td>{{ number_format($row[$key]['plg'], 0, ',', '.') }}</td>
+                                    <td>{{ number_format($row[$key]['kwh'], 0, ',', '.') }}</td>
+                                    <td class="cell-persen">
                                         <span class="persen-bar" style="--pct: {{ $row[$key]['persen'] }}%"></span>
                                         <span class="persen-text">{{ number_format($row[$key]['persen'], 2, ',', '.') }}%</span>
                                     </td>
                                 @endforeach
 
-                                <td class="grp-total cell-plg">{{ number_format($row['total']['plg'], 0, ',', '.') }}</td>
-                                <td class="grp-total">{{ number_format($row['total']['kwh'], 0, ',', '.') }}</td>
-                                <td class="grp-total cell-persen">
+                                <td>{{ number_format($row['total']['plg'], 0, ',', '.') }}</td>
+                                <td>{{ number_format($row['total']['kwh'], 0, ',', '.') }}</td>
+                                <td class="cell-persen">
                                     <span class="persen-bar" style="--pct: {{ $row['total']['persen'] }}%"></span>
                                     <span class="persen-text">{{ number_format($row['total']['persen'], 2, ',', '.') }}%</span>
                                 </td>
@@ -645,13 +485,13 @@
                             <td colspan="2">UID JABAR</td>
                             @foreach ($kolomUlpP as $g)
                                 @php $key = strtolower($g); @endphp
-                                <td class="grp-{{ $key }}">{{ number_format($ulpTotalP[$key]['plg'], 0, ',', '.') }}</td>
-                                <td class="grp-{{ $key }}">{{ number_format($ulpTotalP[$key]['kwh'], 0, ',', '.') }}</td>
-                                <td class="grp-{{ $key }}">{{ number_format($ulpTotalP[$key]['persen'], 2, ',', '.') }}%</td>
+                                <td>{{ number_format($ulpTotalP[$key]['plg'], 0, ',', '.') }}</td>
+                                <td>{{ number_format($ulpTotalP[$key]['kwh'], 0, ',', '.') }}</td>
+                                <td>{{ number_format($ulpTotalP[$key]['persen'], 2, ',', '.') }}%</td>
                             @endforeach
-                            <td class="grp-total">{{ number_format($ulpTotalP['total']['plg'], 0, ',', '.') }}</td>
-                            <td class="grp-total">{{ number_format($ulpTotalP['total']['kwh'], 0, ',', '.') }}</td>
-                            <td class="grp-total">{{ number_format($ulpTotalP['total']['persen'], 2, ',', '.') }}%</td>
+                            <td>{{ number_format($ulpTotalP['total']['plg'], 0, ',', '.') }}</td>
+                            <td>{{ number_format($ulpTotalP['total']['kwh'], 0, ',', '.') }}</td>
+                            <td>{{ number_format($ulpTotalP['total']['persen'], 2, ',', '.') }}%</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -667,7 +507,7 @@
     <div class="ulp-card-head">
         <div>
             <h3>Rekap KWH per ULP — Golongan K</h3>
-            <p class="sub">Breakdown Jumlah Pelanggan, KWH, dan persentase &mdash; UID Jawa Barat</p>
+            <p class="sub">Jumlah Pelanggan, KWH, dan persentase &mdash; UID Jawa Barat</p>
         </div>
         <div class="goltarif-head-actions">
             <span class="goltarif-year-badge">{{ $tahunAktif ?: '-' }}</span>
@@ -680,17 +520,19 @@
             @if (count($ulpRowsK) > 0)
                 <table class="ulp-table" id="tabel-ulp-k">
                     <thead>
-                        <tr>
+                        <tr class="grp-row">
                             <th rowspan="2" class="col-no">No</th>
                             <th rowspan="2" class="col-ulp">ULP</th>
                             @foreach ($kolomUlpKTampil as $g)
-                                <th colspan="3" class="grp-{{ strtolower($g) }}">{{ $g }}</th>
+                                @php $key = strtolower($g); @endphp
+                                <th colspan="3" class="grp-{{ $key }}">{{ $g }}</th>
                             @endforeach
                             <th colspan="3" class="grp-total">Total</th>
                         </tr>
-                        <tr>
+                        <tr class="sub-row">
                             @foreach ($kolomUlpKTampil as $g)
-                                <th class="grp-{{ strtolower($g) }}">PLG</th><th class="grp-{{ strtolower($g) }}">KWH</th><th class="grp-{{ strtolower($g) }}">%</th>
+                                @php $key = strtolower($g); @endphp
+                                <th class="grp-{{ $key }}">PLG</th><th class="grp-{{ $key }}">KWH</th><th class="grp-{{ $key }}">%</th>
                             @endforeach
                             <th class="grp-total">PLG</th><th class="grp-total">KWH</th><th class="grp-total">%</th>
                         </tr>
@@ -703,17 +545,17 @@
 
                                 @foreach ($kolomUlpKTampil as $g)
                                     @php $key = strtolower($g); @endphp
-                                    <td class="grp-{{ $key }} cell-plg">{{ number_format($row[$key]['plg'], 0, ',', '.') }}</td>
-                                    <td class="grp-{{ $key }}">{{ number_format($row[$key]['kwh'], 0, ',', '.') }}</td>
-                                    <td class="grp-{{ $key }} cell-persen">
+                                    <td>{{ number_format($row[$key]['plg'], 0, ',', '.') }}</td>
+                                    <td>{{ number_format($row[$key]['kwh'], 0, ',', '.') }}</td>
+                                    <td class="cell-persen">
                                         <span class="persen-bar" style="--pct: {{ $row[$key]['persen'] }}%"></span>
                                         <span class="persen-text">{{ number_format($row[$key]['persen'], 2, ',', '.') }}%</span>
                                     </td>
                                 @endforeach
 
-                                <td class="grp-total cell-plg">{{ number_format($row['total']['plg'], 0, ',', '.') }}</td>
-                                <td class="grp-total">{{ number_format($row['total']['kwh'], 0, ',', '.') }}</td>
-                                <td class="grp-total cell-persen">
+                                <td>{{ number_format($row['total']['plg'], 0, ',', '.') }}</td>
+                                <td>{{ number_format($row['total']['kwh'], 0, ',', '.') }}</td>
+                                <td class="cell-persen">
                                     <span class="persen-bar" style="--pct: {{ $row['total']['persen'] }}%"></span>
                                     <span class="persen-text">{{ number_format($row['total']['persen'], 2, ',', '.') }}%</span>
                                 </td>
@@ -725,13 +567,13 @@
                             <td colspan="2">UID JABAR</td>
                             @foreach ($kolomUlpKTampil as $g)
                                 @php $key = strtolower($g); @endphp
-                                <td class="grp-{{ $key }}">{{ number_format($ulpTotalK[$key]['plg'], 0, ',', '.') }}</td>
-                                <td class="grp-{{ $key }}">{{ number_format($ulpTotalK[$key]['kwh'], 0, ',', '.') }}</td>
-                                <td class="grp-{{ $key }}">{{ number_format($ulpTotalK[$key]['persen'], 2, ',', '.') }}%</td>
+                                <td>{{ number_format($ulpTotalK[$key]['plg'], 0, ',', '.') }}</td>
+                                <td>{{ number_format($ulpTotalK[$key]['kwh'], 0, ',', '.') }}</td>
+                                <td>{{ number_format($ulpTotalK[$key]['persen'], 2, ',', '.') }}%</td>
                             @endforeach
-                            <td class="grp-total">{{ number_format($ulpTotalK['total']['plg'], 0, ',', '.') }}</td>
-                            <td class="grp-total">{{ number_format($ulpTotalK['total']['kwh'], 0, ',', '.') }}</td>
-                            <td class="grp-total">{{ number_format($ulpTotalK['total']['persen'], 2, ',', '.') }}%</td>
+                            <td>{{ number_format($ulpTotalK['total']['plg'], 0, ',', '.') }}</td>
+                            <td>{{ number_format($ulpTotalK['total']['kwh'], 0, ',', '.') }}</td>
+                            <td>{{ number_format($ulpTotalK['total']['persen'], 2, ',', '.') }}%</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -777,7 +619,7 @@ function toggleGolTarifView(view) {
                 labels: labels,
                 datasets: [{
                     data: data,
-                    backgroundColor: ['#0b3d91', '#e07a1f', '#9aa4c2', '#ffce3a', '#1a9c4a', '#d81b60', '#3d63b8', '#6b8fd6'],
+                    backgroundColor: ['#5a7fd6', '#e6a15a', '#9aa4c2', '#f0cf6f', '#6bbf8f', '#e07a9e', '#7c93d6', '#8fa8e0'],
                     borderWidth: 2,
                     borderColor: '#fff',
                 }]
@@ -826,4 +668,4 @@ function toggleGolTarifView(view) {
 })();
 </script>
 @include('laporan.partials.copy-image-script')
-@endpush    
+@endpush

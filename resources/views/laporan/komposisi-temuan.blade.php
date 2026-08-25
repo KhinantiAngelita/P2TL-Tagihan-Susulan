@@ -9,87 +9,122 @@
 
 @push('styles')
 <style>
-    .komposisi-card {
-        padding: 24px;
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        box-sizing: border-box;
+    .trend-page-title { font-size: clamp(18px, 4.2vw, 22px); margin: 0 0 4px; color: #1b2559; font-weight: 700; }
+
+    .trend-table-card {
+        padding: 0; overflow: hidden; background: #fff;
+        border: 1px solid var(--border); border-radius: 16px; box-sizing: border-box;
+        box-shadow: 0 1px 2px rgba(16,24,64,.04);
     }
-    .komposisi-card-actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-bottom: 12px;
+    .trend-table-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 20px 22px; border-bottom: 1px solid var(--border); flex-wrap: wrap;
     }
+    .trend-table-head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .trend-table-head-icon {
+        width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: #eaf0fb; color: #0b3d91;
+    }
+    .trend-table-head-icon svg { width: 17px; height: 17px; }
+    .trend-table-head h3 { margin: 0; font-size: 14.5px; color: #1b2559; font-weight: 700; }
+    .trend-table-head p { margin: 2px 0 0; font-size: 12px; color: #8892a8; }
+
     .copy-btn {
         border: 1px solid var(--border);
         background: #fff;
         color: #0b3d91;
         font-size: 12px;
         font-weight: 700;
-        padding: 6px 12px;
-        border-radius: 999px;
+        padding: 7px 14px;
+        border-radius: 9px;
         cursor: pointer;
         white-space: nowrap;
         transition: background .15s, color .15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
     .copy-btn:hover { background: #eaf0fb; }
-    .copy-btn:disabled { color: #1a9c4a; border-color: #1a9c4a; cursor: default; }
+    .copy-btn:disabled { color: #16803c; border-color: #16803c; background: #e5f7ec; cursor: default; }
 
-    .komposisi-table-scroll {
-        overflow-x: auto;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-    }
-    .komposisi-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12.5px;
-        min-width: 900px;
-    }
-    .komposisi-table th, .komposisi-table td {
-        padding: 10px 12px;
-        text-align: center;
-        border-bottom: 1px solid #eef0f6;
+    .komposisi-table-scroll { overflow-x: auto; }
+
+    /* ===== Tabel dasar — garis pemisah kolom soft di SEMUA sel
+       (header, body, footer), bukan cuma header ===== */
+    .rpt-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .rpt-table th, .rpt-table td {
+        padding: 12px 16px; font-size: 12.5px; white-space: nowrap; text-align: right;
         border-right: 1px solid #eef0f6;
-        white-space: nowrap;
     }
-    .komposisi-table thead th {
-        color: #fff;
-        font-weight: 700;
-        font-size: 11px;
-        text-transform: uppercase;
+    .rpt-table th:last-child, .rpt-table td:last-child { border-right: none; }
+
+    /* ===== Header — warna cuma di sini, 2 baris (judul grup + sub-header) ===== */
+    .rpt-table thead th {
+        border-bottom: 1px solid var(--border);
+        position: sticky; top: 0; z-index: 1;
     }
-    .komposisi-table thead tr:first-child th.col-no,
-    .komposisi-table thead tr:first-child th.col-up3 { background: #0b3d91; vertical-align: middle; }
-    .komposisi-table thead th.grp-p { background: #b3001f; }
-    .komposisi-table thead th.grp-k { background: #8a6d1f; }
-    .komposisi-table thead th.grp-total { background: #0b1f4d; }
-
-    .komposisi-table th.col-no, .komposisi-table td.col-no { width: 42px; }
-    .komposisi-table th.col-up3, .komposisi-table td.col-up3 { text-align: left; font-weight: 700; color: #1b2559; min-width: 150px; }
-    .komposisi-table thead th.col-up3 { color: #fff; }
-
-    .komposisi-table tbody tr:nth-child(even) { background: #f8f9fc; }
-    .komposisi-table tbody tr:hover { background: #eef2fb; }
-
-    .komposisi-table td.cell-persen { position: relative; text-align: right; padding-right: 10px; }
-    .komposisi-persen-bar {
-        position: absolute; left: 4px; top: 4px; bottom: 4px;
-        width: calc(var(--pct) * 0.01 * 30px);
-        max-width: 30px;
-        background: #34c77b;
-        border-radius: 3px;
-        opacity: .8;
+    .rpt-table thead tr.grp-row th {
+        font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .02em;
+        padding-top: 10px; padding-bottom: 8px; border-bottom: none; text-align: center;
     }
-    .komposisi-persen-text { position: relative; z-index: 1; }
-
-    .komposisi-table tfoot td {
-        font-weight: 800;
-        background: #0b3d91;
-        color: #fff;
-        border-bottom: none;
+    .rpt-table thead tr.sub-row th {
+        font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+        padding-top: 6px; padding-bottom: 9px;
     }
+
+    .rpt-table thead th.grp-p { background: #e4ebfb; color: #1d4ed8; }
+    .rpt-table thead th.grp-k { background: #fbedd9; color: #b45309; }
+    .rpt-table thead th.grp-total { background: #eef0f6; color: #1b2559; }
+
+    /* Garis pemisah putih tipis di dalam header berwarna (antar PLG/KWH/TS),
+       lebih terang dari border abu biasa supaya kebaca di atas warna gelap */
+    .rpt-table thead th.grp-p,
+    .rpt-table thead th.grp-k,
+    .rpt-table thead th.grp-total {
+        border-right: 1px solid rgba(255,255,255,.55);
+    }
+    .rpt-table thead tr.grp-row th.grp-p:last-of-type,
+    .rpt-table thead tr.grp-row th.grp-k:last-of-type,
+    .rpt-table thead tr.grp-row th.grp-total:last-of-type {
+        border-right: none;
+    }
+    /* Garis lebih tebal/gelap di batas ANTAR grup (P|K|Total), biar
+       transisi antar kelompok kolom tetap kelihatan jelas */
+    .rpt-table th.grp-start-outer, .rpt-table td.grp-start-outer {
+        border-left: 1px solid #dde1ee;
+    }
+
+    /* ===== Body & footer — netral, garis kolom soft abu tipis ===== */
+    .rpt-table tbody td { color: #1b2559; border-bottom: 1px solid #f1f2f8; }
+    .rpt-table tbody tr:last-child td { border-bottom: none; }
+    .rpt-table tbody tr:nth-child(even) td { background: #f8f9fc; }
+    .rpt-table tbody tr:hover td { background: #eef2fb; }
+
+    .rpt-table tfoot td {
+        font-weight: 800; background: #f7f8fc; color: #1b2559; border-top: 1px solid var(--border);
+    }
+
+    /* Kolom No + UP3 sticky di kiri */
+    .rpt-table th.col-no, .rpt-table td.col-no {
+        width: 40px; min-width: 40px; text-align: left;
+        position: sticky; left: 0; z-index: 2; background: #fff; color: #b3bad0;
+    }
+    .rpt-table th.col-nama, .rpt-table td.col-nama {
+        min-width: 155px; text-align: left; font-weight: 700; color: #1b2559;
+        position: sticky; left: 40px; z-index: 2; background: #fff;
+    }
+    .rpt-table thead th.col-no,
+    .rpt-table thead th.col-nama { background: #eef0f6; color: #1b2559; z-index: 3; }
+    .rpt-table tbody tr:nth-child(even) td.col-no,
+    .rpt-table tbody tr:nth-child(even) td.col-nama { background: #f8f9fc; }
+    .rpt-table tbody tr:hover td.col-no,
+    .rpt-table tbody tr:hover td.col-nama { background: #eef2fb; }
+    .rpt-table tfoot td.col-no,
+    .rpt-table tfoot td.col-nama {
+        position: sticky; left: 0; z-index: 3; background: #f7f8fc; text-align: left;
+    }
+    .rpt-table tfoot td.col-nama { left: 40px; }
 
     .filter-wrap { position: relative; }
     .filter-wrap svg {
@@ -101,17 +136,25 @@
         border-radius: 9px;
         padding: 8px 14px 8px 34px;
         font-size: 13px;
+        font-weight: 600;
         background: #fff;
+        color: #1b2559;
         appearance: none;
+        cursor: pointer;
+    }
+    .filter-select:focus { outline: none; border-color: var(--blue-primary, #0b3d91); }
+
+    @media (max-width: 640px) {
+        .trend-table-head { padding: 16px; }
     }
 </style>
 @endpush
 
 @section('content')
 
-<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
     <div>
-        <h2 style="margin:0 0 4px;font-size:22px;">Komposisi Temuan Gol P & K Per UP3</h2>
+        <h2 class="trend-page-title">Komposisi Temuan Gol P & K Per UP3</h2>
         <p style="color:#6b7690;margin:0;font-size:14px;">Rekap jumlah pelanggan, KWH, dan TS per UP3</p>
     </div>
 
@@ -131,67 +174,72 @@
 
 @include('laporan.partials.filter-periode-ulp')
 
-<div class="komposisi-card">
-    <div class="komposisi-card-actions">
-        <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-komposisi', this, 'Komposisi Temuan Gol P & K Per UP3')">📷 Salin Gambar</button>
+<div class="trend-table-card">
+    <div class="trend-table-head">
+        <div class="trend-table-head-left">
+            <div class="trend-table-head-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+            </div>
+            <div>
+                <h3>Rincian per UP3</h3>
+                <p>Komposisi temuan golongan P vs K</p>
+            </div>
+        </div>
+        <div>
+            <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-komposisi', this, 'Komposisi Temuan Gol P & K Per UP3')">📷 Salin Gambar</button>
+        </div>
     </div>
 
     <div id="capture-komposisi">
     <div class="komposisi-table-scroll">
         @if (count($rows) > 0)
-            <table class="komposisi-table" id="tabel-komposisi">
+            <table class="rpt-table" id="tabel-komposisi">
                 <thead>
-                    <tr>
+                    <tr class="grp-row">
                         <th rowspan="2" class="col-no">No</th>
-                        <th rowspan="2" class="col-up3">UP3</th>
-                        <th colspan="3" class="grp-p">Temuan P</th>
-                        <th colspan="3" class="grp-k">Temuan K</th>
-                        <th colspan="3" class="grp-total">Total</th>
+                        <th rowspan="2" class="col-nama">UP3</th>
+                        <th colspan="3" class="grp-p grp-start-outer">Temuan P</th>
+                        <th colspan="3" class="grp-k grp-start-outer">Temuan K</th>
+                        <th colspan="3" class="grp-total grp-start-outer">Total</th>
                     </tr>
-                    <tr>
-                        <th class="grp-p">PLG</th><th class="grp-p">KWH</th><th class="grp-p">TS</th>
-                        <th class="grp-k">PLG</th><th class="grp-k">KWH</th><th class="grp-k">TS</th>
-                        <th class="grp-total">KWH</th><th class="grp-total">% P KWH</th><th class="grp-total">% K KWH</th>
+                    <tr class="sub-row">
+                        <th class="grp-p grp-start-outer">PLG</th><th class="grp-p">KWH</th><th class="grp-p">TS</th>
+                        <th class="grp-k grp-start-outer">PLG</th><th class="grp-k">KWH</th><th class="grp-k">TS</th>
+                        <th class="grp-total grp-start-outer">KWH</th><th class="grp-total">% P KWH</th><th class="grp-total">% K KWH</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($rows as $i => $row)
                         <tr>
                             <td class="col-no">{{ $i + 1 }}</td>
-                            <td class="col-up3">{{ $row['nama'] }}</td>
+                            <td class="col-nama">{{ $row['nama'] }}</td>
 
-                            <td class="grp-p">{{ number_format($row['p']['plg'], 0, ',', '.') }}</td>
-                            <td class="grp-p">{{ number_format($row['p']['kwh'], 0, ',', '.') }}</td>
-                            <td class="grp-p">{{ number_format($row['p']['ts'], 0, ',', '.') }}</td>
+                            <td class="grp-start-outer">{{ number_format($row['p']['plg'], 0, ',', '.') }}</td>
+                            <td>{{ number_format($row['p']['kwh'], 0, ',', '.') }}</td>
+                            <td>{{ number_format($row['p']['ts'], 0, ',', '.') }}</td>
 
-                            <td class="grp-k">{{ number_format($row['k']['plg'], 0, ',', '.') }}</td>
-                            <td class="grp-k">{{ number_format($row['k']['kwh'], 0, ',', '.') }}</td>
-                            <td class="grp-k">{{ number_format($row['k']['ts'], 0, ',', '.') }}</td>
+                            <td class="grp-start-outer">{{ number_format($row['k']['plg'], 0, ',', '.') }}</td>
+                            <td>{{ number_format($row['k']['kwh'], 0, ',', '.') }}</td>
+                            <td>{{ number_format($row['k']['ts'], 0, ',', '.') }}</td>
 
-                            <td class="grp-total">{{ number_format($row['total_kwh'], 0, ',', '.') }}</td>
-                            <td class="grp-total cell-persen">
-                                <span class="komposisi-persen-bar" style="--pct: {{ $row['persen_p'] }}%"></span>
-                                <span class="komposisi-persen-text">{{ number_format($row['persen_p'], 2, ',', '.') }}%</span>
-                            </td>
-                            <td class="grp-total cell-persen">
-                                <span class="komposisi-persen-bar" style="--pct: {{ $row['persen_k'] }}%"></span>
-                                <span class="komposisi-persen-text">{{ number_format($row['persen_k'], 2, ',', '.') }}%</span>
-                            </td>
+                            <td class="grp-start-outer">{{ number_format($row['total_kwh'], 0, ',', '.') }}</td>
+                            <td>{{ number_format($row['persen_p'], 2, ',', '.') }}%</td>
+                            <td>{{ number_format($row['persen_k'], 2, ',', '.') }}%</td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="2">UID JABAR</td>
-                        <td class="grp-p">{{ number_format($totalRingkasan['p']['plg'], 0, ',', '.') }}</td>
-                        <td class="grp-p">{{ number_format($totalRingkasan['p']['kwh'], 0, ',', '.') }}</td>
-                        <td class="grp-p">{{ number_format($totalRingkasan['p']['ts'], 0, ',', '.') }}</td>
-                        <td class="grp-k">{{ number_format($totalRingkasan['k']['plg'], 0, ',', '.') }}</td>
-                        <td class="grp-k">{{ number_format($totalRingkasan['k']['kwh'], 0, ',', '.') }}</td>
-                        <td class="grp-k">{{ number_format($totalRingkasan['k']['ts'], 0, ',', '.') }}</td>
-                        <td class="grp-total">{{ number_format($totalRingkasan['total_kwh'], 0, ',', '.') }}</td>
-                        <td class="grp-total">{{ number_format($totalRingkasan['persen_p'], 2, ',', '.') }}%</td>
-                        <td class="grp-total">{{ number_format($totalRingkasan['persen_k'], 2, ',', '.') }}%</td>
+                        <td colspan="2" class="col-nama">UID JABAR</td>
+                        <td class="grp-start-outer">{{ number_format($totalRingkasan['p']['plg'], 0, ',', '.') }}</td>
+                        <td>{{ number_format($totalRingkasan['p']['kwh'], 0, ',', '.') }}</td>
+                        <td>{{ number_format($totalRingkasan['p']['ts'], 0, ',', '.') }}</td>
+                        <td class="grp-start-outer">{{ number_format($totalRingkasan['k']['plg'], 0, ',', '.') }}</td>
+                        <td>{{ number_format($totalRingkasan['k']['kwh'], 0, ',', '.') }}</td>
+                        <td>{{ number_format($totalRingkasan['k']['ts'], 0, ',', '.') }}</td>
+                        <td class="grp-start-outer">{{ number_format($totalRingkasan['total_kwh'], 0, ',', '.') }}</td>
+                        <td>{{ number_format($totalRingkasan['persen_p'], 2, ',', '.') }}%</td>
+                        <td>{{ number_format($totalRingkasan['persen_k'], 2, ',', '.') }}%</td>
                     </tr>
                 </tfoot>
             </table>
