@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\DetailTagihanSusulan;
 use App\Models\LaporanSusulan;
+use App\Support\ChartImageGenerator;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class DetailDataController extends Controller
@@ -137,7 +139,7 @@ class DetailDataController extends Controller
                 $q->whereRaw(self::TANGGAL_AGENDA_SQL . ' <= ?', [\Carbon\Carbon::parse($tanggalSampai)->format('Ymd')]);
             })
             ->orderBy('no')
-            ->paginate(15)
+            ->paginate(20)
             ->withQueryString();
 
         $daftarGolongan = (clone $detailBase())
@@ -169,6 +171,36 @@ class DetailDataController extends Controller
             ->orderByDesc('tahun')->orderByDesc('bulan')
             ->get(['id', 'bulan', 'tahun']);
 
+        // ---- Distribusi golongan dengan jumlah pelanggan, KWH, dan persentase ----
+        // ---- Distribusi golongan dengan jumlah pelanggan, KWH, dan persentase ----
+        // SEBELUM: (clone $detailBase())
+        $distribusiGolonganDetail = (clone $chartBase())
+            ->selectRaw('gol, COUNT(*) as jumlah_pelanggan, SUM(kwh) as total_kwh')
+            ->groupBy('gol')
+            ->orderBy('gol')
+            ->get()
+            ->map(function ($row) use ($totalKwh) {
+                $row->persen_kwh = $totalKwh > 0 ? round($row->total_kwh / $totalKwh * 100, 1) : 0;
+                return $row;
+            });
+
+        // ---- Komposisi golongan P vs K (berdasarkan huruf awal kolom `gol`) ----
+        // SEBELUM: (clone $detailBase())
+        $totalPelangganP = (clone $chartBase())->where('gol', 'like', 'P%')->count();
+        $totalPelangganK = (clone $chartBase())->where('gol', 'like', 'K%')->count();
+        $totalPelangganKeseluruhan = $totalPelangganP + $totalPelangganK;
+
+        // ---- Tren harian jumlah pelanggan golongan P vs K ----
+        // SEBELUM: (clone $detailBase())
+        $trenPK = (clone $chartBase())
+            ->selectRaw("DATE(tanggal_register) as tanggal,
+                SUM(CASE WHEN gol LIKE 'P%' THEN 1 ELSE 0 END) as jumlah_p,
+                SUM(CASE WHEN gol LIKE 'K%' THEN 1 ELSE 0 END) as jumlah_k")
+            ->whereNotNull('tanggal_register')
+            ->groupBy('tanggal')
+            ->orderBy('tanggal')
+            ->get();   
+
         return view('detail-data.index', [
             'laporan'            => $laporan,
             'rows'               => $rows,
@@ -189,6 +221,11 @@ class DetailDataController extends Controller
             'totalPenetapan'     => $totalPenetapan,
             'totalTunaiChart'    => $totalTunaiChart,
             'totalAngsuranChart' => $totalAngsuranChart,
+            'distribusiGolonganDetail' => $distribusiGolonganDetail,
+            'totalPelangganP'    => $totalPelangganP,
+            'totalPelangganK'    => $totalPelangganK,
+            'totalPelangganKeseluruhan' => $totalPelangganKeseluruhan,
+            'trenPK'             => $trenPK,
         ]);
     }
 
@@ -202,64 +239,6 @@ class DetailDataController extends Controller
     public function showDetail(DetailTagihanSusulan $detail)
     {
         return response()->json($detail);
-    }
-
-    /**
-     * Modal "Edit Data Pelanggan": form ubah SEMUA kolom satu baris
-     * DetailTagihanSusulan.
-     *
-     * View : resources/views/detail-data/edit.blade.php
-     * Route: GET /data-detail/{detail}/edit -> name('detail-data.edit')
-     */
-    public function edit(DetailTagihanSusulan $detail)
-    {
-        return view('detail-data.edit', [
-            'detail' => $detail,
-        ]);
-    }
-
-    /**
-     * Simpan perubahan dari form edit. Kolom `total` dihitung ulang
-     * otomatis dari tunai + angsuran, sesuai catatan "Dihitung otomatis"
-     * di form.
-     *
-     * Route: PUT /data-detail/{detail} -> name('detail-data.update')
-     */
-    public function update(Request $request, DetailTagihanSusulan $detail)
-    {
-        $validated = $request->validate([
-            'no_agenda'        => 'nullable|string|max:50',
-            'idpel'            => 'required|string|max:20',
-            'nama'             => 'required|string|max:150',
-            'gol'              => 'nullable|string|max:10',
-            'alamat'           => 'nullable|string|max:255',
-            'daya'             => 'nullable|string|max:30',
-            'kwh'              => 'nullable|numeric|min:0',
-            'beban'            => 'nullable|numeric|min:0',
-            'kwh_rupiah'       => 'nullable|numeric|min:0',
-            'ts'               => 'nullable|numeric|min:0',
-            'materai'          => 'nullable|numeric|min:0',
-            'segel'            => 'nullable|numeric|min:0',
-            'materia'          => 'nullable|numeric|min:0',
-            'rpppj'            => 'nullable|numeric|min:0',
-            'rpujl'            => 'nullable|numeric|min:0',
-            'rpppn'            => 'nullable|numeric|min:0',
-            'tunai'            => 'nullable|numeric|min:0',
-            'angsuran'         => 'nullable|numeric|min:0',
-            'tanggal_register' => 'nullable|date',
-            'nomor_register'   => 'nullable|string|max:50',
-            'tanggal_sph'      => 'nullable|date',
-            'nomor_sph'        => 'nullable|string|max:50',
-        ]);
-
-        // Total = Tunai + Angsuran (dihitung otomatis, bukan input manual)
-        $validated['total'] = (float) ($validated['tunai'] ?? 0) + (float) ($validated['angsuran'] ?? 0);
-
-        $detail->update($validated);
-
-        return redirect()
-            ->route('detail-data.show', $detail->laporan_susulan_id)
-            ->with('success', 'Data pelanggan berhasil diperbarui.');
     }
 
     /**
@@ -317,5 +296,228 @@ class DetailDataController extends Controller
         }
 
         return number_format($value, 0, ',', '.');
+    }
+    public function exportPdf(Request $request, LaporanSusulan $laporan)
+    {
+        ini_set('memory_limit', '2048M');
+        set_time_limit(0);
+
+        // =========================
+        // FILTER
+        // =========================
+        $search        = $request->input('search');
+        $golonganAktif = $request->input('golongan', 'semua');
+        $ulpAktif      = $request->input('ulp', 'semua');
+        $tanggalDari   = $request->input('tanggal_dari');
+        $tanggalSampai = $request->input('tanggal_sampai');
+
+                // =========================
+        // BASE QUERY
+        // =========================
+        $base = function () use ($laporan) {
+            return DetailTagihanSusulan::where(
+                'laporan_susulan_id',
+                $laporan->id
+            );
+        };
+
+        // ---- Base khusus kartu ringkasan & grafik — filter tanggal_dari/
+        //      tanggal_sampai berdasarkan tanggal_register, SAMA PERSIS
+        //      dengan $chartBase di method show() (web). ----
+        $chartBase = function () use ($laporan, $tanggalDari, $tanggalSampai) {
+            return DetailTagihanSusulan::where('laporan_susulan_id', $laporan->id)
+                ->when($tanggalDari, fn ($q) => $q->whereDate('tanggal_register', '>=', $tanggalDari))
+                ->when($tanggalSampai, fn ($q) => $q->whereDate('tanggal_register', '<=', $tanggalSampai));
+        };
+
+        try {
+            // =========================
+            // DATA DETAIL PDF
+            // =========================
+            $rows = $base()
+                ->when($search, function ($q) use ($search) {
+                    $q->where(function ($sub) use ($search) {
+                        $sub->where('idpel', 'like', "%{$search}%")
+                            ->orWhere('nama', 'like', "%{$search}%");
+                    });
+                })
+                ->when($golonganAktif && strtolower($golonganAktif) !== 'semua', function ($q) use ($golonganAktif) {
+                    $q->where('gol', $golonganAktif);
+                })
+                ->when($ulpAktif && strtolower($ulpAktif) !== 'semua', function ($q) use ($ulpAktif) {
+                    $q->whereRaw(self::ULP_SQL . ' = ?', [$ulpAktif]);
+                })
+                ->when($tanggalDari, function ($q) use ($tanggalDari) {
+                    $q->whereRaw(self::TANGGAL_AGENDA_SQL . ' >= ?', [
+                        \Carbon\Carbon::parse($tanggalDari)->format('Ymd'),
+                    ]);
+                })
+                ->when($tanggalSampai, function ($q) use ($tanggalSampai) {
+                    $q->whereRaw(self::TANGGAL_AGENDA_SQL . ' <= ?', [
+                        \Carbon\Carbon::parse($tanggalSampai)->format('Ymd'),
+                    ]);
+                })
+                ->orderBy('no')
+                ->get();
+
+            // =========================
+            // TOTAL
+            // =========================
+            $totalKwh = (clone $chartBase())->sum('kwh');
+            $totalTs = (clone $chartBase())->sum('ts');
+            $totalTunai = (clone $chartBase())->sum('tunai');
+            $totalAngsuran = (clone $chartBase())->sum('angsuran');
+            $totalPenetapan = $totalTunai + $totalAngsuran;
+
+            // =========================
+            // DISTRIBUSI GOLONGAN
+            // =========================
+            $distribusiGolonganDetail = (clone $chartBase())
+                ->selectRaw('
+                    gol,
+                    COUNT(*) as jumlah_pelanggan,
+                    SUM(kwh) as total_kwh
+                ')
+                ->groupBy('gol')
+                ->orderBy('gol')
+                ->get();
+
+            $totalKwhGolongan = $distribusiGolonganDetail->sum('total_kwh');
+
+            foreach ($distribusiGolonganDetail as $g) {
+                $g->persen_kwh = $totalKwhGolongan > 0
+                    ? round(($g->total_kwh / $totalKwhGolongan) * 100, 1)
+                    : 0;
+            }
+
+            // =========================
+            // KOMPOSISI P VS K
+            // =========================
+            $totalPelangganP = (clone $chartBase())
+                ->where('gol', 'like', 'P%')
+                ->count();
+
+            $totalPelangganK = (clone $chartBase())
+                ->where('gol', 'like', 'K%')
+                ->count();
+
+            // =========================
+            // TREN HARIAN
+            // =========================
+            $trenHarian = (clone $chartBase())
+                ->selectRaw('
+                    DATE(tanggal_register) as tanggal,
+                    SUM(kwh) as kwh,
+                    SUM(ts) as ts
+                ')
+                ->whereNotNull('tanggal_register')
+                ->groupBy('tanggal')
+                ->orderBy('tanggal')
+                ->get();
+
+            // =========================
+            // TREN P VS K
+            // =========================
+            $trenPK = (clone $chartBase())
+                ->selectRaw("
+                    DATE(tanggal_register) as tanggal,
+                    SUM(
+                        CASE
+                            WHEN gol LIKE 'P%' THEN 1
+                            ELSE 0
+                        END
+                    ) as jumlah_p,
+                    SUM(
+                        CASE
+                            WHEN gol LIKE 'K%' THEN 1
+                            ELSE 0
+                        END
+                    ) as jumlah_k
+                ")
+                ->whereNotNull('tanggal_register')
+                ->groupBy('tanggal')
+                ->orderBy('tanggal')
+                ->get();
+
+                    // =========================
+            // CHART IMAGES (PNG, biar render sama persis di PDF)
+            // =========================
+            $golonganColors = ['#ffce3a', '#0b3d91', '#3d63b8', '#6b8fd6', '#1a9c4a'];
+
+            $chartGolonganImg = ChartImageGenerator::barChart(
+                $distribusiGolonganDetail->pluck('gol')->toArray(),
+                $distribusiGolonganDetail->pluck('total_kwh')->map(fn ($v) => (float) $v)->toArray(),
+                $distribusiGolonganDetail->pluck('jumlah_pelanggan')->map(fn ($v) => $v . ' plg')->toArray(),
+                $distribusiGolonganDetail->pluck('persen_kwh')->map(fn ($v) => str_replace('.', ',', $v) . '%')->toArray(),
+                $golonganColors
+            );
+
+            $chartKomposisiImg = ChartImageGenerator::donutChart((int) $totalPelangganP, (int) $totalPelangganK, '#0b3d91', '#ffce3a', 500, 320);
+
+            $trenLabels = $trenHarian->pluck('tanggal')->map(fn ($t) => \Carbon\Carbon::parse($t)->format('d/m'))->toArray();
+
+            $chartTrenKwhImg = ChartImageGenerator::lineChart($trenLabels, [
+                ['data' => $trenHarian->pluck('kwh')->map(fn ($v) => (float) $v)->toArray(), 'color' => '#0b3d91', 'label' => 'KWH'],
+            ]);
+
+            $chartTrenTsImg = ChartImageGenerator::lineChart($trenLabels, [
+                ['data' => $trenHarian->pluck('ts')->map(fn ($v) => (float) $v)->toArray(), 'color' => '#ffce3a', 'label' => 'TS'],
+            ], 700, 300, true);
+
+            $trenPkLabels = $trenPK->pluck('tanggal')->map(fn ($t) => \Carbon\Carbon::parse($t)->format('d/m'))->toArray();
+
+            $chartTrenPkImg = ChartImageGenerator::lineChart($trenPkLabels, [
+                ['data' => $trenPK->pluck('jumlah_p')->map(fn ($v) => (float) $v)->toArray(), 'color' => '#0b3d91', 'label' => 'Golongan P'],
+                ['data' => $trenPK->pluck('jumlah_k')->map(fn ($v) => (float) $v)->toArray(), 'color' => '#ffce3a', 'label' => 'Golongan K'],
+            ], 700, 300);    
+
+            // =========================
+            // GENERATE PDF
+            // =========================
+            $pdf = Pdf::setOptions([
+                    'isRemoteEnabled'      => false,
+                    'isHtml5ParserEnabled' => true,
+                    'defaultFont'          => 'sans-serif',
+                    'dpi'                  => 96,
+                ])
+                ->loadView('detail-data.pdf', [
+                    'laporan'       => $laporan,
+                    'rows'          => $rows,
+                    'search'        => $search,
+                    'golonganAktif' => $golonganAktif,
+                    'ulpAktif'      => $ulpAktif,
+                    'tanggalDari'   => $tanggalDari,
+                    'tanggalSampai' => $tanggalSampai,
+
+                    'totalKwh'       => $totalKwh,
+                    'totalTs'        => $totalTs,
+                    'totalPenetapan' => $totalPenetapan,
+
+                    'distribusiGolonganDetail' => $distribusiGolonganDetail,
+
+                    'totalPelangganP' => $totalPelangganP,
+                    'totalPelangganK' => $totalPelangganK,
+
+                    'trenHarian' => $trenHarian,
+                    'trenPK'     => $trenPK,
+
+                    'chartGolonganImg'  => $chartGolonganImg,
+                    'chartKomposisiImg' => $chartKomposisiImg,
+                    'chartTrenKwhImg'   => $chartTrenKwhImg,
+                    'chartTrenTsImg'    => $chartTrenTsImg,
+                    'chartTrenPkImg'    => $chartTrenPkImg,
+                ])
+                ->setPaper('a4', 'landscape');
+
+            return $pdf->download('Detail-Laporan-' . $laporan->bulan . '-' . $laporan->tahun . '.pdf');
+
+        } catch (\Throwable $e) {
+            \Log::error('Export PDF gagal: ' . $e->getMessage(), [
+                'laporan_id' => $laporan->id,
+                'trace'      => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Gagal membuat PDF: ' . $e->getMessage());
+        }
     }
 }

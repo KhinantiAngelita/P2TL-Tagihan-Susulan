@@ -70,6 +70,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{laporan}/riwayat', [LaporanController::class, 'riwayat'])->name('riwayat');
         Route::post('/{laporan}/aktifkan', [LaporanController::class, 'aktifkan'])->name('aktifkan');
         Route::get('/{laporan}/export', [LaporanController::class, 'export'])->name('export');
+        Route::get('/{laporan}/export-pdf', [DetailDataController::class, 'exportPdf'])->name('export-pdf');
 
         // Wildcard routes selalu paling bawah di dalam group ini
         Route::get('/{laporan}', [DetailDataController::class, 'show'])->name('show');
