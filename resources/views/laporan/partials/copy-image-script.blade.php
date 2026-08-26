@@ -4,32 +4,55 @@
  * Render elemen (id={elId}, harus berupa <div> pembungkus) jadi gambar
  * PNG lewat html2canvas, lalu disalin ke clipboard.
  *
- * PENDEKATAN: capture dilakukan dari SALINAN (clone) elemen sumber di
- * panggung offscreen (di luar layar), BUKAN memodifikasi elemen live
- * yang sedang ditampilkan ke user. Ini memperbaiki 2 masalah versi
- * sebelumnya:
+ * PENDEKATAN: capture dilakukan dari SALINAN (clone) elemen sumber, yang
+ * ditempel ke dalam <iframe> offscreen (di luar layar) — BUKAN
+ * memodifikasi elemen live yang sedang ditampilkan ke user, dan BUKAN
+ * cuma ditempel ke document.body utama. Riwayat masalah yang sudah
+ * diperbaiki sampai versi ini:
  *
- * 1. Tabel kepotong di kanan — dulu wrapper (target) dikasih
- *    overflow:hidden dengan lebar TETAP (dari CSS grid card), padahal
- *    tabel di dalamnya dilebarkan ke max-content. Sekarang panggung
- *    offscreen lebarnya "fit-content" (mengikuti isi), jadi apapun
- *    lebar tabelnya, gak ada yang kepotong.
- * 2. Area kosong hitam/transparan yang gak rapi — dulu ukuran capture
- *    diambil dari elemen live yang gaya-nya baru saja diubah (rawan
- *    telat/reflow belum kelar). Sekarang ukuran diambil SETELAH clone
- *    selesai di-layout di panggung sendiri, presisi sama persis
- *    dengan kontennya.
+ * 1. Tabel kepotong di kanan — panggung offscreen lebarnya "fit-content"
+ *    (mengikuti isi tabel), bukan lebar tetap dari CSS grid card.
+ * 2. Area kosong hitam/transparan yang gak rapi — ukuran capture diambil
+ *    SETELAH clone selesai di-layout, bukan dari elemen live yang gaya-
+ *    nya baru saja diubah (rawan telat/reflow belum kelar).
+ * 3. Tabel keremes sempit + kotak hitam kosong — gara-gara `position:
+ *    sticky` (dipakai di header/footer/kolom pertama banyak tabel).
+ *    html2canvas dikenal salah hitung layout kalau ada elemen sticky,
+ *    jadi semua elemen sticky di clone diubah jadi `relative` (bukan
+ *    `static`, biar pseudo-element ::after yang posisinya absolute
+ *    tetap punya containing block yang benar) sebelum di-capture.
+ * 4. Label kolom hilang di mode kartu (HP) — label "Target", "Realisasi"
+ *    dst di tampilan mobile itu teks buatan CSS (`::before { content:
+ *    attr(data-label) }`), dan html2canvas TIDAK BISA render CSS
+ *    generated content sama sekali. Fix-nya: deteksi STRUKTURAL (kolom
+ *    pertama tiap baris dilewati, sisanya yang punya `data-label` selalu
+ *    dikasih `<span>` label beneran) — bukan nebak dari pembacaan
+ *    `::before` yang gak konsisten di semua browser.
+ * 5. [BARU] Hasil capture ikut tampilan mode-kartu HP padahal maunya
+ *    selalu tampilan tabel desktop (dengan header "PERIODE TERPILIH",
+ *    kolom Target/Realisasi berwarna, dst) — soalnya `@media` query itu
+ *    ngecek lebar VIEWPORT ASLI (layar HP), bukan lebar konten yang mau
+ *    di-capture. Fix-nya: clone di-render di dalam <iframe> offscreen
+ *    yang lebarnya di-set TETAP LEBAR (jauh di atas semua breakpoint
+ *    mobile di CSS project ini), karena iframe punya viewport-nya
+ *    SENDIRI yang terpisah dari window utama — jadi `@media` di
+ *    dalamnya PASTI selalu ke-evaluate sebagai "desktop", apapun lebar
+ *    layar aslinya.
+ * 6. [BARU] Judul & info filter belum ikut ke-capture — elemen yang
+ *    di-capture (id={elId}) itu cuma bungkus tabelnya doang, sedangkan
+ *    header kartu asli (mis. `.trend-table-head`, `.goltarif-card-head`)
+ *    itu SAUDARA (sibling), bukan anak dari situ, jadi nggak ikut ke-
+ *    grab. Sebelumnya diakalin pakai banner biru buatan sendiri —
+ *    sekarang header ASLINYA yang di-clone (dicari otomatis lewat
+ *    konvensi class yang diakhiri "-head", konsisten dipakai di semua
+ *    card di app ini), tombol "Salin Gambar"-nya dibuang, dan kalau ada
+ *    dropdown pemilih tampilan (mis. Gol Tarif Prabayar) diganti jadi
+ *    teks biasa. Info filter (Tahun/ULP aktif) ditambahkan sebagai satu
+ *    baris kecil tambahan di bawah subjudulnya.
  *
  * Elemen <canvas> (chart pie) butuh perlakuan khusus: cloneNode() TIDAK
  * menyalin isi gambar canvas, jadi tiap canvas asli dikonversi ke <img>
  * (via toDataURL) di dalam clone-nya sebelum di-capture.
- *
- * Jarak antara chart & tabel di bawahnya SENGAJA ditambah cuma di dalam
- * clone (bukan di halaman asli): elemen SPACER baru (bukan margin, biar
- * gak tergantung baca getComputedStyle pada node yang belum ter-attach
- * ke DOM — itu sebabnya percobaan margin-bottom sebelumnya efeknya nyaris
- * gak kelihatan) disisipkan tepat setelah tiap elemen ber-class
- * "*chart-wrap*" (mis. .goltarif-chart-wrap).
  */
 function salinTabelGambar(elId, btnEl, judul) {
     var sumber = document.getElementById(elId);
@@ -44,11 +67,82 @@ function salinTabelGambar(elId, btnEl, judul) {
     btnEl.disabled = true;
     btnEl.innerHTML = '⏳ Memproses...';
 
-    var PADDING         = 24; // px — spasi putih di sekeliling hasil gambar
-    var RADIUS           = 16; // px — kelengkungan sudut hasil gambar
-    var CHART_SPACER_H   = 60; // px — tinggi spacer KHUSUS DI GAMBAR antara chart & tabel di bawahnya
+    var PADDING          = 24;   // px — spasi putih di sekeliling hasil gambar
+    var RADIUS            = 16;   // px — kelengkungan sudut hasil gambar
+    var CHART_SPACER_H    = 60;   // px — tinggi spacer KHUSUS DI GAMBAR antara chart & tabel di bawahnya
+    var IFRAME_WIDTH       = 1400; // px — lebih lebar dari semua breakpoint mobile di CSS project ini, biar @media selalu ke-anggap desktop
 
-    // ---- 1. Clone konten sumber, lepas semua batas scroll/tinggi &
+    // ---- 0. Iframe offscreen: viewport-nya sendiri, terpisah dari
+    // window utama, dan disalin dulu semua stylesheet halaman ke
+    // dalamnya biar semua CSS (termasuk breakpoint-nya) ikut aktif. ----
+    var iframe = document.createElement('iframe');
+    iframe.style.cssText =
+        'position:fixed; left:-99999px; top:0; width:' + IFRAME_WIDTH + 'px; height:1200px; ' +
+        'border:0; visibility:hidden;';
+    document.body.appendChild(iframe);
+
+    var iwin = iframe.contentWindow;
+    var idoc = iframe.contentDocument;
+
+    Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"], style'), function (node) {
+        idoc.head.appendChild(node.cloneNode(true));
+    });
+    idoc.body.style.cssText = 'margin:0; background:transparent;';
+
+    // ---- 1. Cari header kartu ASLI (saudara dari elemen sumber, class
+    // diakhiri "-head" — konvensi yang konsisten dipakai di semua card
+    // di app ini: .trend-table-head, .goltarif-card-head, dst), lalu
+    // clone dia. Tombol & dropdown di dalamnya dibersihkan biar gak ikut
+    // muncul di gambar. ----
+    var headerAsli = sumber.parentElement
+        ? sumber.parentElement.querySelector('[class$="-head"]')
+        : null;
+    var headerWrap  = null;
+    var headerClone = null;
+    if (headerAsli) {
+        headerClone = headerAsli.cloneNode(true);
+        Array.prototype.forEach.call(headerClone.querySelectorAll('button, .copy-btn'), function (b) {
+            b.remove();
+        });
+        // Dropdown pemilih tampilan (mis. "Gol Tarif Prabayar" / "Gol per
+        // Daya Prabayar") diganti jadi teks biasa sesuai judul yang aktif.
+        Array.prototype.forEach.call(headerClone.querySelectorAll('select'), function (sel) {
+            var span = document.createElement('span');
+            span.textContent = judul || sel.selectedOptions[0].text;
+            span.style.cssText = sel.getAttribute('style') || '';
+            span.style.fontWeight = '700';
+            sel.parentNode.replaceChild(span, sel);
+        });
+        // Elemen dekoratif kayak svg panah dropdown udah gak relevan lagi
+        // begitu select-nya diganti jadi teks; sisa svg lain (ikon) dibiarkan.
+        Array.prototype.forEach.call(headerClone.querySelectorAll('.goltarif-title-select-wrap svg'), function (s) {
+            s.remove();
+        });
+        // Header dibungkus wrapper POLOS (blok biasa, bukan flex) — biar
+        // baris info filter yang ditambahkan nanti (lihat bawah) jadi
+        // baris block BARU DI BAWAH header, bukan ikut kesedot masuk jadi
+        // flex-item tambahan di baris header itu sendiri (itu penyebab
+        // tampilannya mepet/dempetan sama badge tahun yang udah ada).
+        headerWrap = document.createElement('div');
+        headerWrap.appendChild(headerClone);
+    }
+
+    // Info filter aktif (Tahun/ULP dst — teks halaman, bukan bagian dari
+    // header kartu) ditambahkan sebagai baris BARU di bawah header. Kalau
+    // headernya sendiri udah nampilin badge tahun/filter (mis.
+    // .goltarif-year-badge), baris ini di-skip biar gak dobel nampilin
+    // info yang sama.
+    var infoEl   = document.getElementById('filter-info-text');
+    var infoText = infoEl ? infoEl.textContent.trim() : '';
+    var infoBaris = null;
+    var sudahAdaBadge = headerClone ? headerClone.querySelector('[class*="badge"]') : null;
+    if (infoText && !sudahAdaBadge) {
+        infoBaris = document.createElement('div');
+        infoBaris.textContent = infoText;
+        infoBaris.style.cssText = 'font-size:12px; color:#6b7690; margin:10px 0 0; font-family:inherit;';
+    }
+
+    // ---- 2. Clone konten tabel, lepas semua batas scroll/tinggi &
     // lebarkan tabel ke max-content di dalam clone-nya saja. ----
     var clone = sumber.cloneNode(true);
 
@@ -62,6 +156,31 @@ function salinTabelGambar(elId, btnEl, judul) {
         t.style.width = 'max-content';
     });
 
+    // ---- 1c. Beberapa tabel (mis. Gol Tarif Prabayar/Paskabayar) ngatur
+    // warna header/footer-nya lewat selector yang butuh CLASS ANCESTOR
+    // tertentu, contoh: `.goltarif-card.tone-prabayar .goltarif-table
+    // thead th { background:#e4ebfb; color:#1d4ed8; }`. Elemen yang
+    // di-capture (id={elId}) itu ANAK dari `.goltarif-card.tone-prabayar`,
+    // BUKAN elemen itu sendiri — jadi begitu di-clone berdiri sendiri
+    // (tanpa ikut parent card-nya), konteks class ancestor itu ilang,
+    // aturan CSS di atas gak nyantol lagi, dan header balik ke gaya
+    // dasar yang CUMA nyetel `color:#fff` tanpa background sama sekali
+    // — hasilnya teks putih di atas background kosong, nyaris gak
+    // kebaca. Fix-nya: salin warna background & teks ASLI (dibaca dari
+    // elemen SUMBER yang masih live, masih punya konteks ancestor
+    // lengkap) langsung jadi inline style di clone — jadi warnanya
+    // kekunci, gak gantung ke ancestor context lagi sama sekali. ----
+    var selSelWarna = 'thead th, tfoot td';
+    var thTdAsli  = sumber.querySelectorAll(selSelWarna);
+    var thTdClone = clone.querySelectorAll(selSelWarna);
+    Array.prototype.forEach.call(thTdAsli, function (elAsli, i) {
+        var elClone = thTdClone[i];
+        if (!elClone) return;
+        var cs = getComputedStyle(elAsli);
+        elClone.style.backgroundColor = cs.backgroundColor;
+        elClone.style.color           = cs.color;
+    });
+
     // Sisipkan elemen spacer BARU (bukan mengandalkan margin) tepat
     // setelah tiap wrapper chart, biar jaraknya pasti kelihatan di
     // gambar — gak tergantung nilai margin CSS yang mungkin gak
@@ -72,9 +191,34 @@ function salinTabelGambar(elId, btnEl, judul) {
         w.parentNode.insertBefore(spacer, w.nextSibling);
     });
 
-    // ---- 2. Ganti tiap <canvas> di clone dengan <img> berisi snapshot
+    // ---- 2b. Fallback label mode-kartu (lihat poin 4 di komentar atas).
+    // Karena sekarang capture dipaksa selalu tampilan desktop (poin 5),
+    // blok ini normalnya gak akan pernah kepakai (thead beneran yang
+    // dipakai). Tetap dipertahankan sebagai jaring pengaman kalau suatu
+    // saat ada halaman/skenario yang lolos dari deteksi lebar iframe. ----
+    Array.prototype.forEach.call(clone.querySelectorAll('tbody tr, tfoot tr'), function (tr) {
+        var tdPertama = tr.querySelector('td:first-child');
+        var isFooter  = tr.closest('tfoot') !== null;
+
+        Array.prototype.forEach.call(tr.querySelectorAll('td[data-label]'), function (td) {
+            if (td === tdPertama) return; // kolom pertama sengaja gak dikasih label
+
+            var label = td.getAttribute('data-label');
+            if (!label) return;
+
+            var span = document.createElement('span');
+            span.textContent = label;
+            span.style.cssText =
+                'font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em;' +
+                'text-align:left; display:block; flex-shrink:0; margin-right:8px;' +
+                'color:' + (isFooter ? '#6b7690' : '#9aa4c2') + ';';
+            td.insertBefore(span, td.firstChild);
+        });
+    });
+
+    // ---- 3. Ganti tiap <canvas> di clone dengan <img> berisi snapshot
     // canvas ASLI (yang masih tampil live), karena clone canvas kosong. ----
-    var canvasAsli = sumber.querySelectorAll('canvas');
+    var canvasAsli  = sumber.querySelectorAll('canvas');
     var canvasClone = clone.querySelectorAll('canvas');
     Array.prototype.forEach.call(canvasAsli, function (asli, i) {
         var target = canvasClone[i];
@@ -86,41 +230,61 @@ function salinTabelGambar(elId, btnEl, judul) {
         target.parentNode.replaceChild(img, target);
     });
 
-    // Bersihkan semua id dalam clone biar gak dobel sama versi live
-    // yang masih tampil di halaman.
-    if (clone.id) clone.removeAttribute('id');
-    Array.prototype.forEach.call(clone.querySelectorAll('[id]'), function (el) {
-        el.removeAttribute('id');
+    // Bersihkan semua id dalam clone (header & tabel) biar gak dobel
+    // sama versi live yang masih tampil di halaman.
+    [headerClone, clone].forEach(function (root) {
+        if (!root) return;
+        if (root.id) root.removeAttribute('id');
+        Array.prototype.forEach.call(root.querySelectorAll('[id]'), function (el) {
+            el.removeAttribute('id');
+        });
     });
 
-    // ---- 3. Panggung offscreen: lebar auto mengikuti konten
+    // ---- 4. Panggung di dalam iframe: lebar auto mengikuti konten
     // (display:inline-block), bukan lebar tetap — jadi apapun lebar
     // tabel di dalamnya, gak ada yang kepotong oleh overflow:hidden. ----
-    var infoEl   = document.getElementById('filter-info-text');
-    var infoText = infoEl ? infoEl.textContent : '';
-
-    var header = document.createElement('div');
-    header.style.cssText =
-        'padding:16px 20px; background:#0b3d91;' +
-        'margin:-' + PADDING + 'px -' + PADDING + 'px 20px -' + PADDING + 'px;';
-    header.innerHTML =
-        '<div style="font-size:16px;font-weight:800;color:#fff;font-family:inherit;line-height:1.35;">' + (judul || '') + '</div>' +
-        (infoText ? '<div style="font-size:11.5px;color:#cdd8f5;margin-top:4px;font-family:inherit;">' + infoText + '</div>' : '');
-
-    var panggung = document.createElement('div');
+    var panggung = idoc.createElement('div');
     panggung.style.cssText =
-        'position:fixed; left:-99999px; top:0; z-index:-1;' +
         'display:inline-block; background:#ffffff; padding:' + PADDING + 'px;' +
         'border-radius:' + RADIUS + 'px; border:1px solid #e2e6f0;' +
-        'box-sizing:border-box; overflow:hidden;';
+        'box-sizing:border-box; overflow:hidden; font-family:inherit;';
 
-    panggung.appendChild(header);
+    if (headerWrap) {
+        headerWrap.style.margin = '-' + PADDING + 'px -' + PADDING + 'px ' + PADDING + 'px -' + PADDING + 'px';
+        headerWrap.style.padding = PADDING + 'px ' + PADDING + 'px 0';
+        panggung.appendChild(headerWrap);
+        if (infoBaris) headerWrap.appendChild(infoBaris);
+    } else if (infoBaris || judul) {
+        // Fallback kalau header aslinya gak ketemu (mis. struktur halaman
+        // beda) — tetap tampilkan minimal judul yang dikirim ke fungsi ini.
+        var headerFallback = document.createElement('div');
+        headerFallback.style.cssText = 'margin-bottom:16px;';
+        headerFallback.innerHTML = '<div style="font-size:16px;font-weight:800;color:#1b2559;font-family:inherit;">' + (judul || '') + '</div>';
+        if (infoBaris) headerFallback.appendChild(infoBaris);
+        panggung.appendChild(headerFallback);
+    }
     panggung.appendChild(clone);
-    document.body.appendChild(panggung);
+    idoc.body.appendChild(panggung);
 
-    // Kasih 1 frame biar browser selesai layout panggung (lebar tabel,
-    // posisi elemen, dst) sebelum diukur & di-capture.
-    requestAnimationFrame(function () {
+    // ---- 5. Lepas SEMUA position:sticky di dalam panggung (header +
+    // tabel), ganti jadi position:relative (bukan static — biar
+    // pseudo-element ::after yang posisinya absolute tetap punya
+    // containing block yang benar, yaitu sel itu sendiri). html2canvas
+    // dikenal salah hitung layout kalau ada elemen sticky. ----
+    Array.prototype.forEach.call(panggung.querySelectorAll('*'), function (el) {
+        if (iwin.getComputedStyle(el).position === 'sticky') {
+            el.style.position = 'relative';
+            el.style.top    = 'auto';
+            el.style.left   = 'auto';
+            el.style.right  = 'auto';
+            el.style.bottom = 'auto';
+            el.style.zIndex = 'auto';
+        }
+    });
+
+    // Kasih 1 frame biar iframe selesai layout panggung (lebar tabel,
+    // posisi elemen, breakpoint desktop, dst) sebelum diukur & di-capture.
+    iwin.requestAnimationFrame(function () {
         var lebar  = panggung.scrollWidth;
         var tinggi = panggung.scrollHeight;
 
@@ -130,10 +294,10 @@ function salinTabelGambar(elId, btnEl, judul) {
             useCORS: true,
             width: lebar,
             height: tinggi,
-            windowWidth: lebar,
+            windowWidth: IFRAME_WIDTH,
             windowHeight: tinggi,
         }).then(function (canvas) {
-            document.body.removeChild(panggung);
+            document.body.removeChild(iframe);
             canvas.toBlob(function (blob) {
                 if (!blob) { gagal(); return; }
 
@@ -148,7 +312,7 @@ function salinTabelGambar(elId, btnEl, judul) {
                 }
             }, 'image/png');
         }).catch(function (err) {
-            document.body.removeChild(panggung);
+            document.body.removeChild(iframe);
             console.error('Gagal membuat gambar:', err);
             gagal();
         });
