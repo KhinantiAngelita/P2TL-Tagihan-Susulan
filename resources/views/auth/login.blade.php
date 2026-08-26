@@ -54,8 +54,6 @@
             </svg>
         </button>
     </form>
-
-    <p class="auth-footer-text">Belum punya akun? <a href="{{ route('register') }}" class="link">Daftar</a></p>
 @endsection
 
 @push('scripts')

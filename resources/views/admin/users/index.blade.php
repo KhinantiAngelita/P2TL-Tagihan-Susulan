@@ -2,9 +2,18 @@
 @section('title', 'Manajemen User')
 @section('content')
 <style>
-    .um-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; }
+    .um-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; gap: 16px; flex-wrap: wrap; }
     .um-header h2 { margin: 0 0 4px; font-size: 24px; }
     .um-header p { margin: 0; color: #6b7690; font-size: 14px; }
+
+    .um-btn-tambah {
+        background: #0b3d91; color: #fff; border: none; border-radius: 10px;
+        padding: 11px 20px; font-size: 13.5px; font-weight: 700; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+        white-space: nowrap; transition: background .15s; flex-shrink: 0;
+    }
+    .um-btn-tambah:hover { background: #092f70; }
+    .um-btn-tambah svg { width: 16px; height: 16px; }
 
     .um-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
     .um-stat-card {
@@ -51,6 +60,13 @@
     .um-name-cell strong { display: block; font-size: 14px; color: #1b2559; }
     .um-name-cell span { font-size: 12px; color: #9aa4c2; }
 
+    .role-pill {
+        display: inline-flex; align-items: center;
+        padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
+        background: #eaf0fb; color: #0b3d91;
+    }
+    .role-pill.super { background: #fdf1e6; color: #b45309; }
+
     .status-pill {
         display: inline-flex; align-items: center; gap: 6px;
         padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;
@@ -85,6 +101,11 @@
     .um-view-btn svg { width: 16px; height: 16px; }
 
     .um-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 13px; color: #6b7690; }
+
+    @media (max-width: 640px) {
+        .um-header { flex-direction: column; align-items: stretch; }
+        .um-btn-tambah { justify-content: center; }
+    }
 </style>
 
 <div class="um-header">
@@ -92,6 +113,10 @@
         <h2>Manajemen User</h2>
         <p>Kelola status akun pengguna yang terdaftar di sistem</p>
     </div>
+    <a href="{{ route('admin.users.create') }}" class="um-btn-tambah">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+        Tambah User
+    </a>
 </div>
 
 <div class="um-stats">
@@ -139,6 +164,7 @@
                 <th>#</th>
                 <th>Nama</th>
                 <th>Email</th>
+                <th>Role</th>
                 <th>Status</th>
                 <th>Aksi</th>
             </tr>
@@ -158,16 +184,23 @@
                 </td>
                 <td>{{ $u->email }}</td>
                 <td>
+                    <span class="role-pill {{ $u->isSuperAdmin() ? 'super' : '' }}">
+                        {{ $u->isSuperAdmin() ? 'Super Admin' : 'Pengguna' }}
+                    </span>
+                </td>
+                <td>
                     <div class="um-status-cell">
-                        <form action="{{ route('admin.users.toggle', $u->id) }}" method="POST"
-                              onsubmit="return confirm('{{ $u->is_active ? 'Nonaktifkan' : 'Aktifkan' }} akun {{ $u->name }}?')">
-                            @csrf
-                            @method('PATCH')
-                            <label class="switch-sm" title="{{ $u->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
-                                <input type="checkbox" {{ $u->is_active ? 'checked' : '' }} onchange="this.form.submit()">
-                                <span class="slider"></span>
-                            </label>
-                        </form>
+                        @if ($u->id !== auth()->id())
+                            <form action="{{ route('admin.users.toggle', $u->id) }}" method="POST"
+                                  onsubmit="return confirm('{{ $u->is_active ? 'Nonaktifkan' : 'Aktifkan' }} akun {{ $u->name }}?')">
+                                @csrf
+                                @method('PATCH')
+                                <label class="switch-sm" title="{{ $u->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
+                                    <input type="checkbox" {{ $u->is_active ? 'checked' : '' }} onchange="this.form.submit()">
+                                    <span class="slider"></span>
+                                </label>
+                            </form>
+                        @endif
                         <span class="status-pill {{ $u->is_active ? 'aktif' : 'nonaktif' }}">
                             <span class="dot"></span>
                             {{ $u->is_active ? 'Aktif' : 'Nonaktif' }}
@@ -181,7 +214,7 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="5" style="text-align:center;color:#667">Tidak ada user yang cocok.</td></tr>
+            <tr><td colspan="6" style="text-align:center;color:#667">Tidak ada user yang cocok.</td></tr>
         @endforelse
         </tbody>
     </table>

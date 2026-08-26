@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class UserManagementController extends Controller
@@ -39,6 +40,41 @@ class UserManagementController extends Controller
         return view('admin.users.index', compact(
             'users', 'status', 'search', 'totalUser', 'totalAktif', 'totalNonaktif'
         ));
+    }
+
+    /**
+     * Form buat akun baru — hanya bisa diakses super admin (sudah
+     * dibatasi middleware 'super_admin' di route). Ini menggantikan
+     * halaman register publik yang sudah tidak ada lagi.
+     */
+    public function create(): View
+    {
+        return view('admin.users.create');
+    }
+
+    /**
+     * Simpan akun baru yang dibuat oleh super admin.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'role'     => ['required', 'in:user,super_admin'],
+        ]);
+
+        User::create([
+            'name'      => $validated['name'],
+            'email'     => $validated['email'],
+            'password'  => Hash::make($validated['password']),
+            'role'      => $validated['role'],
+            'is_active' => true,
+        ]);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', "Akun {$validated['name']} berhasil dibuat.");
     }
 
     /**

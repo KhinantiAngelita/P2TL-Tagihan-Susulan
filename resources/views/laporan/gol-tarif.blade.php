@@ -80,12 +80,15 @@
     }
     @media (min-width: 901px) { .goltarif-table-scroll { max-height: 320px; } }
 
-    .goltarif-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 480px; }
+    .goltarif-table {
+        width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 480px;
+        font-variant-numeric: tabular-nums;
+    }
     .goltarif-table th, .goltarif-table td {
-        padding: 10px 12px; text-align: right; border-bottom: 1px solid #f1f3f9; white-space: nowrap;
+        padding: 11px 14px; text-align: right; border-bottom: 1px solid #f1f3f9; white-space: nowrap;
     }
 
-    /* Kolom pertama (Tarif) sticky, background solid putih + garis pemisah */
+    /* Kolom pertama (Tarif/Daya) sticky, background solid putih + garis pemisah */
     .goltarif-table th:first-child, .goltarif-table td:first-child {
         text-align: left; position: sticky; left: 0; z-index: 2; background: #fff; padding-right: 16px;
     }
@@ -95,13 +98,28 @@
     .goltarif-table tbody tr:nth-child(even) td:first-child { background: #f8f9fc; }
     .goltarif-table tbody td:first-child { font-weight: 700; color: #1b2559; }
 
+    /* Kolom Total ditonjolkan, kolom % dibuat sekunder/muted */
+    .goltarif-table td:nth-last-child(2) { font-weight: 800; color: #1b2559; background: rgba(90,127,214,.04); }
+    .goltarif-table td:last-child { color: #6b7690; font-weight: 600; font-size: 11.5px; }
+    .goltarif-table thead th:last-child { opacity: .85; }
+
     /* ===== Header bar & footer bar — soft/pastel, teks putih tetap
        terbaca karena warnanya masih cukup medium (bukan pucat banget). ===== */
     .goltarif-table thead th {
         color: #fff; font-weight: 700; font-size: 11px; text-transform: uppercase;
-        letter-spacing: .03em; white-space: nowrap; position: sticky; top: 0; z-index: 1;
+        letter-spacing: .04em; white-space: nowrap; position: sticky; top: 0; z-index: 4;
     }
-    .goltarif-table tfoot td { font-weight: 800; color: #fff; border-bottom: none; position: sticky; bottom: 0; }
+    /* Sel pojok (header kolom pertama) harus paling atas: sticky top+left sekaligus,
+       jadi wajib z-index lebih tinggi dari td/th kolom pertama biasa (z-index 2),
+       supaya baris body yang lewat di baliknya tidak "menembus" saat scroll ke bawah. */
+    .goltarif-table thead th:first-child { z-index: 5; }
+    .goltarif-table tfoot td {
+        font-weight: 800; color: #fff; border-bottom: none; position: sticky; bottom: 0;
+        border-top: 1px solid rgba(255,255,255,.35); z-index: 4;
+    }
+    .goltarif-table tfoot td:first-child { z-index: 5; }
+    .goltarif-table tfoot td:nth-last-child(2) { background: transparent; color: #fff; }
+    .goltarif-table tfoot td:last-child { color: rgba(255,255,255,.85); font-size: 12px; }
 
     .goltarif-card.tone-prabayar .goltarif-table thead th,
     .goltarif-card.tone-prabayar .goltarif-table thead th:first-child,
@@ -118,6 +136,8 @@
 
     .goltarif-table tbody tr:nth-child(even) { background: #f8f9fc; }
     .goltarif-table tbody tr:hover { background: #eef2fb; }
+    .goltarif-table tbody tr:hover td:first-child { background: #eef2fb; }
+    .goltarif-table tbody tr:last-child td { border-bottom: none; }
 
     .goltarif-empty { text-align: center; color: #9aa4c2; padding: 32px; font-size: 13px; }
 
@@ -165,7 +185,6 @@
     .ulp-table thead tr.grp-row th { padding-top: 10px; padding-bottom: 8px; text-align: center; border-bottom: none; }
     .ulp-table thead tr.sub-row th { font-size: 9.5px; font-weight: 700; padding-top: 6px; padding-bottom: 9px; }
 
-    .ulp-table thead tr:first-child th.col-no,
     .ulp-table thead tr:first-child th.col-ulp { background: #eef0f6; color: #1b2559; vertical-align: middle; }
 
     .ulp-table thead th.grp-p1 { background: #e3f6ea; color: #15803d; }
@@ -182,12 +201,26 @@
         border-left: 1px solid rgba(255,255,255,.7);
     }
 
-    .ulp-table th.col-no, .ulp-table td.col-no { position: sticky; left: 0; z-index: 2; width: 42px; }
-    .ulp-table th.col-ulp, .ulp-table td.col-ulp { position: sticky; left: 42px; z-index: 2; text-align: left; font-weight: 700; min-width: 150px; }
+    .ulp-table th, .ulp-table td { box-sizing: border-box; }
+
+    /* Hanya kolom ULP yang di-freeze. Kolom No sengaja tidak sticky lagi supaya
+       tidak perlu dua batas sticky yang harus align pixel-perfect (itu penyebab
+       garis/celah putih sebelumnya) — cukup satu batas sticky di kiri. */
+    /* Kolom ULP sekarang kolom PERTAMA tabel (nomor urut digabung sebagai badge
+       kecil di dalamnya) supaya sticky-nya stabil — sticky di kolom yang bukan
+       kolom pertama gampang salah hitung offset dan ketiban kolom sebelumnya
+       saat discroll. */
+    .ulp-table th.col-ulp, .ulp-table td.col-ulp { position: sticky; left: 0; z-index: 2; text-align: left; font-weight: 700; min-width: 170px; background: #fff; }
     .ulp-table td.col-ulp { color: #1b2559; }
     .ulp-table th.col-ulp { color: #1b2559; }
-    .ulp-table tbody tr:nth-child(even) td.col-no, .ulp-table tbody tr:nth-child(even) td.col-ulp { background: #f8f9fc; }
-    .ulp-table th.col-no, .ulp-table td.col-no { background: #fff; }
+    .ulp-table tbody tr:nth-child(even) td.col-ulp { background: #f8f9fc; }
+
+    .ulp-no {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 20px; height: 20px; border-radius: 6px; margin-right: 8px;
+        background: #eef0f6; color: #6b7690; font-size: 10.5px; font-weight: 800;
+        flex-shrink: 0;
+    }
 
     .ulp-table tbody tr:nth-child(even) { background: #f8f9fc; }
     .ulp-table tbody tr:hover { background: #eef2fb; }
@@ -201,7 +234,7 @@
     .persen-text { position: relative; z-index: 1; }
 
     .ulp-table tfoot td { font-weight: 800; background: #f7f8fc; color: #1b2559; border-top: 1px solid var(--border); border-bottom: none; }
-    .ulp-table tfoot td:first-child, .ulp-table tfoot td:nth-child(2) { position: sticky; left: 0; z-index: 3; }
+    .ulp-table tfoot td:first-child { position: sticky; left: 0; z-index: 3; }
 </style>
 @endpush
 
@@ -439,7 +472,6 @@
                 <table class="ulp-table" id="tabel-ulp-p">
                     <thead>
                         <tr class="grp-row">
-                            <th rowspan="2" class="col-no">No</th>
                             <th rowspan="2" class="col-ulp">ULP</th>
                             @foreach ($kolomUlpP as $g)
                                 @php $key = strtolower($g); @endphp
@@ -450,16 +482,15 @@
                         <tr class="sub-row">
                             @foreach ($kolomUlpP as $g)
                                 @php $key = strtolower($g); @endphp
-                                <th class="grp-{{ $key }}">PLG</th><th class="grp-{{ $key }}">KWH</th><th class="grp-{{ $key }}">%</th>
+                                <th class="grp-{{ $key }}">Pelanggan</th><th class="grp-{{ $key }}">KWH</th><th class="grp-{{ $key }}">%</th>
                             @endforeach
-                            <th class="grp-total">PLG</th><th class="grp-total">KWH</th><th class="grp-total">%</th>
+                            <th class="grp-total">Pelanggan</th><th class="grp-total">KWH</th><th class="grp-total">%</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($ulpRowsP as $i => $row)
                             <tr>
-                                <td class="col-no">{{ $i + 1 }}</td>
-                                <td class="col-ulp">{{ $row['nama'] }}</td>
+                                <td class="col-ulp"><span class="ulp-no">{{ $i + 1 }}</span>{{ $row['nama'] }}</td>
 
                                 @foreach ($kolomUlpP as $g)
                                     @php $key = strtolower($g); @endphp
@@ -482,7 +513,7 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="2">UID JABAR</td>
+                            <td class="col-ulp">UID JABAR</td>
                             @foreach ($kolomUlpP as $g)
                                 @php $key = strtolower($g); @endphp
                                 <td>{{ number_format($ulpTotalP[$key]['plg'], 0, ',', '.') }}</td>
@@ -521,7 +552,6 @@
                 <table class="ulp-table" id="tabel-ulp-k">
                     <thead>
                         <tr class="grp-row">
-                            <th rowspan="2" class="col-no">No</th>
                             <th rowspan="2" class="col-ulp">ULP</th>
                             @foreach ($kolomUlpKTampil as $g)
                                 @php $key = strtolower($g); @endphp
@@ -532,16 +562,15 @@
                         <tr class="sub-row">
                             @foreach ($kolomUlpKTampil as $g)
                                 @php $key = strtolower($g); @endphp
-                                <th class="grp-{{ $key }}">PLG</th><th class="grp-{{ $key }}">KWH</th><th class="grp-{{ $key }}">%</th>
+                                <th class="grp-{{ $key }}">Pelanggan</th><th class="grp-{{ $key }}">KWH</th><th class="grp-{{ $key }}">%</th>
                             @endforeach
-                            <th class="grp-total">PLG</th><th class="grp-total">KWH</th><th class="grp-total">%</th>
+                            <th class="grp-total">Pelanggan</th><th class="grp-total">KWH</th><th class="grp-total">%</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($ulpRowsK as $i => $row)
                             <tr>
-                                <td class="col-no">{{ $i + 1 }}</td>
-                                <td class="col-ulp">{{ $row['nama'] }}</td>
+                                <td class="col-ulp"><span class="ulp-no">{{ $i + 1 }}</span>{{ $row['nama'] }}</td>
 
                                 @foreach ($kolomUlpKTampil as $g)
                                     @php $key = strtolower($g); @endphp
@@ -564,7 +593,7 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="2">UID JABAR</td>
+                            <td class="col-ulp">UID JABAR</td>
                             @foreach ($kolomUlpKTampil as $g)
                                 @php $key = strtolower($g); @endphp
                                 <td>{{ number_format($ulpTotalK[$key]['plg'], 0, ',', '.') }}</td>
