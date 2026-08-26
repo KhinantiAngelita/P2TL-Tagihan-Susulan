@@ -193,6 +193,37 @@
 
     .trend-filter-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
+    /* ===== Tombol "Salin Gambar" di tiap card ===== */
+    .copyable-card { position: relative; }
+
+    .card-copy-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        color: #1b2559;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: background .15s, border-color .15s, color .15s;
+    }
+    .card-copy-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    .card-copy-btn:hover { background: #f4f6fb; border-color: #c7cede; }
+    .card-copy-btn.is-busy { opacity: .6; pointer-events: none; }
+    .card-copy-btn.is-done { background: #e5f7ec; border-color: #1a9c4a; color: #1a9c4a; }
+    .card-copy-btn.is-error { background: #fdecec; border-color: #e0433d; color: #e0433d; }
+
+    @media (max-width: 640px) {
+        .card-copy-btn { font-size: 12px; padding: 6px 12px; }
+        .card-copy-btn-label { display: none; }
+    }
+
     /* Dikunci 2 kolom mulai tablet biar kartunya gak terlalu lebar/gepeng
        di lebar-lebar "aneh" (samain sama tab Presentase Pencapaian). */
     @media (max-width: 900px) {
@@ -342,7 +373,7 @@
 </div>
 
 <div class="dash-stats">
-    <div class="dash-stat-card tone-blue">
+    <div class="dash-stat-card tone-blue copyable-card" data-copy-name="total-{{ $tahunAktif }}">
         <div class="dash-stat-top">
             <div class="dash-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
@@ -355,7 +386,7 @@
         <div class="dash-stat-sub">Sesuai filter tahun &amp; ULP terpilih</div>
     </div>
 
-    <div class="dash-stat-card tone-yellow">
+    <div class="dash-stat-card tone-yellow copyable-card" data-copy-name="rata-rata-bulan">
         <div class="dash-stat-top">
             <div class="dash-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
@@ -368,7 +399,7 @@
         <div class="dash-stat-sub">Rata-rata dari bulan yang ada datanya</div>
     </div>
 
-    <div class="dash-stat-card tone-green">
+    <div class="dash-stat-card tone-green copyable-card" data-copy-name="bulan-tertinggi">
         <div class="dash-stat-top">
             <div class="dash-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 8.5 9 9 5-.5 9-4 9-9V7l-9-5Z"/></svg>
@@ -381,7 +412,7 @@
         </div>
     </div>
 
-    <div class="dash-stat-card {{ $totalTargetTahunIni == 0 ? 'tone-abu' : ($selisihTahunIni > 0 ? 'tone-pink' : 'tone-green') }}">
+    <div class="dash-stat-card {{ $totalTargetTahunIni == 0 ? 'tone-abu' : ($selisihTahunIni > 0 ? 'tone-pink' : 'tone-green') }} copyable-card" data-copy-name="selisih-target">
         <div class="dash-stat-top">
             <div class="dash-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3m8-3v3M4 21V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v13M4 21h16M9 12h6M9 16h6"/></svg>
@@ -405,13 +436,19 @@
     </div>
 </div>
 
-<div class="card trend-chart-card">
+<div class="card trend-chart-card copyable-card" data-copy-name="trend-{{ $metric }}-{{ $mode }}">
     <div class="trend-chart-head">
         <div>
             <h3>{{ $mode === 'kumulatif' ? 'Trend Komulatif' : 'Trend Bulanan' }} — {{ $metric === 'kwh' ? 'kWh' : 'Rp TS' }}</h3>
             <p>{{ $mode === 'kumulatif' ? 'Akumulasi nilai dari Januari sampai bulan berjalan' : 'Nilai per bulan (tidak diakumulasi)' }} &mdash; Tahun {{ $tahunAktif ?: '-' }}</p>
         </div>
-        <span class="chart-badge" style="background:#eaf0fb;color:#0b3d91;">{{ $ulpAktif === 'semua' ? 'Semua ULP' : (($daftarUlp->firstWhere('kode', $ulpAktif)['nama'] ?? null) ? $ulpAktif . ' - ' . $daftarUlp->firstWhere('kode', $ulpAktif)['nama'] : $ulpAktif) }}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+            <button type="button" class="card-copy-btn" title="Salin sebagai gambar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="card-copy-btn-label">Salin Gambar</span>
+            </button>
+            <span class="chart-badge" style="background:#eaf0fb;color:#0b3d91;">{{ $ulpAktif === 'semua' ? 'Semua ULP' : (($daftarUlp->firstWhere('kode', $ulpAktif)['nama'] ?? null) ? $ulpAktif . ' - ' . $daftarUlp->firstWhere('kode', $ulpAktif)['nama'] : $ulpAktif) }}</span>
+        </div>
     </div>
 
     {{-- Keterangan singkat: label di atas tiap bar = % pencapaian &
@@ -426,7 +463,7 @@
     </div>
 </div>
 
-<div class="card trend-hz-table-wrap">
+<div class="card trend-hz-table-wrap copyable-card" data-copy-name="rincian-per-bulan-{{ $metric }}">
     <div class="trend-hz-table-head">
         <div class="icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -435,7 +472,12 @@
             <strong>Rincian per Bulan</strong>
             <span>Target, Realisasi, % Pencapaian &amp; Jumlah Pelanggan — Tahun {{ $tahunAktif ?: '-' }}</span>
         </div>
+        <button type="button" class="card-copy-btn" title="Salin sebagai gambar" style="margin-left:auto;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span class="card-copy-btn-label">Salin Gambar</span>
+        </button>
     </div>
+    
     <div class="table-scroll">
         <table class="trend-hz-table">
             <thead>
@@ -531,7 +573,111 @@
        baru — cukup pakai Chart.js API bawaan (afterDatasetsDraw).
 --}}
 @push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
+(function () {
+    /**
+     * Salin sebuah elemen card sebagai gambar PNG ke clipboard.
+     * Kalau Clipboard API gagal (browser lama / non-HTTPS), fallback
+     * ke download file PNG langsung.
+     */
+    function setBtnState(btn, state) {
+        btn.classList.remove('is-busy', 'is-done', 'is-error');
+        if (state) btn.classList.add(state);
+        if (state === 'is-done' || state === 'is-error') {
+            setTimeout(function () {
+                btn.classList.remove('is-done', 'is-error');
+            }, 1600);
+        }
+    }
+
+    function withTemporaryOverflowVisible(card, callback) {
+        // Elemen tabel di dalam card sering dibungkus .table-scroll
+        // (overflow-x:auto) — biar html2canvas nangkep SELURUH lebar
+        // tabel (bukan cuma yang keliatan di layar), overflow-nya
+        // dibuka sementara pas proses screenshot lalu dikembalikan lagi.
+        var scrollers = card.querySelectorAll('.table-scroll');
+        var originalStyles = [];
+
+        scrollers.forEach(function (el) {
+            originalStyles.push({
+                el: el,
+                overflow: el.style.overflow,
+                width: el.style.width,
+            });
+            el.style.overflow = 'visible';
+            el.style.width = el.scrollWidth + 'px';
+        });
+
+        return callback().finally(function () {
+            originalStyles.forEach(function (s) {
+                s.el.style.overflow = s.overflow;
+                s.el.style.width = s.width;
+            });
+        });
+    }
+
+    function copyCardAsImage(card, btn) {
+        setBtnState(btn, 'is-busy');
+
+        withTemporaryOverflowVisible(card, function () {
+            return html2canvas(card, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                useCORS: true,
+                ignoreElements: function (el) {
+                    return el.classList && el.classList.contains('card-copy-btn');
+                },
+            });
+        }).then(function (canvas) {
+            canvas.toBlob(function (blob) {
+                if (!blob) {
+                    setBtnState(btn, 'is-error');
+                    return;
+                }
+
+                if (navigator.clipboard && window.ClipboardItem) {
+                    navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]).then(function () {
+                        setBtnState(btn, 'is-done');
+                    }).catch(function () {
+                        downloadBlob(blob, card.dataset.copyName || 'card');
+                        setBtnState(btn, 'is-done');
+                    });
+                } else {
+                    // Browser tidak dukung Clipboard API image — fallback download
+                    downloadBlob(blob, card.dataset.copyName || 'card');
+                    setBtnState(btn, 'is-done');
+                }
+            }, 'image/png');
+        }).catch(function (err) {
+            console.error('Gagal menyalin card sebagai gambar:', err);
+            setBtnState(btn, 'is-error');
+        });
+    }
+
+    function downloadBlob(blob, name) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = name + '.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.card-copy-btn');
+        if (!btn) return;
+
+        var card = btn.closest('.copyable-card');
+        if (!card) return;
+
+        copyCardAsImage(card, btn);
+    });
+})();
 (function () {
     var canvas = document.getElementById('trendChart');
     if (!canvas) return;
@@ -548,6 +694,14 @@
     // urutannya sejajar sama $labels/$data.
     var persenPerBulan = @json($persenPerBulanMentah);
     var jumlahPelangganPerBulan = @json($jumlahPelangganData);
+    var nilaiRealisasiPerBulan = @json($data);
+    var nilaiTargetPerBulan = @json($targetData);
+    var metricPrefix = {!! json_encode($metric === 'kwh' ? '' : 'Rp ') !!};
+    var metricSuffix = {!! json_encode($metric === 'kwh' ? ' KWH' : '') !!};
+
+    function formatNilai(v) {
+        return metricPrefix + Number(v).toLocaleString('id-ID') + metricSuffix;
+    }
 
     // ===== Custom plugin: gambar teks "% pencapaian" & "jumlah
     // pelanggan" langsung di atas tiap batang Realisasi, permanen di
@@ -564,10 +718,14 @@
             barDataset.data.forEach(function (bar, i) {
                 var persen = persenPerBulan[i];
                 var jumlahPelanggan = jumlahPelangganPerBulan[i];
+                var nilaiRealisasi = nilaiRealisasiPerBulan[i];
+                var nilaiTarget = nilaiTargetPerBulan[i];
 
-                // Skip kalau dua-duanya gak ada data, biar canvas gak
-                // penuh teks "- • -" buat bulan yang kosong.
-                if (persen === null && (jumlahPelanggan === null || jumlahPelanggan === undefined)) {
+                // Skip kalau semua data kosong/nol, biar canvas gak
+                // penuh teks buat bulan yang gak ada apa-apanya.
+                var adaRealisasi = nilaiRealisasi !== null && nilaiRealisasi !== undefined && nilaiRealisasi > 0;
+                var adaTarget = nilaiTarget !== null && nilaiTarget !== undefined && nilaiTarget > 0;
+                if (!adaRealisasi && !adaTarget && persen === null && (jumlahPelanggan === null || jumlahPelanggan === undefined)) {
                     return;
                 }
 
@@ -575,22 +733,43 @@
                 var teksPelanggan = (jumlahPelanggan === null || jumlahPelanggan === undefined)
                     ? '-'
                     : Number(jumlahPelanggan).toLocaleString('id-ID') + ' plg';
+                var teksRealisasi = adaRealisasi ? 'R: ' + formatNilai(nilaiRealisasi) : null;
+                var teksTarget = adaTarget ? 'T: ' + formatNilai(nilaiTarget) : null;
 
                 var x = bar.x;
                 var y = bar.y - 8; // sedikit di atas ujung batang
+                var lineGap = 12;
 
-                ctx.font = '700 10.5px inherit';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'alphabetic';
 
-                // Baris 1: % pencapaian (warna ijo/merah sesuai capaian)
-                ctx.fillStyle = (persen !== null && persen >= 100) ? '#16803c' : (persen === null ? '#9aa4c2' : '#c62828');
-                ctx.fillText(teksPersen, x, y);
+                var baris = [];
 
-                // Baris 2: jumlah pelanggan (warna biru netral)
-                ctx.font = '600 9.5px inherit';
-                ctx.fillStyle = '#0f6bd9';
-                ctx.fillText(teksPelanggan, x, y - 12);
+                // Baris paling atas: nilai Target (kalau ada)
+                if (teksTarget) {
+                    baris.push({ text: teksTarget, font: '600 9.5px inherit', color: '#b8860b' });
+                }
+                // Nilai Realisasi
+                if (teksRealisasi) {
+                    baris.push({ text: teksRealisasi, font: '700 9.5px inherit', color: '#0b3d91' });
+                }
+                // % pencapaian (warna ijo/merah sesuai capaian)
+                baris.push({
+                    text: teksPersen,
+                    font: '700 10.5px inherit',
+                    color: (persen !== null && persen >= 100) ? '#16803c' : (persen === null ? '#9aa4c2' : '#c62828')
+                });
+                // Baris paling bawah (paling dekat batang): jumlah pelanggan
+                baris.push({ text: teksPelanggan, font: '600 9.5px inherit', color: '#0f6bd9' });
+
+                // Gambar dari bawah ke atas biar urutannya: pelanggan (dekat
+                // batang) -> % -> realisasi -> target (paling atas)
+                for (var b = baris.length - 1; b >= 0; b--) {
+                    var offsetIndex = baris.length - 1 - b;
+                    ctx.font = baris[b].font;
+                    ctx.fillStyle = baris[b].color;
+                    ctx.fillText(baris[b].text, x, y - (offsetIndex * lineGap));
+                }
             });
 
             ctx.restore();
@@ -630,7 +809,7 @@
             // Ruang ekstra di atas biar label % & jumlah pelanggan gak
             // kepotong sama batas atas canvas pas nilainya mendekati
             // puncak sumbu Y.
-            layout: { padding: { top: 26 } },
+            layout: { padding: { top: 58 } },
             plugins: {
                 legend: {
                     display: true,
