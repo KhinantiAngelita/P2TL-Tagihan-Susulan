@@ -53,6 +53,7 @@
     .trend-table-head {
         display: flex; align-items: center; justify-content: space-between; gap: 12px;
         padding: 18px 22px; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+        background: #fafbfe;
     }
     .trend-table-head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
     .trend-table-head-icon {
@@ -144,12 +145,27 @@
         .trend-table-legend { width: 100%; order: 3; }
         .trend-summary-bar { padding: 12px 16px; }
         .trend-summary-chip { min-width: 100%; }
+        /* PERBAIKAN: .table-scroll (wrapper global, overflow-x:auto buat
+           scroll tabel lebar di desktop) kadang lebarnya sepersekian pixel
+           melebihi viewport di HP, jadi browser tetap nampilin jalur
+           scroll horizontal tipis di kanan — kelihatan kayak garis/sliver
+           "kepotong" di pinggir kanan tiap card row-best/row-worst. Di
+           mode card-stack ini kita nggak butuh scroll ke samping lagi,
+           jadi dimatikan total. */
+        .table-scroll { overflow-x: hidden; }
         .trend-table thead { display: none; }
         .trend-table, .trend-table tbody, .trend-table tr, .trend-table td { display: block; width: 100%; }
         .trend-table tbody { padding: 10px; }
         .trend-table tbody tr {
             margin-bottom: 10px; border: 1px solid var(--border); border-radius: 12px;
             padding: 4px 14px; background: #fff;
+            /* PERBAIKAN: garis "patah"/persegi nongol di pojok kanan
+               baris row-best/row-worst — background warnanya ada di td
+               di dalam tr, dan tanpa overflow:hidden di sini, background
+               td itu nggak ikut kepotong lengkungan border-radius si tr,
+               jadi pojoknya kelihatan kotak/patah walau border tr sudah
+               rounded. */
+            overflow: hidden;
         }
         .trend-table tbody tr:last-child { margin-bottom: 0; }
         .trend-table tbody tr.row-best { border-color: #b9e6c6; }
@@ -166,7 +182,7 @@
         }
         .trend-table tbody td:first-child::before { content: none; }
         .trend-table tfoot { display: block; }
-        .trend-table tfoot tr { display: block; margin: 4px 10px 10px; border-radius: 12px; background: #fafbfe; }
+        .trend-table tfoot tr { display: block; margin: 4px 10px 10px; border-radius: 12px; background: #fafbfe; overflow: hidden; }
         .trend-table tfoot td {
             display: flex; align-items: center; justify-content: space-between; text-align: right;
             border-top: none; padding: 8px 14px;

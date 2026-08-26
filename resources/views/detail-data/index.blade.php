@@ -11,6 +11,10 @@
 
 @push('styles')
 <style>
+    @media (max-width: 900px) {
+        .info-grid { grid-template-columns: repeat(2, 1fr); }
+        .chart-grid { grid-template-columns: 1fr; }
+    }
     .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
     .info-item { display: flex; align-items: center; gap: 12px; }
     .info-icon {
@@ -100,21 +104,21 @@
         background: rgba(255, 255, 255, .15);
     }
 
-    .btn-export-excel {
+    .btn-export-pdf {
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        background: #1e7e46;
+        background: #c2412b;
         color: #fff;
-        border: 1px solid #1e7e46;
+        border: 1px solid #c2412b;
         border-radius: 9px;
         font-weight: 600;
         text-decoration: none;
         transition: .2s;
     }
-    .btn-export-excel:hover {
-        background: #17663a;
-        border-color: #17663a;
+    .btn-export-pdf:hover {
+        background: #a4331f;
+        border-color: #a4331f;
         color: #fff;
     }
 
@@ -278,6 +282,25 @@
         flex:1 1 auto;
         min-height:0;
     }
+    .section-title {
+        font-size: 19px;
+        font-weight: 800;
+        color: #1b2559;
+        margin: 32px 0 16px;
+        padding: 0 0 10px 14px;
+        border-left: 4px solid var(--blue-primary);
+        border-bottom: 2px solid #eaf0fb;
+    }
+    .section-title:first-of-type { margin-top: 0; }
+
+    .golongan-info-list { margin-top: 14px; }
+    .golongan-info-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 8px 0; border-bottom: 1px solid #f1f3f9; font-size: 12.5px;
+    }
+    .golongan-info-row:last-child { border-bottom: none; }
+    .golongan-info-row .gol-name { font-weight: 700; color: #1b2559; }
+    .golongan-info-row .gol-detail { color: #6b7690; text-align: right; }
 
     @keyframes popup{
 
@@ -456,6 +479,58 @@
         display:flex;justify-content:flex-end;gap:10px;
         padding:18px 25px;border-top:1px solid var(--border);
     }
+
+    /* ============ RESPONSIVE ============ */
+
+    @media (max-width: 1024px) {
+        .chart-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 900px) {
+        .info-grid { grid-template-columns: repeat(2, 1fr); }
+        .chart-grid { grid-template-columns: 1fr; }
+        .chart-grid-equal { grid-template-columns: 1fr; }
+        .dash-stats { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 700px) {
+        .modal-grid { grid-template-columns: 1fr; }
+        .custom-modal { padding: 10px 0; }
+        .custom-modal-content { width: 95%; max-height: 92vh; }
+        .table-toolbar { flex-direction: column; align-items: stretch; }
+        .table-toolbar form { flex-direction: column; align-items: stretch; }
+        .search-input, .filter-select { width: 100%; box-sizing: border-box; }
+        .search-wrap, .filter-wrap { width: 100%; }
+        .table-toolbar .btn, .table-toolbar .btn-outline { width: 100%; text-align: center; }
+        .filter-chart-card { flex-direction: column; align-items: stretch; }
+        .filter-chart-card form { flex-direction: column; align-items: stretch; }
+        .date-range-wrap { width: 100%; }
+        .date-range-wrap .date-input { flex: 1; min-width: 0; }
+    }
+
+    @media (max-width: 560px) {
+        .info-grid { grid-template-columns: 1fr; }
+        .dash-stats { grid-template-columns: 1fr; }
+        h2 { font-size: 19px !important; }
+        .section-title { font-size: 16px; margin: 24px 0 12px; }
+        div[style*="display:flex;align-items:flex-start;justify-content:space-between"] {
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+        div[style*="display:flex;align-items:flex-end;gap:10px"] {
+            flex-direction: column;
+            align-items: stretch !important;
+            width: 100%;
+        }
+        div[style*="display:flex;align-items:flex-end;gap:10px"] > div { width: 100%; }
+        div[style*="display:flex;align-items:flex-end;gap:10px"] a.btn {
+            width: 100%;
+            justify-content: center;
+        }
+        .data-table { font-size: 11.5px; }
+        .data-table thead th, .data-table tbody td { padding: 8px 10px; }
+        .row-actions { gap: 4px; }
+        .icon-btn { width: 30px; height: 30px; }
 </style>
 @endpush
 
@@ -482,18 +557,28 @@
         <label style="display:block;font-size:11.5px;font-weight:600;color:#9aa4c2;text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px 2px;visibility:hidden;">
             &nbsp;
         </label>
-        <a href="#" class="btn btn-export-excel" style="padding:9px 14px;font-size:13px;white-space:nowrap;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <path d="M14 2v6h6"/>
-                <path d="m8 13 2.5 5M10.5 13 8 18"/>
-                <path d="m14 13 2.5 5M16.5 13 14 18"/>
-            </svg>
-            Export Excel
-        </a>
+        <a href="{{ route('laporan.export-pdf', array_filter([
+            'laporan'        => $laporan->id,
+            'search'         => $search,
+            'golongan'       => $golonganAktif !== 'semua' ? $golonganAktif : null,
+            'ulp'            => $ulpAktif !== 'semua' ? $ulpAktif : null,
+            'tanggal_dari'   => $tanggalDari,
+            'tanggal_sampai' => $tanggalSampai,
+        ])) }}" class="btn btn-export-pdf" target="_blank">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <path d="M14 2v6h6"/>
+            <path d="M9 15h1a1 1 0 0 0 0-2H9v4"/>
+            <path d="M13 13v4h1.5a1.5 1.5 0 0 0 0-3H13"/>
+            <path d="M17 13v4M17 15h1.5"/>
+        </svg>
+        Export PDF
+    </a>
     </div>
     </div>
 </div>
+
+<h3 class="section-title">Ringkasan Utama</h3>
 
 {{-- Info laporan --}}
 <div class="card" style="padding:18px 22px;margin-bottom:22px;">
@@ -537,10 +622,8 @@
     </div>
 </div>
 
-{{-- Filter rentang tanggal — DIPINDAH KE ATAS. Berlaku untuk kartu ringkasan
-     di bawah ini, 5 grafik, dan tabel "Semua Data Detail" (berdasarkan
-     tanggal_register). Dikasih warna gradient biru biar keliatan beda dari
-     card putih lainnya dan jelas "menaungi" kartu ringkasan di bawahnya. --}}
+{{-- Filter rentang tanggal — berlaku untuk kartu ringkasan, semua grafik,
+     dan tabel "Semua Data Detail" (berdasarkan tanggal_register). --}}
 <div class="card filter-chart-card filter-chart-card--active">
     <div style="display:flex;align-items:center;gap:10px;">
         <div class="info-icon" style="width:34px;height:34px;">
@@ -581,8 +664,7 @@
     </form>
 </div>
 
-{{-- Kartu statistik — sekarang pakai .dash-stats / .dash-stat-card, sama persis kayak dashboard.
-     Nilainya SEKARANG ikut Filter Rentang Tanggal di atas. --}}
+{{-- Kartu statistik — nilainya ikut Filter Rentang Tanggal di atas. --}}
 <div class="dash-stats">
     <div class="dash-stat-card tone-yellow">
         <div class="dash-stat-top">
@@ -618,7 +700,9 @@
     </div>
 </div>
 
-{{-- Chart: distribusi golongan & tunai vs angsuran --}}
+<h3 class="section-title">Analisis Golongan Tarif</h3>
+
+{{-- Chart: distribusi golongan (dengan info jumlah pelanggan/KWH/persen) & komposisi P vs K --}}
 <div class="chart-grid">
     <div class="chart-card">
         <div class="chart-card-head">
@@ -631,18 +715,22 @@
 
         <canvas id="chartGolongan" height="110"></canvas>
     </div>
-    <div class="chart-card">
+        <div class="chart-card">
         <div class="chart-card-head">
             <div>
-                <h4>Tunai vs Angsuran</h4>
-                <p class="chart-sub">Proporsi pembayaran</p>
+                <h4>Komposisi Golongan P vs K</h4>
+                <p class="chart-sub">Perbandingan jumlah pelanggan</p>
             </div>
         </div>
-        <canvas id="chartTunaiAngsuranDonut" height="110"></canvas>
+        <div style="height:280px;position:relative;">
+            <canvas id="chartKomposisiPK"></canvas>
+        </div>
     </div>
 </div>
 
-{{-- Chart: tren harian & tunai vs angsuran --}}
+<h3 class="section-title">Tren Harian</h3>
+
+{{-- Chart: tren harian KWH & TS --}}
 <div class="chart-grid-equal">
     <div class="chart-card">
         <div class="chart-card-head">
@@ -668,14 +756,16 @@
     <div class="chart-card" style="margin-bottom:22px;">
         <div class="chart-card-head">
             <div>
-                <h4>Tren Tunai vs Angsuran</h4>
-                <p class="chart-sub">Tagihan tunai dan angsuran per hari &mdash; {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
+                <h4>Tren Golongan P vs K</h4>
+                <p class="chart-sub">Jumlah pelanggan golongan P dan K per hari &mdash; {{ $laporan->bulan }} {{ $laporan->tahun }}</p>
             </div>
         </div>
         <div style="height:180px;">
-            <canvas id="chartTunaiAngsuranHarian"></canvas>
+            <canvas id="chartTrenPK"></canvas>
         </div>
     </div>
+
+<h3 class="section-title">Data Detail</h3>
 
 {{-- Tabel semua data detail --}}
 <div class="card" style="padding:0;overflow:hidden;">
@@ -779,14 +869,7 @@
                                     <circle cx="12" cy="12" r="3"/>
                                 </svg>
                             </button>
-
-                            {{-- Edit --}}
-                            <button type="button" class="icon-btn warning btn-edit" data-id="{{ $row->id }}" title="Edit">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                                </svg>
-                            </button>
-
+                            
                             {{-- Hapus --}}
                             <button type="button" class="icon-btn danger btn-delete"
                                     data-id="{{ $row->id }}"
@@ -918,187 +1001,7 @@
     </div>
 </div>
 
-{{-- ================= MODAL EDIT ================= --}}
-<div id="editModal" class="custom-modal">
-    <div class="custom-modal-content" style="width:1000px;">
-        <form id="editForm" method="POST" style="display:flex;flex-direction:column;min-height:0;flex:1 1 auto;overflow:hidden;">
-            @csrf
-            @method('PUT')
-
-            <div class="modal-header-blue">
-                <div class="header-text">
-                    <div class="header-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                    </div>
-                    <div>
-                        <h3>Edit Data Pelanggan</h3>
-                        <p>No. Agenda: <span id="editAgenda">-</span></p>
-                    </div>
-                </div>
-                <button class="close-modal" type="button">&times;</button>
-            </div>
-
-            <div class="modal-body">
-
-                <div class="modal-section">
-                    <p class="section-label">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        Data Pelanggan
-                    </p>
-                    <div class="modal-grid">
-                        <div class="form-group">
-                            <label>No Agenda</label>
-                            <div class="field-wrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
-                                <input type="text" name="no_agenda" id="e_no_agenda">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>IDPEL</label>
-                            <div class="field-wrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M19 4h-2a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/></svg>
-                                <input type="text" name="idpel" id="e_idpel" required>
-                            </div>
-                        </div>
-                        <div class="form-group full">
-                            <label>Nama Pelanggan</label>
-                            <div class="field-wrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                <input type="text" name="nama" id="e_nama" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Golongan</label>
-                            <div class="field-wrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"/></svg>
-                                <input type="text" name="gol" id="e_gol">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Daya (VA)</label>
-                            <div class="field-wrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                                <input type="text" name="daya" id="e_daya">
-                            </div>
-                        </div>
-                        <div class="form-group full">
-                            <label>Alamat</label>
-                            <div class="field-wrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v18"/><path d="M2 22h20M10 6h.01M14 6h.01M10 10h.01M14 10h.01M10 14h.01M14 14h.01M10 18h4"/></svg>
-                                <input type="text" name="alamat" id="e_alamat">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-section">
-                    <p class="section-label">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        Tagihan Susulan
-                    </p>
-                    <div class="modal-grid">
-                        <div class="form-group">
-                            <label>KWH</label>
-                            <div class="field-wrap"><input type="number" step="1" name="kwh" id="e_kwh"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>Beban (Rp)</label>
-                            <div class="field-wrap"><input type="number" step="1" name="beban" id="e_beban"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>KWH (Rp)</label>
-                            <div class="field-wrap"><input type="number" step="1" name="kwh_rupiah" id="e_kwh_rupiah"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>TS</label>
-                            <div class="field-wrap"><input type="number" step="1" name="ts" id="e_ts"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-section">
-                    <p class="section-label">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                        Rupiah Biaya Lain-lain
-                    </p>
-                    <div class="modal-grid">
-                        <div class="form-group"><label>Materai</label><div class="field-wrap"><input type="number" step="1" name="materai" id="e_materai"></div></div>
-                        <div class="form-group"><label>Segel</label><div class="field-wrap"><input type="number" step="1" name="segel" id="e_segel"></div></div>
-                        <div class="form-group"><label>Materia</label><div class="field-wrap"><input type="number" step="1" name="materia" id="e_materia"></div></div>
-                        <div class="form-group"><label>RPPPJ</label><div class="field-wrap"><input type="number" step="1" name="rpppj" id="e_rpppj"></div></div>
-                        <div class="form-group"><label>RPUJL</label><div class="field-wrap"><input type="number" step="1" name="rpujl" id="e_rpujl"></div></div>
-                        <div class="form-group"><label>RPPPN</label><div class="field-wrap"><input type="number" step="1" name="rpppn" id="e_rpppn"></div></div>
-                    </div>
-                </div>
-
-                <div class="modal-section">
-                    <p class="section-label">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
-                        Penetapan
-                    </p>
-                    <div class="modal-grid">
-                        <div class="form-group">
-                            <label>Tunai (Rp)</label>
-                            <div class="field-wrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                                <input type="number" step="1" name="tunai" id="e_tunai">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Angsuran (Rp)</label>
-                            <div class="field-wrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                                <input type="number" step="1" name="angsuran" id="e_angsuran">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Tanggal Register</label>
-                            <div class="field-wrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                                <input type="date" name="tanggal_register" id="e_tanggal_register">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Nomor Register</label>
-                            <div class="field-wrap"><input type="text" name="nomor_register" id="e_nomor_register"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>Tanggal SPH</label>
-                            <div class="field-wrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                                <input type="date" name="tanggal_sph" id="e_tanggal_sph">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Nomor SPH</label>
-                            <div class="field-wrap"><input type="text" name="nomor_sph" id="e_nomor_sph"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="total-box">
-                    <div>
-                        <span>Total (Tunai + Angsuran)</span>
-                        <p style="margin:4px 0 0;font-size:12px;color:#9aa4c2;">Dihitung otomatis</p>
-                    </div>
-                    <h2 id="e_total">Rp 0</h2>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline close-modal">Batal</button>
-                <button type="submit" class="btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><polyline points="20 6 9 17 4 12"/></svg>
-                    Simpan Perubahan
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 {{-- ================= MODAL DELETE ================= --}}
-{{-- Diseragamkan dengan modal konfirmasi hapus di halaman Daftar Laporan:
-     header merah solid (bukan gradient), icon putih, layout & teks senada. --}}
 <div id="deleteModal" class="custom-modal">
     <div class="custom-modal-content" style="width:420px;">
 
@@ -1150,76 +1053,55 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <script>
     new Chart(document.getElementById('chartGolongan'), {
         type: 'bar',
         data: {
-            labels: {!! json_encode($distribusiGolongan->keys()) !!},
+            labels: {!! json_encode($distribusiGolonganDetail->pluck('gol')) !!},
             datasets: [{
-                data: {!! json_encode($distribusiGolongan->values()) !!},
-                backgroundColor: ['#ffce3a', '#0b3d91', '#3d63b8', '#6b8fd6'],
+                data: {!! json_encode($distribusiGolonganDetail->pluck('total_kwh')) !!},
+                backgroundColor: ['#ffce3a', '#0b3d91', '#3d63b8', '#6b8fd6', '#1a9c4a'],
                 borderRadius: 4,
                 minBarLength: 6,
             }]
         },
+        plugins: [ChartDataLabels],
         options: {
+            layout: { padding: { top: 34 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
                         label: function(ctx) {
-                            return ' ' + Number(ctx.raw).toLocaleString('id-ID') + ' KWH';
+                            const jml = {!! json_encode($distribusiGolonganDetail->pluck('jumlah_pelanggan')) !!}[ctx.dataIndex];
+                            return [' ' + Number(ctx.raw).toLocaleString('id-ID') + ' KWH', ' ' + jml.toLocaleString('id-ID') + ' pelanggan'];
                         }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    offset: 4,
+                    color: '#1b2559',
+                    font: { size: 10.5, weight: '700' },
+                    lineHeight: 1.3,
+                    formatter: function(value, ctx) {
+                        const jml = {!! json_encode($distribusiGolonganDetail->pluck('jumlah_pelanggan')) !!}[ctx.dataIndex];
+                        const persen = {!! json_encode($distribusiGolonganDetail->pluck('persen_kwh')) !!}[ctx.dataIndex];
+                        const kwhFormatted = Number(value).toLocaleString('id-ID');
+                        return kwhFormatted + ' KWH\n' + jml.toLocaleString('id-ID') + ' plg  •  ' + persen.toString().replace('.', ',') + '%';
                     }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return Number(value).toLocaleString('id-ID');
-                        }
-                    }
+                    ticks: { callback: v => Number(v).toLocaleString('id-ID') }
                 }
             }
         }
-    });
-
-    new Chart(document.getElementById('chartTunaiAngsuranHarian'), {
-        type: 'line',
-        data: {
-            labels: {!! json_encode($trenHarian->pluck('tanggal')->map(fn ($t) => \Carbon\Carbon::parse($t)->format('d M'))) !!},
-            datasets: [
-                {
-                    label: 'Tunai',
-                    data: {!! json_encode($trenHarian->pluck('tunai')) !!},
-                    borderColor: '#0b3d91',
-                    tension: 0.3,
-                },
-                {
-                    label: 'Angsuran',
-                    data: {!! json_encode($trenHarian->pluck('angsuran')) !!},
-                    borderColor: '#ffce3a',
-                    tension: 0.3,
-                }
-            ]
-        },
-        options: {
-            maintainAspectRatio: false,   // <-- tambahin ini
-            plugins: {
-                legend: { position: 'top' },
-                tooltip: {
-                    callbacks: {
-                        label: function(ctx) {
-                            return ' ' + ctx.dataset.label + ': Rp ' + Number(ctx.raw).toLocaleString('id-ID');
-                        }
-                    }
-                }
-            },
-            scales: { y: { beginAtZero: true } }
-        }
-    });
+});
 
     new Chart(document.getElementById('chartTrenKwh'), {
     type: 'line',
@@ -1287,30 +1169,81 @@
         }
     });
 
-    new Chart(document.getElementById('chartTunaiAngsuranDonut'), {
+    new Chart(document.getElementById('chartKomposisiPK'), {
         type: 'doughnut',
         data: {
-            labels: ['Tunai', 'Angsuran'],
+            labels: [
+                'Golongan P ({{ number_format($totalPelangganP, 0, ",", ".") }})',
+                'Golongan K ({{ number_format($totalPelangganK, 0, ",", ".") }})'
+            ],
             datasets: [{
-                data: [{{ $totalTunaiChart }}, {{ $totalAngsuranChart }}],
+                data: [{{ $totalPelangganP }}, {{ $totalPelangganK }}],
                 backgroundColor: ['#0b3d91', '#ffce3a'],
             }]
         },
+        plugins: [ChartDataLabels],
         options: {
-            cutout: '70%',
+            maintainAspectRatio: false,
+            cutout: '55%',
             plugins: {
-                legend: { position: 'bottom' },
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 10, font: { size: 11.5, weight: '600' }, padding: 14 }
+                },
                 tooltip: {
                     callbacks: {
                         label: function(ctx) {
-                            return ' ' + ctx.label + ': Rp ' + Number(ctx.raw).toLocaleString('id-ID');
+                            return ' ' + ctx.label + ' pelanggan';
                         }
+                    }
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: { size: 13, weight: '800' },
+                    formatter: function(value, ctx) {
+                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                        const persen = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                        return persen.toString().replace('.', ',') + '%';
                     }
                 }
             }
         }
-})
+    });
 
+    new Chart(document.getElementById('chartTrenPK'), {
+        type: 'line',
+        data: {
+            labels: {!! json_encode($trenPK->pluck('tanggal')->map(fn ($t) => \Carbon\Carbon::parse($t)->format('d M'))) !!},
+            datasets: [
+                {
+                    label: 'Golongan P',
+                    data: {!! json_encode($trenPK->pluck('jumlah_p')) !!},
+                    borderColor: '#0b3d91',
+                    tension: 0.3,
+                },
+                {
+                    label: 'Golongan K',
+                    data: {!! json_encode($trenPK->pluck('jumlah_k')) !!},
+                    borderColor: '#ffce3a',
+                    tension: 0.3,
+                }
+            ]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ' ' + ctx.dataset.label + ': ' + Number(ctx.raw).toLocaleString('id-ID') + ' pelanggan';
+                        }
+                    }
+                }
+            },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', function () {
 
@@ -1350,46 +1283,9 @@
         document.getElementById('d_total').textContent = formatRupiah(data.total);
     }
 
-    function fillEdit(data, id){
-        document.getElementById('editForm').action = updateUrlTemplate.replace('__ID__', id);
-        document.getElementById('editAgenda').textContent = data.no_agenda ?? '-';
-        document.getElementById('e_no_agenda').value = data.no_agenda ?? '';
-        document.getElementById('e_idpel').value = data.idpel ?? '';
-        document.getElementById('e_nama').value = data.nama ?? '';
-        document.getElementById('e_gol').value = data.gol ?? '';
-        document.getElementById('e_daya').value = data.daya ?? '';
-        document.getElementById('e_alamat').value = data.alamat ?? '';
-        document.getElementById('e_kwh').value = data.kwh ?? 0;
-        document.getElementById('e_beban').value = data.beban ?? 0;
-        document.getElementById('e_kwh_rupiah').value = data.kwh_rupiah ?? 0;
-        document.getElementById('e_ts').value = data.ts ?? 0;
-        document.getElementById('e_materai').value = data.materai ?? 0;
-        document.getElementById('e_segel').value = data.segel ?? 0;
-        document.getElementById('e_materia').value = data.materia ?? 0;
-        document.getElementById('e_rpppj').value = data.rpppj ?? 0;
-        document.getElementById('e_rpujl').value = data.rpujl ?? 0;
-        document.getElementById('e_rpppn').value = data.rpppn ?? 0;
-        document.getElementById('e_tunai').value = data.tunai ?? 0;
-        document.getElementById('e_angsuran').value = data.angsuran ?? 0;
-        document.getElementById('e_tanggal_register').value = fmtDate(data.tanggal_register);
-        document.getElementById('e_nomor_register').value = data.nomor_register ?? '';
-        document.getElementById('e_tanggal_sph').value = fmtDate(data.tanggal_sph);
-        document.getElementById('e_nomor_sph').value = data.nomor_sph ?? '';
-        recalcEditTotal();
-    }
-
-    function recalcEditTotal(){
-        const tunai = parseFloat(document.getElementById('e_tunai').value) || 0;
-        const angsuran = parseFloat(document.getElementById('e_angsuran').value) || 0;
-        document.getElementById('e_total').textContent = formatRupiah(tunai + angsuran);
-    }
-    document.getElementById('e_tunai').addEventListener('input', recalcEditTotal);
-    document.getElementById('e_angsuran').addEventListener('input', recalcEditTotal);
-
     // Event delegation — tetap jalan walau tabel di-render ulang via pagination/filter
     document.addEventListener('click', function (e) {
         const detailBtn = e.target.closest('.btn-detail');
-        const editBtn   = e.target.closest('.btn-edit');
         const closeBtn  = e.target.closest('.close-modal');
         const deleteBtn = e.target.closest('.btn-delete');
 
@@ -1399,14 +1295,6 @@
                 .then(res => { if (!res.ok) throw new Error(res.status); return res.json(); })
                 .then(data => { fillDetail(data); document.getElementById('detailModal').style.display = 'flex'; })
                 .catch(err => { console.error(err); alert('Gagal memuat detail data.'); });
-        }
-
-        if (editBtn) {
-            const id = editBtn.dataset.id;
-            fetch(showUrlTemplate.replace('__ID__', id))
-                .then(res => { if (!res.ok) throw new Error(res.status); return res.json(); })
-                .then(data => { fillEdit(data, id); document.getElementById('editModal').style.display = 'flex'; })
-                .catch(err => { console.error(err); alert('Gagal memuat data untuk edit.'); });
         }
 
         if (closeBtn) {
@@ -1422,17 +1310,14 @@
             document.getElementById('del_idpel').textContent = idpel;
             document.getElementById('deleteForm').action = destroyUrlTemplate.replace('__ID__', id);
 
-            document.getElementById('deleteModal').style.display = 'flex';   // ganti dari 'block'
+            document.getElementById('deleteModal').style.display = 'flex';
         }
 
         if (e.target.classList.contains('custom-modal')) {
             e.target.style.display = 'none';
         }
 
-        
-
     });
-    
 
 });
 
@@ -1449,36 +1334,37 @@
         const tahunSelect = document.getElementById('tahunSelect');
         const bulanSelect = document.getElementById('bulanSelect');
 
-        // Isi dropdown Tahun (urut terbaru dulu)
-        Object.keys(dataPeriode).sort((a, b) => b - a).forEach(tahun => {
-            const opt = document.createElement('option');
-            opt.value = tahun;
-            opt.textContent = tahun;
-            if (tahun === tahunAktif) opt.selected = true;
-            tahunSelect.appendChild(opt);
-        });
-
-        function isiBulan(tahun) {
-            bulanSelect.innerHTML = '';
-            (dataPeriode[tahun] || []).forEach(item => {
+        if (tahunSelect && bulanSelect) {
+            Object.keys(dataPeriode).sort((a, b) => b - a).forEach(tahun => {
                 const opt = document.createElement('option');
-                opt.value = item.url;
-                opt.textContent = item.bulan;
-                if (tahun === tahunAktif && item.bulan === bulanAktif) opt.selected = true;
-                bulanSelect.appendChild(opt);
+                opt.value = tahun;
+                opt.textContent = tahun;
+                if (tahun === tahunAktif) opt.selected = true;
+                tahunSelect.appendChild(opt);
+            });
+
+            function isiBulan(tahun) {
+                bulanSelect.innerHTML = '';
+                (dataPeriode[tahun] || []).forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.url;
+                    opt.textContent = item.bulan;
+                    if (tahun === tahunAktif && item.bulan === bulanAktif) opt.selected = true;
+                    bulanSelect.appendChild(opt);
+                });
+            }
+
+            isiBulan(tahunSelect.value);
+
+            tahunSelect.addEventListener('change', function () {
+                isiBulan(this.value);
+                bulanSelect.dispatchEvent(new Event('change'));
+            });
+
+            bulanSelect.addEventListener('change', function () {
+                if (this.value) window.location.href = this.value;
             });
         }
-
-        isiBulan(tahunSelect.value);
-
-        tahunSelect.addEventListener('change', function () {
-            isiBulan(this.value);
-            bulanSelect.dispatchEvent(new Event('change')); // langsung pindah ke bulan pertama tahun itu
-        });
-
-        bulanSelect.addEventListener('change', function () {
-            if (this.value) window.location.href = this.value;
-        });
 });
 
     // ---- Tutup modal (tombol X, Batal, klik backdrop) ----

@@ -59,6 +59,14 @@
     }
     .rpt-table th:last-child, .rpt-table td:last-child { border-right: none; }
 
+    /* PERBAIKAN: kolom terakhir di tiap grup warna (TS pada grup P,
+       TS pada grup K) ditandai class .grp-end supaya border-right
+       soft-nya dimatikan — biar nggak dobel sama garis batas grup
+       (.grp-start-outer, border-left abu tegas) di kolom sebelahnya.
+       Sebelumnya dicoba pakai `:last-of-type` tapi itu cuma cocok utk
+       tag (th), bukan class, jadi nggak pernah kena kolom yang benar. */
+    .rpt-table th.grp-end, .rpt-table td.grp-end { border-right: none; }
+
     /* ===== Header — warna cuma di sini, 2 baris (judul grup + sub-header) ===== */
     .rpt-table thead th {
         border-bottom: 1px solid var(--border);
@@ -78,16 +86,12 @@
     .rpt-table thead th.grp-total { background: #eef0f6; color: #1b2559; }
 
     /* Garis pemisah putih tipis di dalam header berwarna (antar PLG/KWH/TS),
-       lebih terang dari border abu biasa supaya kebaca di atas warna gelap */
+       lebih terang dari border abu biasa supaya kebaca di atas warna gelap.
+       Kolom .grp-end di dalamnya otomatis kepotong duluan oleh rule di atas. */
     .rpt-table thead th.grp-p,
     .rpt-table thead th.grp-k,
     .rpt-table thead th.grp-total {
         border-right: 1px solid rgba(255,255,255,.55);
-    }
-    .rpt-table thead tr.grp-row th.grp-p:last-of-type,
-    .rpt-table thead tr.grp-row th.grp-k:last-of-type,
-    .rpt-table thead tr.grp-row th.grp-total:last-of-type {
-        border-right: none;
     }
     /* Garis lebih tebal/gelap di batas ANTAR grup (P|K|Total), biar
        transisi antar kelompok kolom tetap kelihatan jelas */
@@ -125,6 +129,11 @@
         position: sticky; left: 0; z-index: 3; background: #f7f8fc; text-align: left;
     }
     .rpt-table tfoot td.col-nama { left: 40px; }
+    /* PERBAIKAN: sel Total di footer pakai colspan="2" (gabungan
+       kolom No + UP3), jadi lebarnya mulai dari 0, bukan dari 40px
+       seperti kolom UP3 biasa. Tanpa ini, "UID JABAR" nyantol geser
+       ke kanan 40px saat tabel discroll ke samping. */
+    .rpt-table tfoot td.col-total-label { left: 0; }
 
     .filter-wrap { position: relative; }
     .filter-wrap svg {
@@ -203,8 +212,8 @@
                         <th colspan="3" class="grp-total grp-start-outer">Total</th>
                     </tr>
                     <tr class="sub-row">
-                        <th class="grp-p grp-start-outer">PLG</th><th class="grp-p">KWH</th><th class="grp-p">TS</th>
-                        <th class="grp-k grp-start-outer">PLG</th><th class="grp-k">KWH</th><th class="grp-k">TS</th>
+                        <th class="grp-p grp-start-outer">PLG</th><th class="grp-p">KWH</th><th class="grp-p grp-end">TS</th>
+                        <th class="grp-k grp-start-outer">PLG</th><th class="grp-k">KWH</th><th class="grp-k grp-end">TS</th>
                         <th class="grp-total grp-start-outer">KWH</th><th class="grp-total">% P KWH</th><th class="grp-total">% K KWH</th>
                     </tr>
                 </thead>
@@ -216,11 +225,11 @@
 
                             <td class="grp-start-outer">{{ number_format($row['p']['plg'], 0, ',', '.') }}</td>
                             <td>{{ number_format($row['p']['kwh'], 0, ',', '.') }}</td>
-                            <td>{{ number_format($row['p']['ts'], 0, ',', '.') }}</td>
+                            <td class="grp-end">{{ number_format($row['p']['ts'], 0, ',', '.') }}</td>
 
                             <td class="grp-start-outer">{{ number_format($row['k']['plg'], 0, ',', '.') }}</td>
                             <td>{{ number_format($row['k']['kwh'], 0, ',', '.') }}</td>
-                            <td>{{ number_format($row['k']['ts'], 0, ',', '.') }}</td>
+                            <td class="grp-end">{{ number_format($row['k']['ts'], 0, ',', '.') }}</td>
 
                             <td class="grp-start-outer">{{ number_format($row['total_kwh'], 0, ',', '.') }}</td>
                             <td>{{ number_format($row['persen_p'], 2, ',', '.') }}%</td>
@@ -230,13 +239,13 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="2" class="col-nama">UID JABAR</td>
+                        <td colspan="2" class="col-nama col-total-label">UID JABAR</td>
                         <td class="grp-start-outer">{{ number_format($totalRingkasan['p']['plg'], 0, ',', '.') }}</td>
                         <td>{{ number_format($totalRingkasan['p']['kwh'], 0, ',', '.') }}</td>
-                        <td>{{ number_format($totalRingkasan['p']['ts'], 0, ',', '.') }}</td>
+                        <td class="grp-end">{{ number_format($totalRingkasan['p']['ts'], 0, ',', '.') }}</td>
                         <td class="grp-start-outer">{{ number_format($totalRingkasan['k']['plg'], 0, ',', '.') }}</td>
                         <td>{{ number_format($totalRingkasan['k']['kwh'], 0, ',', '.') }}</td>
-                        <td>{{ number_format($totalRingkasan['k']['ts'], 0, ',', '.') }}</td>
+                        <td class="grp-end">{{ number_format($totalRingkasan['k']['ts'], 0, ',', '.') }}</td>
                         <td class="grp-start-outer">{{ number_format($totalRingkasan['total_kwh'], 0, ',', '.') }}</td>
                         <td>{{ number_format($totalRingkasan['persen_p'], 2, ',', '.') }}%</td>
                         <td>{{ number_format($totalRingkasan['persen_k'], 2, ',', '.') }}%</td>

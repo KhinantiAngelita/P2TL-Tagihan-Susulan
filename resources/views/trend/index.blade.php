@@ -88,35 +88,86 @@
        kepotong/nabrak sama bagian atas card. */
     .trend-chart-canvas-wrap { position: relative; height: 350px; width: 100%; }
 
-    .persen-badge {
-        display: inline-flex; align-items: center; padding: 3px 10px;
-        border-radius: 999px; font-size: 12.5px; font-weight: 700;
-    }
-    .persen-badge.tone-hijau { background: #e5f7ec; color: #16803c; }
-    .persen-badge.tone-merah { background: #fdeaea; color: #c62828; }
-    .persen-badge.tone-abu   { background: #eef0f6; color: #6b7690; }
-
     /* ===== Tabel horizontal (bulan = kolom, Target/Realisasi/%/Pelanggan
        = baris) ===== */
     .trend-hz-table-wrap { padding: 0; overflow: hidden; }
+    .trend-hz-table-head {
+        display: flex; align-items: center; gap: 12px;
+        padding: 18px 22px; border-bottom: 1px solid var(--border);
+        background: #fafbfe;
+    }
+    .trend-hz-table-head .icon {
+        width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: #eaf0fb; color: #0b3d91;
+    }
+    .trend-hz-table-head .icon svg { width: 17px; height: 17px; }
+    .trend-hz-table-head strong { font-size: 14.5px; color: #1b2559; display: block; }
+    .trend-hz-table-head span { font-size: 12px; color: #9aa4c2; }
+
     .trend-hz-table { width: 100%; border-collapse: collapse; }
     .trend-hz-table th, .trend-hz-table td {
         padding: 13px 16px; font-size: 13px; text-align: center; white-space: nowrap;
         border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);
+        transition: background .12s;
     }
     .trend-hz-table th:first-child, .trend-hz-table td:first-child {
         text-align: left; font-weight: 700; color: var(--text-dark);
         background: #fafbfe; position: sticky; left: 0; z-index: 1;
+        display: flex; align-items: center; gap: 8px;
     }
+    .trend-hz-table th:first-child .row-icon,
+    .trend-hz-table td:first-child .row-icon {
+        width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+    .trend-hz-table td:first-child .row-icon svg { width: 12px; height: 12px; }
+    .row-icon.tone-target    { background: #fde6f0; color: #c0246b; }
+    .row-icon.tone-realisasi { background: #e5f7ec; color: #1a9c4a; }
+    .row-icon.tone-persen    { background: #fff6e0; color: #b8860b; }
+    .row-icon.tone-pelanggan { background: #eaf0fb; color: #0f6bd9; }
+
     .trend-hz-table thead th {
         color: var(--text-muted); font-weight: 700; font-size: 11.5px;
         text-transform: uppercase; letter-spacing: .03em; background: #fafbfe;
     }
+    .trend-hz-table thead th:first-child {
+        text-align: left;
+        color: #c3c9dc;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: normal;
+        padding-left: 16px;
+        display: table-cell;
+    }
+    .trend-hz-table thead th:not(:first-child) { transition: background .12s; cursor: default; }
+    .trend-hz-table thead th:not(:first-child):hover,
+    .trend-hz-table tbody tr td:not(:first-child):hover {
+        background: #f4f7ff;
+    }
     .trend-hz-table tbody tr:last-child td { border-bottom: none; }
     .trend-hz-table tbody td { color: var(--text-dark); font-weight: 500; }
-    .trend-hz-table tbody tr:nth-child(1) td { color: #c0246b; } /* baris Target */
-    .trend-hz-table tbody tr:nth-child(2) td:not(:first-child) { color: #1a9c4a; } /* baris Realisasi */
-    .trend-hz-table tbody tr:nth-child(4) td:not(:first-child) { color: #0f6bd9; font-weight: 600; } /* baris Jumlah Pelanggan */
+
+    /* baris Target */
+    .trend-hz-table tbody tr.row-target td:not(:first-child) { color: #c0246b; }
+    /* baris Realisasi */
+    .trend-hz-table tbody tr.row-realisasi td:not(:first-child) {
+        color: #1a9c4a; font-weight: 700;
+    }
+    /* baris Jumlah Pelanggan */
+    .trend-hz-table tbody tr.row-pelanggan td:not(:first-child) { color: #0f6bd9; font-weight: 600; }
+    /* baris % Pencapaian — background soft di kolom (bukan cuma teks),
+       3 tone: hijau (tercapai), oren (mendekati), merah (jauh dari
+       target). Background & teks dua-duanya ngikutin tone yang sama. */
+    .persen-text { font-weight: 700; }
+    td.tone-hijau { background: #eafaf0; }
+    td.tone-hijau .persen-text { color: #16803c; }
+    td.tone-oren { background: #fff4e5; }
+    td.tone-oren .persen-text { color: #c47a06; }
+    td.tone-merah { background: #fdecec; }
+    td.tone-merah .persen-text { color: #c62828; }
+    td.tone-abu { background: #f4f5f9; }
+    td.tone-abu .persen-text { color: #9aa4c2; }
 
     /* ===== Card "Selisih dari Target" — sengaja dibikin ringkas =====
        Detail lengkap (persen per bulan, ranking bulan tertinggi/
@@ -165,6 +216,7 @@
            tapi padding & font dikecilin dikit biar lebih banyak kolom
            bulan yang keliatan sekali swipe. */
         .trend-hz-table th, .trend-hz-table td { padding: 10px 12px; font-size: 12px; }
+        .trend-hz-table-head { padding: 14px 16px; }
     }
 
     @media (max-width: 420px) {
@@ -375,48 +427,75 @@
 </div>
 
 <div class="card trend-hz-table-wrap">
-    <div style="padding:18px 22px;border-bottom:1px solid var(--border);">
-        <strong style="font-size:14.5px;color:#1b2559;">Rincian per Bulan — Target, Realisasi, % Pencapaian &amp; Jumlah Pelanggan</strong>
+    <div class="trend-hz-table-head">
+        <div class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <div>
+            <strong>Rincian per Bulan</strong>
+            <span>Target, Realisasi, % Pencapaian &amp; Jumlah Pelanggan — Tahun {{ $tahunAktif ?: '-' }}</span>
+        </div>
     </div>
     <div class="table-scroll">
         <table class="trend-hz-table">
             <thead>
                 <tr>
-                    <th></th>
+                    <th>Kategori</th>
                     @foreach ($labels as $label)
                         <th>{{ $label }}</th>
                     @endforeach
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>Target</td>
+                <tr class="row-target">
+                    <td>
+                        <span class="row-icon tone-target">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".5" fill="currentColor"/></svg>
+                        </span>
+                        Target
+                    </td>
                     @foreach ($targetData as $nilaiTarget)
                         <td>{{ number_format($nilaiTarget, 2, ',', '.') }}</td>
                     @endforeach
                 </tr>
-                <tr>
-                    <td>Realisasi</td>
+                <tr class="row-realisasi">
+                    <td>
+                        <span class="row-icon tone-realisasi">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                        </span>
+                        Realisasi
+                    </td>
                     @foreach ($data as $nilaiRealisasi)
                         <td>{{ number_format($nilaiRealisasi, 2, ',', '.') }}</td>
                     @endforeach
                 </tr>
-                <tr>
-                    <td>% Pencapaian</td>
-                    @foreach ($persenPerBulanMentah as $persen)
-                        <td>
-                            @if ($persen === null)
-                                <span class="persen-badge tone-abu">-</span>
-                            @else
-                                <span class="persen-badge {{ $persen >= 100 ? 'tone-hijau' : 'tone-merah' }}">{{ $persen }}%</span>
-                            @endif
-                        </td>
-                    @endforeach
-                </tr>
-                <tr>
-                    <td>Jumlah Pelanggan</td>
+                <tr class="row-pelanggan">
+                    <td>
+                        <span class="row-icon tone-pelanggan">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </span>
+                        Jumlah Pelanggan
+                    </td>
                     @foreach ($jumlahPelangganData as $jmlPelanggan)
                         <td>{{ $jmlPelanggan !== null ? number_format($jmlPelanggan, 0, ',', '.') : '-' }}</td>
+                    @endforeach
+                </tr>
+                <tr class="row-persen">
+                    <td>
+                        <span class="row-icon tone-persen">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+                        </span>
+                        % Pencapaian
+                    </td>
+                    @foreach ($persenPerBulanMentah as $persen)
+                        @php
+                            $toneP = $persen === null
+                                ? 'abu'
+                                : ($persen >= 100 ? 'hijau' : ($persen >= 80 ? 'oren' : 'merah'));
+                        @endphp
+                        <td class="tone-{{ $toneP }}">
+                            <span class="persen-text">{{ $persen === null ? '-' : $persen . '%' }}</span>
+                        </td>
                     @endforeach
                 </tr>
             </tbody>

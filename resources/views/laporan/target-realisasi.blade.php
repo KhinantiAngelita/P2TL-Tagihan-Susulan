@@ -53,17 +53,24 @@
 
     .trend-table thead th {
         white-space: nowrap; text-align: left; padding: 11px 22px; font-size: 11.5px;
-        text-transform: uppercase; letter-spacing: .03em; color: #6b7690; font-weight: 700;
-        background: #fafbfe; border-bottom: 1px solid var(--border);
+        text-transform: uppercase; letter-spacing: .03em; color: #6b7690; font-weight: 800;
+        background: #eef0f6; border-bottom: 1px solid var(--border);
         position: sticky; top: 0; z-index: 1;
     }
-    /* Kolom No dan Unit Pelaksana rata kiri, sisanya rata kanan agar rapi */
-    .trend-table thead th:nth-child(n+3) { text-align: right; }
+    /* Kolom No dan Unit Pelaksana rata kiri, sisanya rata kanan.
+       Dipakai :not(:first-child) + :not(:nth-child(2)) supaya aman
+       walau ada colspan di baris header (bukan dihitung by index). */
+    .trend-table thead th.text-right,
+    .trend-table thead tr:not(.sub-row) th:nth-child(n+3) { text-align: right; }
+    .trend-table thead tr:not(.sub-row) th:nth-child(3) { text-align: center; }
 
     /* ===== Warna soft di header kolom Target & Realisasi (sub-row
        kedua saja) — biru lembut untuk Target, hijau lembut untuk
        Realisasi, teks di-bold lebih tegas biar menonjol. Kolom %
        dibiarkan netral karena badge-nya sendiri sudah berwarna. ===== */
+    .trend-table thead tr.sub-row th {
+        text-align: right; font-weight: 800;
+    }
     .trend-table thead tr.sub-row th.col-target {
         background: #e4ebfb; color: #1d4ed8; font-weight: 800; border-right-color: rgba(255,255,255,.6);
     }
@@ -72,7 +79,8 @@
     }
 
     .trend-table tbody td { padding: 13px 22px; font-size: 13.5px; color: var(--text-dark, #1b2559); border-bottom: 1px solid var(--border); }
-    .trend-table tbody td:nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
+    .trend-table tbody td.text-left { text-align: left; font-weight: 600; }
+    .trend-table tbody td:not(.text-left) { text-align: right; font-variant-numeric: tabular-nums; }
     .trend-table tbody tr:last-child td { border-bottom: none; }
     .trend-table tbody tr:hover td { background: #f6f8fd; }
 
@@ -80,7 +88,12 @@
         padding: 13px 22px; font-size: 13px; font-weight: 700; color: #1b2559;
         background: #fafbfe; border-top: 2px solid var(--border);
     }
-    .trend-table tfoot td:nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
+    /* PERBAIKAN: dulu pakai td:nth-child(n+3), padahal sel pertama
+       tfoot pakai colspan="2" — nth-child tidak menghitung colspan,
+       jadi kolom Target ikut ke-skip dari rata kanan. Sekarang pakai
+       :not(:first-child) supaya kebal terhadap colspan. */
+    .trend-table tfoot td:first-child { text-align: left; }
+    .trend-table tfoot td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
 
     /* Badge Persentase Lembut (Soft Palette) ala Menu Pencapaian */
     .persen-badge {
@@ -126,13 +139,13 @@
             display: flex; align-items: center; justify-content: space-between;
             padding: 9px 0; border-bottom: 1px dashed var(--border); text-align: right;
         }
-        .trend-table tbody td:first-child { display: flex; font-size: 14px; }
+        .trend-table tbody td.text-left { display: flex; font-size: 14px; }
+        .trend-table tbody td:first-child::before { content: none; }
         .trend-table tbody tr td:last-child { border-bottom: none; }
         .trend-table tbody td::before {
             content: attr(data-label); font-size: 11px; font-weight: 700; color: #9aa4c2;
             text-transform: uppercase; letter-spacing: .03em; text-align: left;
         }
-        .trend-table tbody td:first-child::before { content: none; }
         .trend-table tfoot { display: block; }
         .trend-table tfoot tr { display: block; margin: 4px 10px 10px; border-radius: 12px; background: #fafbfe; }
         .trend-table tfoot td {
@@ -198,13 +211,13 @@
                 <thead>
                     <tr>
                         <th rowspan="2" style="width: 50px;">No</th>
-                        <th rowspan="2" style="text-align: left;">Unit Pelaksana</th>
-                        <th colspan="3" style="text-align: center;">Periode Terpilih</th>
+                        <th rowspan="2">Unit Pelaksana</th>
+                        <th colspan="3">Periode Terpilih</th>
                     </tr>
                     <tr class="sub-row">
-                        <th class="col-target" style="text-align: right;">Target</th>
-                        <th class="col-realisasi" style="text-align: right;">Realisasi</th>
-                        <th style="text-align: right;">%</th>
+                        <th class="col-target">Target</th>
+                        <th class="col-realisasi">Realisasi</th>
+                        <th>%</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -224,7 +237,7 @@
                         @endphp
                         <tr>
                             <td data-label="No">{{ $i + 1 }}</td>
-                            <td data-label="Unit Pelaksana" style="text-align: left; font-weight: 600;">{{ $row['nama'] }}</td>
+                            <td data-label="Unit Pelaksana" class="text-left">{{ $row['nama'] }}</td>
                             <td data-label="Target">{{ number_format($row['target'], 0, ',', '.') }}</td>
                             <td data-label="Realisasi">{{ number_format($row['realisasi'], 0, ',', '.') }}</td>
                             <td data-label="% Pencapaian">
@@ -248,7 +261,7 @@
                         }
                     @endphp
                     <tr>
-                        <td data-label="Total" colspan="2" style="text-align: left;">UID JABAR</td>
+                        <td data-label="Total" colspan="2">UID JABAR</td>
                         <td data-label="Target">{{ number_format($totalTarget, 0, ',', '.') }}</td>
                         <td data-label="Realisasi">{{ number_format($totalRealisasi, 0, ',', '.') }}</td>
                         <td data-label="% Pencapaian">
