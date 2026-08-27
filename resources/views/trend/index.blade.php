@@ -188,7 +188,16 @@
         color: inherit; text-decoration: none; font-weight: 700;
         display: inline-flex; align-items: center; gap: 4px;
     }
-    .dash-stat-detail-link:hove    /* ===== Tombol "Salin Gambar" di tiap card ===== */
+    /* PERBAIKAN: selector ini sebelumnya kepotong jadi ":hove" (tanpa
+       "r") dan nyambung langsung tanpa "{ }" ke selector .copyable-card
+       di bawahnya — browser baca ini sebagai SATU selector gabungan
+       yang invalid (".dash-stat-detail-link:hove .copyable-card"), jadi
+       seluruh rule di-skip diam-diam oleh browser, dan
+       ".copyable-card { position: relative; }" gak pernah kepasang.
+       Sekarang dipisah jadi 2 rule yang valid. */
+    .dash-stat-detail-link:hover { text-decoration: underline; }
+
+    /* ===== Tombol "Salin Gambar" di tiap card ===== */
     .copyable-card { position: relative; }
 
     .card-copy-btn {
@@ -210,9 +219,7 @@
     .card-copy-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
 
     .card-copy-btn:hover { background: #f4f6fb; border-color: #c7cede; }
-    .card-copy-btn.is-busy { opacity: .6; pointer-events: none; }
-    .card-copy-btn.is-done { background: #e5f7ec; border-color: #1a9c4a; color: #1a9c4a; }
-    .card-copy-btn.is-error { background: #fdecec; border-color: #e0433d; color: #e0433d; }
+    .card-copy-btn:disabled { opacity: .6; cursor: default; }
 
     @media (max-width: 640px) {
         .card-copy-btn { font-size: 12px; padding: 6px 12px; }
@@ -431,14 +438,14 @@
     </div>
 </div>
 
-<div class="card trend-chart-card copyable-card" data-copy-name="trend-{{ $metric }}-{{ $mode }}">
+<div class="card trend-chart-card copyable-card">
     <div class="trend-chart-head">
         <div>
             <h3>{{ $mode === 'kumulatif' ? 'Trend Komulatif' : 'Trend Bulanan' }} — {{ $metric === 'kwh' ? 'kWh' : 'Rp TS' }}</h3>
             <p>{{ $mode === 'kumulatif' ? 'Akumulasi nilai dari Januari sampai bulan berjalan' : 'Nilai per bulan (tidak diakumulasi)' }} &mdash; Tahun {{ $tahunAktif ?: '-' }}</p>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-            <button type="button" class="card-copy-btn" title="Salin sebagai gambar">
+            <button type="button" class="card-copy-btn" onclick="salinTabelGambar('capture-trend-chart', this, 'Trend {{ $metric === 'kwh' ? 'kWh' : 'Rp TS' }} — {{ $mode === 'kumulatif' ? 'Komulatif' : 'Bulanan' }}')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span class="card-copy-btn-label">Salin Gambar</span>
             </button>
@@ -446,19 +453,21 @@
         </div>
     </div>
 
-    {{-- Keterangan singkat: label di atas tiap bar = % pencapaian &
-         jumlah pelanggan BULAN ITU, digambar langsung di chart. --}}
-    <p class="trend-chart-note">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-        Angka di atas tiap batang = % pencapaian &amp; jumlah pelanggan bulan itu.
-    </p>
+    <div id="capture-trend-chart">
+        {{-- Keterangan singkat: label di atas tiap bar = % pencapaian &
+             jumlah pelanggan BULAN ITU, digambar langsung di chart. --}}
+        <p class="trend-chart-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Angka di atas tiap batang = % pencapaian &amp; jumlah pelanggan bulan itu.
+        </p>
 
-    <div class="trend-chart-canvas-wrap">
-        <canvas id="trendChart"></canvas>
+        <div class="trend-chart-canvas-wrap">
+            <canvas id="trendChart"></canvas>
+        </div>
     </div>
 </div>
 
-<div class="card trend-hz-table-wrap copyable-card" data-copy-name="rincian-per-bulan-{{ $metric }}">
+<div class="card trend-hz-table-wrap copyable-card">
     <div class="trend-hz-table-head">
         <div class="icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -467,12 +476,13 @@
             <strong>Rincian per Bulan</strong>
             <span>Target, Realisasi, % Pencapaian &amp; Jumlah Pelanggan — Tahun {{ $tahunAktif ?: '-' }}</span>
         </div>
-        <button type="button" class="card-copy-btn" title="Salin sebagai gambar" style="margin-left:auto;">
+        <button type="button" class="card-copy-btn" style="margin-left:auto;" onclick="salinTabelGambar('capture-trend-tabel', this, 'Rincian per Bulan — {{ $metric === 'kwh' ? 'kWh' : 'Rp TS' }}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span class="card-copy-btn-label">Salin Gambar</span>
         </button>
     </div>
-    
+
+    <div id="capture-trend-tabel">
     <div class="table-scroll">
         <table class="trend-hz-table">
             <thead>
@@ -538,6 +548,7 @@
             </tbody>
         </table>
     </div>
+    </div>
 </div>
 @endsection
 
@@ -566,113 +577,18 @@
     7. Custom plugin drawBarLabels dipakai (bukan library eksternal
        kayak chartjs-plugin-datalabels) biar gak nambah dependency CDN
        baru — cukup pakai Chart.js API bawaan (afterDatasetsDraw).
+    8. PERBAIKAN: sebelumnya ada potongan kode yang ke-duplikat/nyangkut
+       di tengah objek `new Chart(...)` — ada string '#ffce3a' yang
+       nyasar di luar objek manapun, dan key "options" muncul DUA KALI.
+       Itu bikin seluruh <script> di halaman ini gagal di-parse browser
+       (SyntaxError), jadi BUKAN CUMA chart/Target-nya yang gak jalan,
+       tombol "Salin Gambar" di semua card juga ikut mati total karena
+       satu tag <script> yang sama gagal di-parse dari awal. Sudah
+       dibersihkan jadi satu objek Chart yang valid.
 --}}
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+@include('laporan.partials.copy-image-script')
 <script>
-(function () {
-    /**
-     * Salin sebuah elemen card sebagai gambar PNG ke clipboard.
-     * Kalau Clipboard API gagal (browser lama / non-HTTPS), fallback
-     * ke download file PNG langsung.
-     */
-    function setBtnState(btn, state) {
-        btn.classList.remove('is-busy', 'is-done', 'is-error');
-        if (state) btn.classList.add(state);
-        if (state === 'is-done' || state === 'is-error') {
-            setTimeout(function () {
-                btn.classList.remove('is-done', 'is-error');
-            }, 1600);
-        }
-    }
-
-    function withTemporaryOverflowVisible(card, callback) {
-        // Elemen tabel di dalam card sering dibungkus .table-scroll
-        // (overflow-x:auto) — biar html2canvas nangkep SELURUH lebar
-        // tabel (bukan cuma yang keliatan di layar), overflow-nya
-        // dibuka sementara pas proses screenshot lalu dikembalikan lagi.
-        var scrollers = card.querySelectorAll('.table-scroll');
-        var originalStyles = [];
-
-        scrollers.forEach(function (el) {
-            originalStyles.push({
-                el: el,
-                overflow: el.style.overflow,
-                width: el.style.width,
-            });
-            el.style.overflow = 'visible';
-            el.style.width = el.scrollWidth + 'px';
-        });
-
-        return callback().finally(function () {
-            originalStyles.forEach(function (s) {
-                s.el.style.overflow = s.overflow;
-                s.el.style.width = s.width;
-            });
-        });
-    }
-
-    function copyCardAsImage(card, btn) {
-        setBtnState(btn, 'is-busy');
-
-        withTemporaryOverflowVisible(card, function () {
-            return html2canvas(card, {
-                backgroundColor: '#ffffff',
-                scale: 2,
-                useCORS: true,
-                ignoreElements: function (el) {
-                    return el.classList && el.classList.contains('card-copy-btn');
-                },
-            });
-        }).then(function (canvas) {
-            canvas.toBlob(function (blob) {
-                if (!blob) {
-                    setBtnState(btn, 'is-error');
-                    return;
-                }
-
-                if (navigator.clipboard && window.ClipboardItem) {
-                    navigator.clipboard.write([
-                        new ClipboardItem({ 'image/png': blob })
-                    ]).then(function () {
-                        setBtnState(btn, 'is-done');
-                    }).catch(function () {
-                        downloadBlob(blob, card.dataset.copyName || 'card');
-                        setBtnState(btn, 'is-done');
-                    });
-                } else {
-                    // Browser tidak dukung Clipboard API image — fallback download
-                    downloadBlob(blob, card.dataset.copyName || 'card');
-                    setBtnState(btn, 'is-done');
-                }
-            }, 'image/png');
-        }).catch(function (err) {
-            console.error('Gagal menyalin card sebagai gambar:', err);
-            setBtnState(btn, 'is-error');
-        });
-    }
-
-    function downloadBlob(blob, name) {
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = name + '.png';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    }
-
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.card-copy-btn');
-        if (!btn) return;
-
-        var card = btn.closest('.copyable-card');
-        if (!card) return;
-
-        copyCardAsImage(card, btn);
-    });
-})();
 (function () {
     var canvas = document.getElementById('trendChart');
     if (!canvas) return;
@@ -794,6 +710,13 @@
                     pointBackgroundColor: '#ffce3a',
                     tension: 0.3,
                     order: 1,
+                    // PERBAIKAN: Target dipisah ke sumbu Y sendiri (y1) —
+                    // skalanya jauh lebih kecil dibanding Realisasi (bisa
+                    // ribuan kali lipat bedanya), jadi kalau dipaksa satu
+                    // sumbu sama Realisasi, garis Target keinjek rata di
+                    // dasar chart dan kelihatannya kayak "gak kepanggil"
+                    // padahal datanya sebenernya ada & ke-render.
+                    yAxisID: 'y1',
                 },
             ]
         },
@@ -805,23 +728,6 @@
             // kepotong sama batas atas canvas pas nilainya mendekati
             // puncak sumbu Y.
             layout: { padding: { top: 58 } },
-'#ffce3a',
-                    borderWidth: 2.5,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#ffce3a',
-                    tension: 0.3,
-                    order: 1,
-                },
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            // Ruang ekstra di atas biar label % & jumlah pelanggan gak
-            // kepotong sama batas atas canvas pas nilainya mendekati
-            // puncak sumbu Y.
-            layout: { padding: { top: 26 } },
             plugins: {
                 legend: {
                     display: true,
@@ -845,6 +751,20 @@
                     beginAtZero: true,
                     grid: { color: '#eef0f6' },
                     ticks: {
+                        callback: function (v) {
+                            return Number(v).toLocaleString('id-ID');
+                        }
+                    }
+                },
+                // Sumbu Y kedua khusus buat garis Target, skala independen
+                // dari sumbu Y utama (Realisasi) — lihat komentar di
+                // dataset Target di atas.
+                y1: {
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { display: false },
+                    ticks: {
+                        color: '#b8860b',
                         callback: function (v) {
                             return Number(v).toLocaleString('id-ID');
                         }

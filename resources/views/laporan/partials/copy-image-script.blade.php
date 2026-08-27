@@ -21,13 +21,14 @@
  *    jadi semua elemen sticky di clone diubah jadi `relative` (bukan
  *    `static`, biar pseudo-element ::after yang posisinya absolute
  *    tetap punya containing block yang benar) sebelum di-capture.
- * 4. Label kolom hilang di mode kartu (HP) — label "Target", "Realisasi"
- *    dst di tampilan mobile itu teks buatan CSS (`::before { content:
- *    attr(data-label) }`), dan html2canvas TIDAK BISA render CSS
- *    generated content sama sekali. Fix-nya: deteksi STRUKTURAL (kolom
- *    pertama tiap baris dilewati, sisanya yang punya `data-label` selalu
- *    dikasih `<span>` label beneran) — bukan nebak dari pembacaan
- *    `::before` yang gak konsisten di semua browser.
+ * 4. [DIHAPUS] Sebelumnya ada langkah tambahan buat nyisipin label
+ *    manual di tiap sel tabel (buat jaga-jaga kalau capture kepaksa
+ *    render mode-kartu HP, karena label mode-kartu itu asalnya dari CSS
+ *    `::before { content: attr(data-label) }` yang gak bisa dibaca
+ *    html2canvas). Sekarang DIHAPUS total — sejak poin 5 di bawah
+ *    (capture selalu dipaksa tampilan desktop lewat iframe), thead asli
+ *    SELALU kepake, jadi langkah itu cuma bikin teks label dobel di
+ *    tiap baris (sekali dari header asli, sekali dari span buatan).
  * 5. [BARU] Hasil capture ikut tampilan mode-kartu HP padahal maunya
  *    selalu tampilan tabel desktop (dengan header "PERIODE TERPILIH",
  *    kolom Target/Realisasi berwarna, dst) — soalnya `@media` query itu
@@ -153,7 +154,19 @@ function salinTabelGambar(elId, btnEl, judul) {
         w.style.maxHeight  = 'none';
     });
     Array.prototype.forEach.call(clone.querySelectorAll('table'), function (t) {
-        t.style.width = 'max-content';
+        // PERBAIKAN: dulu dipaksa `width: max-content` biar tabel lebar
+        // (mis. Gol Tarif/ULP) gak kepotong pas discroll. Tapi buat tabel
+        // yang nggak lebar-lebar amat (mis. tabel Data Pencapaian, cuma 5
+        // kolom), efeknya malah bikin tabel jadi LEBIH SEMPIT dari
+        // konten lain di atasnya (mis. baris chip ringkasan) — background
+        // warna baris row-best/row-worst jadi berhenti duluan, nyisain
+        // area putih kosong di kanan sampai tepi kartu, kelihatan gak
+        // nyambung. `width:auto` + `min-width:100%` lebih aman: tabel
+        // tetap ngisi penuh minimal selebar container-nya (sama kayak
+        // versi live yang pakai width:100%), tapi masih bisa melebar
+        // lagi kalau kontennya genuinely butuh lebih lebar dari itu.
+        t.style.width = 'auto';
+        t.style.minWidth = '100%';
     });
 
     // ---- 1c. Beberapa tabel (mis. Gol Tarif Prabayar/Paskabayar) ngatur
@@ -191,32 +204,13 @@ function salinTabelGambar(elId, btnEl, judul) {
         w.parentNode.insertBefore(spacer, w.nextSibling);
     });
 
-    // ---- 2b. Fallback label mode-kartu (lihat poin 4 di komentar atas).
-    // Karena sekarang capture dipaksa selalu tampilan desktop (poin 5),
-    // blok ini normalnya gak akan pernah kepakai (thead beneran yang
-    // dipakai). Tetap dipertahankan sebagai jaring pengaman kalau suatu
-    // saat ada halaman/skenario yang lolos dari deteksi lebar iframe. ----
-    Array.prototype.forEach.call(clone.querySelectorAll('tbody tr, tfoot tr'), function (tr) {
-        var tdPertama = tr.querySelector('td:first-child');
-        var isFooter  = tr.closest('tfoot') !== null;
+    // (Fallback label mode-kartu yang dulu ada di sini sudah DIHAPUS —
+    // sejak capture selalu dipaksa tampilan desktop lewat iframe [lihat
+    // poin 5 di komentar atas], thead asli SELALU kepake, jadi span
+    // label manual itu cuma bikin teks dobel: sekali dari header tabel
+    // asli, sekali lagi dari span buatan ini di tiap sel.)
 
-        Array.prototype.forEach.call(tr.querySelectorAll('td[data-label]'), function (td) {
-            if (td === tdPertama) return; // kolom pertama sengaja gak dikasih label
 
-            var label = td.getAttribute('data-label');
-            if (!label) return;
-
-            var span = document.createElement('span');
-            span.textContent = label;
-            span.style.cssText =
-                'font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em;' +
-                'text-align:left; display:block; flex-shrink:0; margin-right:8px;' +
-                'color:' + (isFooter ? '#6b7690' : '#9aa4c2') + ';';
-            td.insertBefore(span, td.firstChild);
-        });
-    });
-
-    // ---- 3. Ganti tiap <canvas> di clone dengan <img> berisi snapshot
     // canvas ASLI (yang masih tampil live), karena clone canvas kosong. ----
     var canvasAsli  = sumber.querySelectorAll('canvas');
     var canvasClone = clone.querySelectorAll('canvas');

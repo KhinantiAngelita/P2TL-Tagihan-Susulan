@@ -64,11 +64,33 @@
     .trend-table-head-icon svg { width: 16px; height: 16px; }
     .trend-table-head h3 { margin: 0; font-size: 14.5px; color: #1b2559; }
     .trend-table-head p { margin: 2px 0 0; font-size: 12px; color: #6b7690; }
+    .trend-table-head-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .trend-table-legend { display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: #6b7690; }
     .trend-table-legend span { display: inline-flex; align-items: center; gap: 5px; }
     .trend-table-legend i { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
     .trend-table-legend .dot-best  { background: #16803c; }
     .trend-table-legend .dot-worst { background: #c62828; }
+
+    /* ===== Tombol "Salin Gambar" — sama gayanya dengan Menu Laporan
+       (.copy-btn), supaya konsisten di seluruh aplikasi. ===== */
+    .copy-btn {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: #0b3d91;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .15s, color .15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .copy-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .copy-btn:hover { background: #eaf0fb; }
+    .copy-btn:disabled { opacity: .6; cursor: default; }
 
     /* ===== Bar ringkasan di dalam card (pengganti 4 kartu statistik
        yang dihapus) — nampilin Pencapaian Total, Rata-rata, Bulan
@@ -142,7 +164,8 @@
         /* Tabel "Rincian per Bulan" jadi tumpukan card per-bulan di HP,
            daripada tabel lebar yang harus discroll ke samping. */
         .trend-table-head { padding: 16px; }
-        .trend-table-legend { width: 100%; order: 3; }
+        .trend-table-head-right { width: 100%; justify-content: space-between; }
+        .trend-table-legend { order: 2; }
         .trend-summary-bar { padding: 12px 16px; }
         .trend-summary-chip { min-width: 100%; }
         /* PERBAIKAN: .table-scroll (wrapper global, overflow-x:auto buat
@@ -227,7 +250,7 @@
         </div>
         <div>
             <strong style="font-size:14px;color:#fff;">Filter Pencapaian</strong>
-            <p style="margin:2px 0 0;font-size:12px;color:rgba(255,255,255,.85);">
+            <p style="margin:2px 0 0;font-size:12px;color:rgba(255,255,255,.85);" id="filter-info-text">
                 {{ $jenisOptions[$jenis] }} &middot; Tahun {{ $tahunAktif ?: '-' }} &middot;
                 {{ $ulpAktif === 'semua' ? 'Semua ULP' : ($daftarUlp->firstWhere('kode', $ulpAktif)['nama'] ?? $ulpAktif) }}
             </p>
@@ -269,148 +292,160 @@
                 <p>Target vs aktual {{ $jenisOptions[$jenis] }} &mdash; Tahun {{ $tahunAktif ?: '-' }}</p>
             </div>
         </div>
-        <div class="trend-table-legend">
-            <span><i class="dot-best"></i> Bulan tertinggi</span>
-            <span><i class="dot-worst"></i> Bulan terendah</span>
+        <div class="trend-table-head-right">
+            <div class="trend-table-legend">
+                <span><i class="dot-best"></i> Bulan tertinggi</span>
+                <span><i class="dot-worst"></i> Bulan terendah</span>
+            </div>
+            <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-pencapaian', this, 'Data Pencapaian — {{ $jenisOptions[$jenis] }}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Salin Gambar
+            </button>
         </div>
     </div>
 
-    {{-- ===== Bar ringkasan — pengganti 4 kartu statistik yang dihapus
-         (Pencapaian Total, Rata-rata, Bulan Tertinggi, Bulan Terendah),
-         supaya info-nya tetap ada tanpa nambah card terpisah di luar
-         "Rincian per Bulan". ===== --}}
-    <div class="trend-summary-bar">
-        <div class="trend-summary-chip tone-blue">
-            <div class="trend-summary-chip-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+    <div id="capture-pencapaian">
+        {{-- ===== Bar ringkasan — pengganti 4 kartu statistik yang dihapus
+             (Pencapaian Total, Rata-rata, Bulan Tertinggi, Bulan Terendah),
+             supaya info-nya tetap ada tanpa nambah card terpisah di luar
+             "Rincian per Bulan". ===== --}}
+        <div class="trend-summary-bar">
+            <div class="trend-summary-chip tone-blue">
+                <div class="trend-summary-chip-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                </div>
+                <div>
+                    <div class="trend-summary-chip-label">Pencapaian Total</div>
+                    <div class="trend-summary-chip-value">{{ $persenTotal !== null ? $persenTotal . '%' : 'Target belum diisi' }}</div>
+                    <div class="trend-summary-chip-sub">
+                        {{ $jenis === 'kwh' ? number_format($totalAktual, 0, ',', '.') . ' / ' . number_format($totalTarget, 0, ',', '.') . ' KWH' : 'Rp ' . number_format($totalAktual, 0, ',', '.') . ' / Rp ' . number_format($totalTarget, 0, ',', '.') }}
+                    </div>
+                </div>
             </div>
-            <div>
-                <div class="trend-summary-chip-label">Pencapaian Total</div>
-                <div class="trend-summary-chip-value">{{ $persenTotal !== null ? $persenTotal . '%' : 'Target belum diisi' }}</div>
-                <div class="trend-summary-chip-sub">
-                    {{ $jenis === 'kwh' ? number_format($totalAktual, 0, ',', '.') . ' / ' . number_format($totalTarget, 0, ',', '.') . ' KWH' : 'Rp ' . number_format($totalAktual, 0, ',', '.') . ' / Rp ' . number_format($totalTarget, 0, ',', '.') }}
+
+            <div class="trend-summary-chip tone-yellow">
+                <div class="trend-summary-chip-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                </div>
+                <div>
+                    <div class="trend-summary-chip-label">Rata-rata Pencapaian</div>
+                    <div class="trend-summary-chip-value">{{ $rataRataPersen !== null ? $rataRataPersen . '%' : '-' }}</div>
+                    <div class="trend-summary-chip-sub">Dari bulan yang sudah ada targetnya</div>
+                </div>
+            </div>
+
+            <div class="trend-summary-chip tone-green">
+                <div class="trend-summary-chip-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 8.5 9 9 5-.5 9-4 9-9V7l-9-5Z"/></svg>
+                </div>
+                <div>
+                    <div class="trend-summary-chip-label">Bulan Tertinggi</div>
+                    <div class="trend-summary-chip-value">{{ $bulanTertinggiLabel ?? '-' }}</div>
+                    <div class="trend-summary-chip-sub">{{ $bulanTertinggiPersen !== null ? $bulanTertinggiPersen . '% dari target' : 'Belum ada target' }}</div>
+                </div>
+            </div>
+
+            <div class="trend-summary-chip tone-red">
+                <div class="trend-summary-chip-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22 3 17V7l9-5 9 5v10Z"/><path d="M12 12v.01"/></svg>
+                </div>
+                <div>
+                    <div class="trend-summary-chip-label">Bulan Terendah</div>
+                    <div class="trend-summary-chip-value">{{ $bulanTerendahLabel ?? '-' }}</div>
+                    <div class="trend-summary-chip-sub">{{ $bulanTerendahPersen !== null ? $bulanTerendahPersen . '% dari target' : 'Belum ada target' }}</div>
                 </div>
             </div>
         </div>
 
-        <div class="trend-summary-chip tone-yellow">
-            <div class="trend-summary-chip-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            </div>
-            <div>
-                <div class="trend-summary-chip-label">Rata-rata Pencapaian</div>
-                <div class="trend-summary-chip-value">{{ $rataRataPersen !== null ? $rataRataPersen . '%' : '-' }}</div>
-                <div class="trend-summary-chip-sub">Dari bulan yang sudah ada targetnya</div>
-            </div>
-        </div>
+        @php
+            // Total selisih setahun (buat baris footer tabel) — cuma dihitung
+            // kalau targetnya udah diisi, biar gak nampilin angka yang salah.
+            $totalSelisihTahun = $totalTarget > 0 ? ($totalAktual - $totalTarget) : null;
+        @endphp
 
-        <div class="trend-summary-chip tone-green">
-            <div class="trend-summary-chip-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 8.5 9 9 5-.5 9-4 9-9V7l-9-5Z"/></svg>
-            </div>
-            <div>
-                <div class="trend-summary-chip-label">Bulan Tertinggi</div>
-                <div class="trend-summary-chip-value">{{ $bulanTertinggiLabel ?? '-' }}</div>
-                <div class="trend-summary-chip-sub">{{ $bulanTertinggiPersen !== null ? $bulanTertinggiPersen . '% dari target' : 'Belum ada target' }}</div>
-            </div>
-        </div>
-
-        <div class="trend-summary-chip tone-red">
-            <div class="trend-summary-chip-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22 3 17V7l9-5 9 5v10Z"/><path d="M12 12v.01"/></svg>
-            </div>
-            <div>
-                <div class="trend-summary-chip-label">Bulan Terendah</div>
-                <div class="trend-summary-chip-value">{{ $bulanTerendahLabel ?? '-' }}</div>
-                <div class="trend-summary-chip-sub">{{ $bulanTerendahPersen !== null ? $bulanTerendahPersen . '% dari target' : 'Belum ada target' }}</div>
-            </div>
-        </div>
-    </div>
-
-    @php
-        // Total selisih setahun (buat baris footer tabel) — cuma dihitung
-        // kalau targetnya udah diisi, biar gak nampilin angka yang salah.
-        $totalSelisihTahun = $totalTarget > 0 ? ($totalAktual - $totalTarget) : null;
-    @endphp
-
-    <div class="table-scroll">
-        <table class="trend-table">
-            <thead>
-                <tr>
-                    <th>Bulan</th>
-                    <th>Target</th>
-                    <th>Aktual</th>
-                    <th>Selisih</th>
-                    <th>% Pencapaian</th>
-                </tr>
-            </thead>
-            <tbody>
-            @forelse ($tabelBulanan as $baris)
-                @php
-                    $rowClass = '';
-                    if ($bulanTertinggiLabel && $baris['label'] === $bulanTertinggiLabel) {
-                        $rowClass = 'row-best';
-                    } elseif ($bulanTerendahLabel && $baris['label'] === $bulanTerendahLabel) {
-                        $rowClass = 'row-worst';
-                    }
-                @endphp
-                <tr class="{{ $rowClass }}">
-                    <td data-label="Bulan">
-                        @if ($rowClass === 'row-best')
-                            <span class="row-star" title="Bulan tertinggi">🟢</span>
-                        @elseif ($rowClass === 'row-worst')
-                            <span class="row-star" title="Bulan terendah">🔴</span>
-                        @endif
-                        <strong>{{ $baris['label'] }}</strong>
-                    </td>
-                    <td data-label="Target">
-                        @if ($baris['target'] > 0)
-                            {{ $jenis === 'kwh' ? number_format($baris['target'], 0, ',', '.') : 'Rp ' . number_format($baris['target'], 0, ',', '.') }}
-                        @else
-                            <span style="color:#9aa4c2;">Belum diisi</span>
-                        @endif
-                    </td>
-                    <td data-label="Aktual">{{ $jenis === 'kwh' ? number_format($baris['aktual'], 0, ',', '.') : 'Rp ' . number_format($baris['aktual'], 0, ',', '.') }}</td>
-                    <td data-label="Selisih" style="color:{{ $baris['selisih'] >= 0 ? '#16803c' : '#c62828' }};">
-                        @if ($baris['target'] > 0)
-                            <span class="diff-cell">
-                                @if ($baris['selisih'] >= 0)
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
-                                @else
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
-                                @endif
-                                {{ $baris['selisih'] >= 0 ? '+' : '' }}{{ $jenis === 'kwh' ? number_format($baris['selisih'], 0, ',', '.') : 'Rp ' . number_format($baris['selisih'], 0, ',', '.') }}
-                            </span>
-                        @else
-                            &mdash;
-                        @endif
-                    </td>
-                    <td data-label="% Pencapaian">
-                        @if ($baris['persen'] === null)
-                            <span class="persen-badge tone-abu">Belum ada target</span>
-                        @else
-                            <span class="persen-badge {{ $baris['persen'] >= 100 ? 'tone-hijau' : 'tone-merah' }}">{{ $baris['persen'] }}%</span>
-                        @endif
-                    </td>
-                </tr>
-            @empty
-                <tr><td colspan="5" style="text-align:center;color:#9aa4c2;padding:24px;">Belum ada data untuk tahun ini.</td></tr>
-            @endforelse
-            </tbody>
-            @if (!empty($tabelBulanan))
-                <tfoot>
+        <div class="table-scroll">
+            <table class="trend-table">
+                <thead>
                     <tr>
-                        <td data-label="Total">Total</td>
-                        <td data-label="Target">{{ $totalTarget > 0 ? ($jenis === 'kwh' ? number_format($totalTarget, 0, ',', '.') : 'Rp ' . number_format($totalTarget, 0, ',', '.')) : '—' }}</td>
-                        <td data-label="Aktual">{{ $jenis === 'kwh' ? number_format($totalAktual, 0, ',', '.') : 'Rp ' . number_format($totalAktual, 0, ',', '.') }}</td>
-                        <td data-label="Selisih" style="color:{{ $totalSelisihTahun !== null && $totalSelisihTahun < 0 ? '#c62828' : '#16803c' }};">
-                            {{ $totalSelisihTahun === null ? '—' : (($totalSelisihTahun >= 0 ? '+' : '') . ($jenis === 'kwh' ? number_format($totalSelisihTahun, 0, ',', '.') : 'Rp ' . number_format($totalSelisihTahun, 0, ',', '.'))) }}
-                        </td>
-                        <td data-label="% Pencapaian">{{ $persenTotal !== null ? $persenTotal . '%' : '—' }}</td>
+                        <th>Bulan</th>
+                        <th>Target</th>
+                        <th>Aktual</th>
+                        <th>Selisih</th>
+                        <th>% Pencapaian</th>
                     </tr>
-                </tfoot>
-            @endif
-        </table>
+                </thead>
+                <tbody>
+                @forelse ($tabelBulanan as $baris)
+                    @php
+                        $rowClass = '';
+                        if ($bulanTertinggiLabel && $baris['label'] === $bulanTertinggiLabel) {
+                            $rowClass = 'row-best';
+                        } elseif ($bulanTerendahLabel && $baris['label'] === $bulanTerendahLabel) {
+                            $rowClass = 'row-worst';
+                        }
+                    @endphp
+                    <tr class="{{ $rowClass }}">
+                        <td data-label="Bulan">
+                            @if ($rowClass === 'row-best')
+                                <span class="row-star" title="Bulan tertinggi">🟢</span>
+                            @elseif ($rowClass === 'row-worst')
+                                <span class="row-star" title="Bulan terendah">🔴</span>
+                            @endif
+                            <strong>{{ $baris['label'] }}</strong>
+                        </td>
+                        <td data-label="Target">
+                            @if ($baris['target'] > 0)
+                                {{ $jenis === 'kwh' ? number_format($baris['target'], 0, ',', '.') : 'Rp ' . number_format($baris['target'], 0, ',', '.') }}
+                            @else
+                                <span style="color:#9aa4c2;">Belum diisi</span>
+                            @endif
+                        </td>
+                        <td data-label="Aktual">{{ $jenis === 'kwh' ? number_format($baris['aktual'], 0, ',', '.') : 'Rp ' . number_format($baris['aktual'], 0, ',', '.') }}</td>
+                        <td data-label="Selisih" style="color:{{ $baris['selisih'] >= 0 ? '#16803c' : '#c62828' }};">
+                            @if ($baris['target'] > 0)
+                                <span class="diff-cell">
+                                    @if ($baris['selisih'] >= 0)
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+                                    @else
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                                    @endif
+                                    {{ $baris['selisih'] >= 0 ? '+' : '' }}{{ $jenis === 'kwh' ? number_format($baris['selisih'], 0, ',', '.') : 'Rp ' . number_format($baris['selisih'], 0, ',', '.') }}
+                                </span>
+                            @else
+                                &mdash;
+                            @endif
+                        </td>
+                        <td data-label="% Pencapaian">
+                            @if ($baris['persen'] === null)
+                                <span class="persen-badge tone-abu">Belum ada target</span>
+                            @else
+                                <span class="persen-badge {{ $baris['persen'] >= 100 ? 'tone-hijau' : 'tone-merah' }}">{{ $baris['persen'] }}%</span>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="5" style="text-align:center;color:#9aa4c2;padding:24px;">Belum ada data untuk tahun ini.</td></tr>
+                @endforelse
+                </tbody>
+                @if (!empty($tabelBulanan))
+                    <tfoot>
+                        <tr>
+                            <td data-label="Total">Total</td>
+                            <td data-label="Target">{{ $totalTarget > 0 ? ($jenis === 'kwh' ? number_format($totalTarget, 0, ',', '.') : 'Rp ' . number_format($totalTarget, 0, ',', '.')) : '—' }}</td>
+                            <td data-label="Aktual">{{ $jenis === 'kwh' ? number_format($totalAktual, 0, ',', '.') : 'Rp ' . number_format($totalAktual, 0, ',', '.') }}</td>
+                            <td data-label="Selisih" style="color:{{ $totalSelisihTahun !== null && $totalSelisihTahun < 0 ? '#c62828' : '#16803c' }};">
+                                {{ $totalSelisihTahun === null ? '—' : (($totalSelisihTahun >= 0 ? '+' : '') . ($jenis === 'kwh' ? number_format($totalSelisihTahun, 0, ',', '.') : 'Rp ' . number_format($totalSelisihTahun, 0, ',', '.'))) }}
+                            </td>
+                            <td data-label="% Pencapaian">{{ $persenTotal !== null ? $persenTotal . '%' : '—' }}</td>
+                        </tr>
+                    </tfoot>
+                @endif
+            </table>
+        </div>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+@include('laporan.partials.copy-image-script')
+@endpush
