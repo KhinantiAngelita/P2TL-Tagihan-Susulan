@@ -19,15 +19,16 @@
     }
     .trend-tabs a.active { background: #fff; color: var(--blue-primary); box-shadow: 0 1px 3px rgba(20,30,80,.12); }
 
-    /* ===== Header halaman — dikasih clamp biar judul gak makan tempat
-       kebanyakan di layar sempit tapi tetap gede di desktop. ===== */
     .trend-page-title { font-size: clamp(18px, 4.2vw, 22px); margin: 0 0 4px; }
 
-    /* ===== Filter card (gradient, kayak versi awal) ===== */
+    /* ===== Filter card (gradient) — sekarang isinya cuma Tahun + toggle
+       mode. Filter ULP/Bulan/Triwulan/Rentang Tanggal dipindah total ke
+       panel "Filter Periode & ULP" (partial shared dengan Menu Laporan),
+       yang di-render terpisah tepat di bawah card ini. ===== */
     .trend-filter-card {
         display: flex; align-items: center; justify-content: space-between;
         flex-wrap: wrap; gap: 14px;
-        padding: 16px 22px; margin-bottom: 18px;
+        padding: 16px 22px; margin-bottom: 14px;
         background: linear-gradient(90deg, #003b94, #0f6bd9);
         border-color: transparent;
     }
@@ -74,18 +75,12 @@
     .trend-chart-head h3 { margin: 0 0 2px; font-size: 16px; color: #1b2559; }
     .trend-chart-head p { margin: 0; font-size: 12.5px; color: #6b7690; }
 
-    /* Catatan kecil di bawah judul chart, jelasin arti label yang
-       digambar langsung di atas tiap bar (% pencapaian & jumlah
-       pelanggan per bulan) — biar gak butuh legend terpisah. */
     .trend-chart-note {
         display: flex; align-items: center; gap: 6px;
         font-size: 11.5px; color: #9aa4c2; margin: 0 0 14px;
     }
     .trend-chart-note svg { width: 13px; height: 13px; flex-shrink: 0; }
 
-    /* Tinggi ditambah dikit dari sebelumnya (320 -> 350) buat kasih
-       ruang label % & jumlah pelanggan di atas tiap bar biar gak
-       kepotong/nabrak sama bagian atas card. */
     .trend-chart-canvas-wrap { position: relative; height: 350px; width: 100%; }
 
     /* ===== Tabel horizontal (bulan = kolom, Target/Realisasi/%/Pelanggan
@@ -148,17 +143,11 @@
     .trend-hz-table tbody tr:last-child td { border-bottom: none; }
     .trend-hz-table tbody td { color: var(--text-dark); font-weight: 500; }
 
-    /* baris Target */
     .trend-hz-table tbody tr.row-target td:not(:first-child) { color: #c0246b; }
-    /* baris Realisasi */
     .trend-hz-table tbody tr.row-realisasi td:not(:first-child) {
         color: #1a9c4a; font-weight: 700;
     }
-    /* baris Jumlah Pelanggan */
     .trend-hz-table tbody tr.row-pelanggan td:not(:first-child) { color: #0f6bd9; font-weight: 600; }
-    /* baris % Pencapaian — background soft di kolom (bukan cuma teks),
-       3 tone: hijau (tercapai), oren (mendekati), merah (jauh dari
-       target). Background & teks dua-duanya ngikutin tone yang sama. */
     .persen-text { font-weight: 700; }
     td.tone-hijau { background: #eafaf0; }
     td.tone-hijau .persen-text { color: #16803c; }
@@ -169,65 +158,39 @@
     td.tone-abu { background: #f4f5f9; }
     td.tone-abu .persen-text { color: #9aa4c2; }
 
-    /* ===== Card "Selisih dari Target" — sengaja dibikin ringkas =====
-       Detail lengkap (persen per bulan, ranking bulan tertinggi/
-       terendah, badge ijo/merah) udah ada di tab "Presentase
-       Pencapaian". Di sini cukup kasih tau selisih nominalnya aja +
-       link ke sana, biar gak dobel nampilin kesimpulan yang sama
-       dengan cara berbeda. */
     .dash-stat-card.tone-pink::before { background: #d81b60; }
     .tone-pink .dash-stat-icon { background: #fde6f0; color: #d81b60; }
 
-    /* Tone netral buat card "Selisih dari Target" pas target belum
-       diisi sama sekali — sengaja dibedain dari tone-pink/tone-green
-       biar gak keliatan kayak ada angka selisih beneran padahal
-       gak ada target buat dibandingin. */
     .dash-stat-card.tone-abu::before { background: #9aa4c2; }
     .tone-abu .dash-stat-icon { background: #eef0f6; color: #6b7690; }
     .dash-stat-detail-link {
         color: inherit; text-decoration: none; font-weight: 700;
         display: inline-flex; align-items: center; gap: 4px;
     }
-    /* PERBAIKAN: selector ini sebelumnya kepotong jadi ":hove" (tanpa
-       "r") dan nyambung langsung tanpa "{ }" ke selector .copyable-card
-       di bawahnya — browser baca ini sebagai SATU selector gabungan
-       yang invalid (".dash-stat-detail-link:hove .copyable-card"), jadi
-       seluruh rule di-skip diam-diam oleh browser, dan
-       ".copyable-card { position: relative; }" gak pernah kepasang.
-       Sekarang dipisah jadi 2 rule yang valid. */
     .dash-stat-detail-link:hover { text-decoration: underline; }
 
-    /* ===== Tombol "Salin Gambar" di tiap card ===== */
     .copyable-card { position: relative; }
 
-    .card-copy-btn {
+    .copy-btn {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: #0b3d91;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .15s, color .15s;
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 7px 14px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: #fff;
-        color: #1b2559;
-        font-size: 12.5px;
-        font-weight: 600;
-        cursor: pointer;
-        white-space: nowrap;
         flex-shrink: 0;
-        transition: background .15s, border-color .15s, color .15s;
     }
-    .card-copy-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .copy-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .copy-btn:hover { background: #eaf0fb; }
+    .copy-btn:disabled { opacity: .6; cursor: default; }
 
-    .card-copy-btn:hover { background: #f4f6fb; border-color: #c7cede; }
-    .card-copy-btn:disabled { opacity: .6; cursor: default; }
-
-    @media (max-width: 640px) {
-        .card-copy-btn { font-size: 12px; padding: 6px 12px; }
-        .card-copy-btn-label { display: none; }
-    }
-
-    /* Dikunci 2 kolom mulai tablet biar kartunya gak terlalu lebar/gepeng
-       di lebar-lebar "aneh" (samain sama tab Presentase Pencapaian). */
     @media (max-width: 900px) {
         .dash-stats { grid-template-columns: repeat(2, 1fr); }
     }
@@ -244,10 +207,6 @@
         .trend-chart-head { flex-direction: column; align-items: flex-start; }
         .chart-badge { align-self: flex-start; }
 
-        /* Tabel horizontal (Target/Realisasi/%/Pelanggan per bulan) —
-           tetap discroll ke samping di HP (udah dibungkus .table-scroll),
-           tapi padding & font dikecilin dikit biar lebih banyak kolom
-           bulan yang keliatan sekali swipe. */
         .trend-hz-table th, .trend-hz-table td { padding: 10px 12px; font-size: 12px; }
         .trend-hz-table-head { padding: 14px 16px; }
     }
@@ -263,39 +222,13 @@
 @endpush
 
 @php
-    // Fallback sementara: kalau controller belum kirim $targetData,
-    // isi 0 semua biar chart & tabel tetap render tanpa error.
-    $targetData = $targetData ?? array_fill(0, count($labels), 0);
-
-    // Fallback: kalau controller belum kirim $jumlahPelangganData (array
-    // jumlah pelanggan unik per bulan, urutan sama kayak $labels), isi
-    // null semua biar tabel/chart tetap render dengan tampilan "-"
-    // daripada error undefined variable.
-    $jumlahPelangganData = $jumlahPelangganData ?? array_fill(0, count($labels), null);
-
-    // Total target tahun berjalan, disesuaikan sama mode tampilan:
-    // - mode kumulatif -> $targetData udah berupa angka akumulasi, jadi
-    //   total-nya tinggal ambil elemen terakhir.
-    // - mode bulanan -> $targetData angka per bulan, jadi total-nya
-    //   dijumlah semua.
     $totalTargetTahunIni = $mode === 'kumulatif'
         ? (float) (end($targetData) ?: 0)
         : (float) array_sum($targetData);
 
-    // Selisih realisasi vs target: positif berarti realisasi MELEBIHI
-    // target (kurang bagus buat metrik susut/TS), negatif berarti masih
-    // di bawah target.
     $selisihTahunIni = $totalTahunIni - $totalTargetTahunIni;
 
-    // % Pencapaian PER BULAN — ini yang ditampilkan langsung di atas
-    // tiap bar chart & di baris tabel, BUKAN angka total setahun.
-    // Dihitung dari $data & $targetData mentah (nilai per bulan asli,
-    // sebelum ikut mode kumulatif), makanya dihitung ulang di sini pakai
-    // pembagian aktual-per-bulan / target-per-bulan yang konsisten
-    // walau mode tampilan lagi "Komulatif".
     $persenPerBulanMentah = collect($labels)->map(function ($label, $i) use ($tabelBulanan, $targetData, $mode, $data) {
-        // Ambil nilai & target PER BULAN (bukan versi kumulatif), biar
-        // %-nya tetap benar walau toggle mode di URL lagi "kumulatif".
         $nilaiBulanIni  = $tabelBulanan[$i]['nilai'] ?? ($mode === 'kumulatif' ? null : ($data[$i] ?? 0));
         $targetBulanIni = $mode === 'kumulatif'
             ? ($i === 0 ? ($targetData[0] ?? 0) : ($targetData[$i] - $targetData[$i - 1]))
@@ -320,62 +253,21 @@
     </div>
 </div>
 
-{{--
-    Urutan tab: "Presentase Pencapaian" ditaro paling depan karena itu
-    yang paling sering dicek duluan ("udah sesuai target belum") —
-    baru kalau perlu drill-down ke nilai aktualnya, pindah ke Trend
-    kWh / Rp TS. Tab ini sebelumnya malah gak ada sama sekali di
-    halaman index, sekarang ditambahin biar bisa pindah tab tanpa
-    balik ke menu dulu.
---}}
 <div class="trend-tabs">
-    <a href="{{ route('trend.pencapaian', request()->only('tahun', 'ulp')) }}">Presentase Pencapaian</a>
-    <a href="{{ route('trend.kwh', request()->only('tahun', 'ulp', 'mode')) }}" class="{{ $metric === 'kwh' ? 'active' : '' }}">Trend kWh</a>
-    <a href="{{ route('trend.ts', request()->only('tahun', 'ulp', 'mode')) }}" class="{{ $metric === 'ts' ? 'active' : '' }}">Trend Rp TS</a>
+    <a href="{{ route('trend.pencapaian', request()->except(['mode'])) }}">Presentase Pencapaian</a>
+    <a href="{{ route('trend.kwh', request()->except([])) }}" class="{{ $metric === 'kwh' ? 'active' : '' }}">Trend kWh</a>
+    <a href="{{ route('trend.ts', request()->except([])) }}" class="{{ $metric === 'ts' ? 'active' : '' }}">Trend Rp TS</a>
 </div>
 
-<div class="card trend-filter-card">
-    <div class="trend-filter-left">
-        <div class="info-icon" style="width:34px;height:34px;background:rgba(255,255,255,.15);color:#ffce3a;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
-        </div>
-        <div>
-            <strong style="font-size:14px;color:#fff;">Filter Trend</strong>
-            <p style="margin:2px 0 0;font-size:12px;color:rgba(255,255,255,.85);">
-                Tahun {{ $tahunAktif ?: '-' }} &middot; {{ $ulpAktif === 'semua' ? 'Semua ULP' : ($daftarUlp->firstWhere('kode', $ulpAktif)['nama'] ?? $ulpAktif) }}
-            </p>
-        </div>
-    </div>
-
-    <div class="trend-filter-right">
-        <form method="GET" class="trend-filter-form">
-            <input type="hidden" name="mode" value="{{ $mode }}">
-
-            <select name="tahun" onchange="this.form.submit()">
-                @forelse ($daftarTahun as $t)
-                    <option value="{{ $t }}" {{ (int) $tahunAktif === (int) $t ? 'selected' : '' }}>{{ $t }}</option>
-                @empty
-                    <option value="">Belum ada data</option>
-                @endforelse
-            </select>
-
-            <select name="ulp" onchange="this.form.submit()">
-                <option value="semua" {{ (string) $ulpAktif === 'semua' ? 'selected' : '' }}>Semua ULP</option>
-                @foreach ($daftarUlp as $u)
-                    <option value="{{ $u['kode'] }}" {{ (string) $ulpAktif === (string) $u['kode'] ? 'selected' : '' }}>{{ $u['kode'] }} - {{ $u['nama'] }}</option>
-                @endforeach
-            </select>
-        </form>
-
-        <div class="trend-mode-toggle">
-            <a href="{{ request()->fullUrlWithQuery(['mode' => 'bulanan']) }}" class="{{ $mode === 'bulanan' ? 'active' : '' }}">Bulan</a>
-            <a href="{{ request()->fullUrlWithQuery(['mode' => 'kumulatif']) }}" class="{{ $mode === 'kumulatif' ? 'active' : '' }}">Komulatif</a>
-        </div>
-    </div>
-</div>
+{{-- Panel Filter Periode & ULP — sekarang juga nampung Tahun & Tampilan
+     (Bulanan/Komulatif) sebagai tab tambahan, khusus buat halaman Trend
+     ini ($tampilkanTahunFilter=true & $mode dikirim dari controller).
+     Triwulan / Bulan / Rentang Tanggal / ULP tetap sama persis dengan
+     yang dipakai di Menu Laporan. --}}
+@include('laporan.partials.filter-periode-ulp')
 
 <div class="dash-stats">
-    <div class="dash-stat-card tone-blue copyable-card" data-copy-name="total-{{ $tahunAktif }}">
+    <div class="dash-stat-card tone-blue copyable-card">
         <div class="dash-stat-top">
             <div class="dash-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
@@ -385,10 +277,10 @@
         <div class="dash-stat-value">
             {{ $metric === 'kwh' ? number_format($totalTahunIni, 0, ',', '.') . ' KWH' : 'Rp ' . number_format($totalTahunIni, 0, ',', '.') }}
         </div>
-        <div class="dash-stat-sub">Sesuai filter tahun &amp; ULP terpilih</div>
+        <div class="dash-stat-sub">Sesuai filter periode &amp; ULP terpilih</div>
     </div>
 
-    <div class="dash-stat-card tone-yellow copyable-card" data-copy-name="rata-rata-bulan">
+    <div class="dash-stat-card tone-yellow copyable-card">
         <div class="dash-stat-top">
             <div class="dash-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
@@ -401,7 +293,7 @@
         <div class="dash-stat-sub">Rata-rata dari bulan yang ada datanya</div>
     </div>
 
-    <div class="dash-stat-card tone-green copyable-card" data-copy-name="bulan-tertinggi">
+    <div class="dash-stat-card tone-green copyable-card">
         <div class="dash-stat-top">
             <div class="dash-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 8.5 9 9 5-.5 9-4 9-9V7l-9-5Z"/></svg>
@@ -414,7 +306,7 @@
         </div>
     </div>
 
-    <div class="dash-stat-card {{ $totalTargetTahunIni == 0 ? 'tone-abu' : ($selisihTahunIni > 0 ? 'tone-pink' : 'tone-green') }} copyable-card" data-copy-name="selisih-target">
+    <div class="dash-stat-card {{ $totalTargetTahunIni == 0 ? 'tone-abu' : ($selisihTahunIni > 0 ? 'tone-pink' : 'tone-green') }} copyable-card">
         <div class="dash-stat-top">
             <div class="dash-stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3m8-3v3M4 21V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v13M4 21h16M9 12h6M9 16h6"/></svg>
@@ -429,7 +321,7 @@
                 {{ $selisihTahunIni > 0 ? '+' : '' }}{{ $metric === 'kwh' ? number_format($selisihTahunIni, 0, ',', '.') . ' KWH' : 'Rp ' . number_format($selisihTahunIni, 0, ',', '.') }}
             </div>
             <div class="dash-stat-sub">
-                <a href="{{ route('trend.pencapaian', request()->only('tahun', 'ulp')) }}" class="dash-stat-detail-link">
+                <a href="{{ route('trend.pencapaian', request()->except(['mode'])) }}" class="dash-stat-detail-link">
                     Lihat detail pencapaian
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 </a>
@@ -442,20 +334,18 @@
     <div class="trend-chart-head">
         <div>
             <h3>{{ $mode === 'kumulatif' ? 'Trend Komulatif' : 'Trend Bulanan' }} — {{ $metric === 'kwh' ? 'kWh' : 'Rp TS' }}</h3>
-            <p>{{ $mode === 'kumulatif' ? 'Akumulasi nilai dari Januari sampai bulan berjalan' : 'Nilai per bulan (tidak diakumulasi)' }} &mdash; Tahun {{ $tahunAktif ?: '-' }}</p>
+            <p>{{ $mode === 'kumulatif' ? 'Akumulasi nilai dari bulan pertama sampai bulan berjalan' : 'Nilai per bulan (tidak diakumulasi)' }} &mdash; Tahun {{ $tahunAktif ?: '-' }}</p>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-            <button type="button" class="card-copy-btn" onclick="salinTabelGambar('capture-trend-chart', this, 'Trend {{ $metric === 'kwh' ? 'kWh' : 'Rp TS' }} — {{ $mode === 'kumulatif' ? 'Komulatif' : 'Bulanan' }}')">
+            <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-trend-chart', this, 'Trend {{ $metric === 'kwh' ? 'kWh' : 'Rp TS' }} — {{ $mode === 'kumulatif' ? 'Komulatif' : 'Bulanan' }}')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                <span class="card-copy-btn-label">Salin Gambar</span>
+                Salin Gambar
             </button>
-            <span class="chart-badge" style="background:#eaf0fb;color:#0b3d91;">{{ $ulpAktif === 'semua' ? 'Semua ULP' : (($daftarUlp->firstWhere('kode', $ulpAktif)['nama'] ?? null) ? $ulpAktif . ' - ' . $daftarUlp->firstWhere('kode', $ulpAktif)['nama'] : $ulpAktif) }}</span>
+            <span class="chart-badge" style="background:#eaf0fb;color:#0b3d91;">{{ empty($filter['ulpTerpilih']) ? 'Semua ULP' : count($filter['ulpTerpilih']) . ' ULP dipilih' }}</span>
         </div>
     </div>
 
     <div id="capture-trend-chart">
-        {{-- Keterangan singkat: label di atas tiap bar = % pencapaian &
-             jumlah pelanggan BULAN ITU, digambar langsung di chart. --}}
         <p class="trend-chart-note">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
             Angka di atas tiap batang = % pencapaian &amp; jumlah pelanggan bulan itu.
@@ -476,9 +366,9 @@
             <strong>Rincian per Bulan</strong>
             <span>Target, Realisasi, % Pencapaian &amp; Jumlah Pelanggan — Tahun {{ $tahunAktif ?: '-' }}</span>
         </div>
-        <button type="button" class="card-copy-btn" style="margin-left:auto;" onclick="salinTabelGambar('capture-trend-tabel', this, 'Rincian per Bulan — {{ $metric === 'kwh' ? 'kWh' : 'Rp TS' }}')">
+        <button type="button" class="copy-btn" style="margin-left:auto;" onclick="salinTabelGambar('capture-trend-tabel', this, 'Rincian per Bulan — {{ $metric === 'kwh' ? 'kWh' : 'Rp TS' }}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <span class="card-copy-btn-label">Salin Gambar</span>
+            Salin Gambar
         </button>
     </div>
 
@@ -552,40 +442,6 @@
 </div>
 @endsection
 
-{{--
-    CATATAN:
-    1. Chart.js sudah di-load sekali di layouts/app.blade.php, gak di-load
-       ulang di sini.
-    2. Canvas dibungkus div ber-tinggi pasti (.trend-chart-canvas-wrap) +
-       maintainAspectRatio:false, biar tingginya konsisten.
-    3. Chart.getChart() dipakai buat destroy instance lama sebelum bikin
-       yang baru — cegah error "Canvas is already in use".
-    4. Semua string JS yang disisipkan dari Blade pakai @json() atau
-       {!! !!}, BUKAN {{ }} — karena {{ }} otomatis nge-htmlspecialchars
-       tanda kutip jadi &#039; dan bikin JS-nya gagal di-parse browser
-       (Unexpected token '&').
-    5. Model chart DISAMAIN sama trend/pencapaian.blade.php: mixed chart
-       (bar buat nilai realisasi + line buat target), BUKAN dua garis
-       seperti sebelumnya. Dataset diberi label "Realisasi" (bukan
-       "Aktual") biar konsisten sama istilah yang dipakai di tabel
-       "Rincian per Bulan" dan card statistik di halaman ini.
-    6. % Pencapaian & Jumlah Pelanggan PER BULAN ditampilkan LANGSUNG di
-       atas tiap batang chart (custom plugin drawBarLabels, ctx.fillText
-       manual — bukan lewat tooltip hover, dan bukan angka total/agregat
-       setahun). Info yang sama juga ada di baris tabel "Rincian per
-       Bulan" sebagai referensi lengkap yang bisa discroll.
-    7. Custom plugin drawBarLabels dipakai (bukan library eksternal
-       kayak chartjs-plugin-datalabels) biar gak nambah dependency CDN
-       baru — cukup pakai Chart.js API bawaan (afterDatasetsDraw).
-    8. PERBAIKAN: sebelumnya ada potongan kode yang ke-duplikat/nyangkut
-       di tengah objek `new Chart(...)` — ada string '#ffce3a' yang
-       nyasar di luar objek manapun, dan key "options" muncul DUA KALI.
-       Itu bikin seluruh <script> di halaman ini gagal di-parse browser
-       (SyntaxError), jadi BUKAN CUMA chart/Target-nya yang gak jalan,
-       tombol "Salin Gambar" di semua card juga ikut mati total karena
-       satu tag <script> yang sama gagal di-parse dari awal. Sudah
-       dibersihkan jadi satu objek Chart yang valid.
---}}
 @push('scripts')
 @include('laporan.partials.copy-image-script')
 <script>
@@ -601,8 +457,6 @@
     var existing = Chart.getChart(canvas);
     if (existing) existing.destroy();
 
-    // Data per bulan buat label di atas tiap bar — dikirim dari PHP,
-    // urutannya sejajar sama $labels/$data.
     var persenPerBulan = @json($persenPerBulanMentah);
     var jumlahPelangganPerBulan = @json($jumlahPelangganData);
     var nilaiRealisasiPerBulan = @json($data);
@@ -610,18 +464,33 @@
     var metricPrefix = {!! json_encode($metric === 'kwh' ? '' : 'Rp ') !!};
     var metricSuffix = {!! json_encode($metric === 'kwh' ? ' KWH' : '') !!};
 
-    function formatNilai(v) {
-        return metricPrefix + Number(v).toLocaleString('id-ID') + metricSuffix;
+    // Format angka disingkat (rb/jt/M/T) khusus buat label yang nempel
+    // permanen di atas tiap batang chart — kalau dibiarkan angka penuh
+    // (mis. "4.200.000"), labelnya kepanjangan & numpuk pas banyak bulan
+    // ditampilkan berdampingan. Tooltip pas di-hover TETAP nampilin angka
+    // penuh presisi (lihat callback tooltip di bawah, gak lewat fungsi
+    // ini) — jadi yang disingkat cuma teks permanen di atas batang.
+    function formatSingkat(v) {
+        v = Number(v) || 0;
+        var abs = Math.abs(v);
+        var opsi = { maximumFractionDigits: 1, minimumFractionDigits: 0 };
+
+        if (abs >= 1e12) return (v / 1e12).toLocaleString('id-ID', opsi) + ' T';
+        if (abs >= 1e9)  return (v / 1e9).toLocaleString('id-ID', opsi) + ' M';
+        if (abs >= 1e6)  return (v / 1e6).toLocaleString('id-ID', opsi) + ' jt';
+        if (abs >= 1e3)  return (v / 1e3).toLocaleString('id-ID', opsi) + ' rb';
+        return v.toLocaleString('id-ID');
     }
 
-    // ===== Custom plugin: gambar teks "% pencapaian" & "jumlah
-    // pelanggan" langsung di atas tiap batang Realisasi, permanen di
-    // canvas (bukan tooltip hover). =====
+    function formatNilai(v) {
+        return metricPrefix + formatSingkat(v) + metricSuffix;
+    }
+
     var drawBarLabelsPlugin = {
         id: 'drawBarLabels',
         afterDatasetsDraw: function (chart) {
             var ctx = chart.ctx;
-            var barDataset = chart.getDatasetMeta(0); // dataset 0 = Realisasi (bar)
+            var barDataset = chart.getDatasetMeta(0);
             if (!barDataset || !barDataset.data) return;
 
             ctx.save();
@@ -632,8 +501,6 @@
                 var nilaiRealisasi = nilaiRealisasiPerBulan[i];
                 var nilaiTarget = nilaiTargetPerBulan[i];
 
-                // Skip kalau semua data kosong/nol, biar canvas gak
-                // penuh teks buat bulan yang gak ada apa-apanya.
                 var adaRealisasi = nilaiRealisasi !== null && nilaiRealisasi !== undefined && nilaiRealisasi > 0;
                 var adaTarget = nilaiTarget !== null && nilaiTarget !== undefined && nilaiTarget > 0;
                 if (!adaRealisasi && !adaTarget && persen === null && (jumlahPelanggan === null || jumlahPelanggan === undefined)) {
@@ -648,7 +515,7 @@
                 var teksTarget = adaTarget ? 'T: ' + formatNilai(nilaiTarget) : null;
 
                 var x = bar.x;
-                var y = bar.y - 8; // sedikit di atas ujung batang
+                var y = bar.y - 8;
                 var lineGap = 12;
 
                 ctx.textAlign = 'center';
@@ -656,25 +523,19 @@
 
                 var baris = [];
 
-                // Baris paling atas: nilai Target (kalau ada)
                 if (teksTarget) {
                     baris.push({ text: teksTarget, font: '600 9.5px inherit', color: '#b8860b' });
                 }
-                // Nilai Realisasi
                 if (teksRealisasi) {
                     baris.push({ text: teksRealisasi, font: '700 9.5px inherit', color: '#0b3d91' });
                 }
-                // % pencapaian (warna ijo/merah sesuai capaian)
                 baris.push({
                     text: teksPersen,
                     font: '700 10.5px inherit',
                     color: (persen !== null && persen >= 100) ? '#16803c' : (persen === null ? '#9aa4c2' : '#c62828')
                 });
-                // Baris paling bawah (paling dekat batang): jumlah pelanggan
                 baris.push({ text: teksPelanggan, font: '600 9.5px inherit', color: '#0f6bd9' });
 
-                // Gambar dari bawah ke atas biar urutannya: pelanggan (dekat
-                // batang) -> % -> realisasi -> target (paling atas)
                 for (var b = baris.length - 1; b >= 0; b--) {
                     var offsetIndex = baris.length - 1 - b;
                     ctx.font = baris[b].font;
@@ -710,12 +571,6 @@
                     pointBackgroundColor: '#ffce3a',
                     tension: 0.3,
                     order: 1,
-                    // PERBAIKAN: Target dipisah ke sumbu Y sendiri (y1) —
-                    // skalanya jauh lebih kecil dibanding Realisasi (bisa
-                    // ribuan kali lipat bedanya), jadi kalau dipaksa satu
-                    // sumbu sama Realisasi, garis Target keinjek rata di
-                    // dasar chart dan kelihatannya kayak "gak kepanggil"
-                    // padahal datanya sebenernya ada & ke-render.
                     yAxisID: 'y1',
                 },
             ]
@@ -724,9 +579,6 @@
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
-            // Ruang ekstra di atas biar label % & jumlah pelanggan gak
-            // kepotong sama batas atas canvas pas nilainya mendekati
-            // puncak sumbu Y.
             layout: { padding: { top: 58 } },
             plugins: {
                 legend: {
@@ -741,6 +593,23 @@
                             var prefix = {!! json_encode($metric === 'kwh' ? '' : 'Rp ') !!};
                             var suffix = {!! json_encode($metric === 'kwh' ? ' KWH' : '') !!};
                             return ctx.dataset.label + ': ' + prefix + val + suffix;
+                        },
+                        // Baris tambahan setelah label Realisasi & Target
+                        // (yang muncul otomatis dari callback "label" di
+                        // atas, sekali per dataset) — nampilin % Pencapaian
+                        // & Jumlah Pelanggan bulan itu juga, biar tooltip
+                        // pas di-hover isinya lengkap sama kayak yang
+                        // ditulis permanen di atas batangnya.
+                        afterBody: function (tooltipItems) {
+                            if (!tooltipItems.length) return [];
+                            var i = tooltipItems[0].dataIndex;
+                            var persen = persenPerBulan[i];
+                            var jumlahPelanggan = jumlahPelangganPerBulan[i];
+
+                            return [
+                                '% Pencapaian: ' + (persen === null ? '-' : persen + '%'),
+                                'Jumlah Pelanggan: ' + ((jumlahPelanggan === null || jumlahPelanggan === undefined) ? '-' : Number(jumlahPelanggan).toLocaleString('id-ID'))
+                            ];
                         }
                     }
                 }
@@ -756,9 +625,6 @@
                         }
                     }
                 },
-                // Sumbu Y kedua khusus buat garis Target, skala independen
-                // dari sumbu Y utama (Realisasi) — lihat komentar di
-                // dataset Target di atas.
                 y1: {
                     position: 'right',
                     beginAtZero: true,

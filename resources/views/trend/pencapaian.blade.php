@@ -19,14 +19,15 @@
     }
     .trend-tabs a.active { background: #fff; color: var(--blue-primary); box-shadow: 0 1px 3px rgba(20,30,80,.12); }
 
-    /* Judul halaman — clamp biar gak makan tempat di layar sempit,
-       samain sama Trend kWh/Rp TS. */
     .trend-page-title { font-size: clamp(18px, 4.2vw, 22px); margin: 0 0 4px; }
 
+    /* ===== Filter card — sekarang cuma Tahun + Jenis (kWh/Rp TS). Filter
+       ULP/Bulan/Triwulan/Rentang Tanggal dipindah ke panel "Filter
+       Periode & ULP" (partial shared dengan Menu Laporan) di bawahnya. ===== */
     .trend-filter-card {
         display: flex; align-items: center; justify-content: space-between;
         flex-wrap: wrap; gap: 14px;
-        padding: 16px 22px; margin-bottom: 18px;
+        padding: 16px 22px; margin-bottom: 14px;
         background: linear-gradient(90deg, #003b94, #0f6bd9);
         border-color: transparent;
     }
@@ -71,8 +72,6 @@
     .trend-table-legend .dot-best  { background: #16803c; }
     .trend-table-legend .dot-worst { background: #c62828; }
 
-    /* ===== Tombol "Salin Gambar" — sama gayanya dengan Menu Laporan
-       (.copy-btn), supaya konsisten di seluruh aplikasi. ===== */
     .copy-btn {
         border: 1px solid var(--border);
         background: #fff;
@@ -92,10 +91,6 @@
     .copy-btn:hover { background: #eaf0fb; }
     .copy-btn:disabled { opacity: .6; cursor: default; }
 
-    /* ===== Bar ringkasan di dalam card (pengganti 4 kartu statistik
-       yang dihapus) — nampilin Pencapaian Total, Rata-rata, Bulan
-       Tertinggi & Terendah sebagai chip ringkas, biar informasinya
-       tetap ada tanpa nambah card terpisah. ===== */
     .trend-summary-bar {
         display: flex; flex-wrap: wrap; gap: 10px;
         padding: 16px 22px; background: #fafbfe; border-bottom: 1px solid var(--border);
@@ -161,20 +156,11 @@
         .trend-filter-form { width: 100%; }
         .trend-filter-form select { flex: 1; min-width: 0; }
 
-        /* Tabel "Rincian per Bulan" jadi tumpukan card per-bulan di HP,
-           daripada tabel lebar yang harus discroll ke samping. */
         .trend-table-head { padding: 16px; }
         .trend-table-head-right { width: 100%; justify-content: space-between; }
         .trend-table-legend { order: 2; }
         .trend-summary-bar { padding: 12px 16px; }
         .trend-summary-chip { min-width: 100%; }
-        /* PERBAIKAN: .table-scroll (wrapper global, overflow-x:auto buat
-           scroll tabel lebar di desktop) kadang lebarnya sepersekian pixel
-           melebihi viewport di HP, jadi browser tetap nampilin jalur
-           scroll horizontal tipis di kanan — kelihatan kayak garis/sliver
-           "kepotong" di pinggir kanan tiap card row-best/row-worst. Di
-           mode card-stack ini kita nggak butuh scroll ke samping lagi,
-           jadi dimatikan total. */
         .table-scroll { overflow-x: hidden; }
         .trend-table thead { display: none; }
         .trend-table, .trend-table tbody, .trend-table tr, .trend-table td { display: block; width: 100%; }
@@ -182,12 +168,6 @@
         .trend-table tbody tr {
             margin-bottom: 10px; border: 1px solid var(--border); border-radius: 12px;
             padding: 4px 14px; background: #fff;
-            /* PERBAIKAN: garis "patah"/persegi nongol di pojok kanan
-               baris row-best/row-worst — background warnanya ada di td
-               di dalam tr, dan tanpa overflow:hidden di sini, background
-               td itu nggak ikut kepotong lengkungan border-radius si tr,
-               jadi pojoknya kelihatan kotak/patah walau border tr sudah
-               rounded. */
             overflow: hidden;
         }
         .trend-table tbody tr:last-child { margin-bottom: 0; }
@@ -233,53 +213,18 @@
     </div>
 </div>
 
-{{--
-    Urutan tab disamain sama index.blade: "Presentase Pencapaian"
-    paling depan karena itu yang paling sering dicek duluan.
---}}
 <div class="trend-tabs">
-    <a href="{{ route('trend.pencapaian', request()->only('tahun', 'ulp', 'jenis')) }}" class="active">Data Pencapaian</a>
-    <a href="{{ route('trend.kwh', request()->only('tahun', 'ulp')) }}">Trend kWh</a>
-    <a href="{{ route('trend.ts', request()->only('tahun', 'ulp')) }}">Trend Rp TS</a>
+    <a href="{{ route('trend.pencapaian', request()->except([])) }}" class="active">Data Pencapaian</a>
+    <a href="{{ route('trend.kwh', request()->except(['jenis'])) }}">Trend kWh</a>
+    <a href="{{ route('trend.ts', request()->except(['jenis'])) }}">Trend Rp TS</a>
 </div>
 
-<div class="card trend-filter-card">
-    <div class="trend-filter-left">
-        <div class="info-icon" style="width:34px;height:34px;background:rgba(255,255,255,.15);color:#ffce3a;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-        </div>
-        <div>
-            <strong style="font-size:14px;color:#fff;">Filter Pencapaian</strong>
-            <p style="margin:2px 0 0;font-size:12px;color:rgba(255,255,255,.85);" id="filter-info-text">
-                {{ $jenisOptions[$jenis] }} &middot; Tahun {{ $tahunAktif ?: '-' }} &middot;
-                {{ $ulpAktif === 'semua' ? 'Semua ULP' : ($daftarUlp->firstWhere('kode', $ulpAktif)['nama'] ?? $ulpAktif) }}
-            </p>
-        </div>
-    </div>
-
-    <form method="GET" class="trend-filter-form">
-        <select name="jenis" onchange="this.form.submit()">
-            @foreach ($jenisOptions as $key => $label)
-                <option value="{{ $key }}" {{ $jenis === $key ? 'selected' : '' }}>{{ $label }}</option>
-            @endforeach
-        </select>
-
-        <select name="tahun" onchange="this.form.submit()">
-            @forelse ($daftarTahun as $t)
-                <option value="{{ $t }}" {{ (int) $tahunAktif === (int) $t ? 'selected' : '' }}>{{ $t }}</option>
-            @empty
-                <option value="">Belum ada data</option>
-            @endforelse
-        </select>
-
-        <select name="ulp" onchange="this.form.submit()">
-            <option value="semua" {{ $ulpAktif === 'semua' ? 'selected' : '' }}>Semua ULP</option>
-            @foreach ($daftarUlp as $u)
-                <option value="{{ $u['kode'] }}" {{ $ulpAktif === $u['kode'] ? 'selected' : '' }}>{{ $u['kode'] }} - {{ $u['nama'] }}</option>
-            @endforeach
-        </select>
-    </form>
-</div>
+{{-- Panel Filter Periode & ULP — sekarang juga nampung Jenis & Tahun
+     sebagai tab tambahan, khusus buat halaman Data Pencapaian ini
+     ($jenisOptions/$jenisAktif & $tampilkanTahunFilter=true dikirim dari
+     controller). Triwulan / Bulan / Rentang Tanggal / ULP tetap sama
+     persis dengan yang dipakai di Menu Laporan. --}}
+@include('laporan.partials.filter-periode-ulp')
 
 <div class="card trend-table-card">
     <div class="trend-table-head">
@@ -305,10 +250,6 @@
     </div>
 
     <div id="capture-pencapaian">
-        {{-- ===== Bar ringkasan — pengganti 4 kartu statistik yang dihapus
-             (Pencapaian Total, Rata-rata, Bulan Tertinggi, Bulan Terendah),
-             supaya info-nya tetap ada tanpa nambah card terpisah di luar
-             "Rincian per Bulan". ===== --}}
         <div class="trend-summary-bar">
             <div class="trend-summary-chip tone-blue">
                 <div class="trend-summary-chip-icon">
@@ -358,8 +299,6 @@
         </div>
 
         @php
-            // Total selisih setahun (buat baris footer tabel) — cuma dihitung
-            // kalau targetnya udah diisi, biar gak nampilin angka yang salah.
             $totalSelisihTahun = $totalTarget > 0 ? ($totalAktual - $totalTarget) : null;
         @endphp
 
@@ -424,7 +363,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" style="text-align:center;color:#9aa4c2;padding:24px;">Belum ada data untuk tahun ini.</td></tr>
+                    <tr><td colspan="5" style="text-align:center;color:#9aa4c2;padding:24px;">Belum ada data untuk filter ini.</td></tr>
                 @endforelse
                 </tbody>
                 @if (!empty($tabelBulanan))

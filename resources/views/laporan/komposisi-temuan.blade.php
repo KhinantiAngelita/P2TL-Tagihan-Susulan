@@ -36,8 +36,8 @@
         color: #0b3d91;
         font-size: 12px;
         font-weight: 700;
-        padding: 7px 14px;
-        border-radius: 9px;
+        padding: 6px 14px;
+        border-radius: 8px;
         cursor: pointer;
         white-space: nowrap;
         transition: background .15s, color .15s;
@@ -45,8 +45,9 @@
         align-items: center;
         gap: 6px;
     }
+    .copy-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
     .copy-btn:hover { background: #eaf0fb; }
-    .copy-btn:disabled { color: #16803c; border-color: #16803c; background: #e5f7ec; cursor: default; }
+    .copy-btn:disabled { opacity: .6; cursor: default; }
 
     .komposisi-table-scroll { overflow-x: auto; }
 
@@ -166,21 +167,11 @@
         <h2 class="trend-page-title">Komposisi Temuan Gol P & K Per UP3</h2>
         <p style="color:#6b7690;margin:0;font-size:14px;">Rekap jumlah pelanggan, KWH, dan TS per UP3</p>
     </div>
-
-    <form method="GET">
-        <div class="filter-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            <select name="tahun" onchange="this.form.submit()" class="filter-select">
-                @forelse ($daftarTahun as $t)
-                    <option value="{{ $t }}" {{ (int) $tahunAktif === (int) $t ? 'selected' : '' }}>{{ $t }}</option>
-                @empty
-                    <option value="">Belum ada data</option>
-                @endforelse
-            </select>
-        </div>
-    </form>
 </div>
 
+@php
+    $tampilkanTahunFilter = true;
+@endphp
 @include('laporan.partials.filter-periode-ulp')
 
 <div class="trend-table-card">
@@ -195,7 +186,10 @@
             </div>
         </div>
         <div>
-            <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-komposisi', this, 'Komposisi Temuan Gol P & K Per UP3')">📷 Salin Gambar</button>
+            <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-komposisi', this, 'Komposisi Temuan Gol P & K Per UP3')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Salin Gambar
+            </button>
         </div>
     </div>
 

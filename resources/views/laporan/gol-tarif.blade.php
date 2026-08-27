@@ -64,11 +64,13 @@
 
     .copy-btn {
         border: 1px solid var(--border); background: #fff; color: #0b3d91;
-        font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px;
+        font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 8px;
         cursor: pointer; white-space: nowrap; transition: background .15s, color .15s;
+        display: inline-flex; align-items: center; gap: 6px;
     }
+    .copy-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
     .copy-btn:hover { background: #eaf0fb; }
-    .copy-btn:disabled { color: #1a9c4a; border-color: #1a9c4a; cursor: default; }
+    .copy-btn:disabled { opacity: .6; cursor: default; }
 
     .goltarif-chart-wrap { position: relative; height: 300px; margin-bottom: 20px; flex-shrink: 0; }
     @media (max-width: 900px) { .goltarif-chart-wrap { height: 260px; } }
@@ -124,15 +126,28 @@
     .goltarif-card.tone-prabayar .goltarif-table thead th,
     .goltarif-card.tone-prabayar .goltarif-table thead th:first-child,
     .goltarif-card.tone-prabayar .goltarif-table tfoot td,
-    .goltarif-card.tone-prabayar .goltarif-table tfoot td:first-child { background: #6488dd; }
+    .goltarif-card.tone-prabayar .goltarif-table tfoot td:first-child { background: #e4ebfb; color: #1d4ed8; }
 
     .goltarif-card.tone-paskabayar .goltarif-table thead th,
     .goltarif-card.tone-paskabayar .goltarif-table thead th:first-child,
     .goltarif-card.tone-paskabayar .goltarif-table tfoot td,
-    .goltarif-card.tone-paskabayar .goltarif-table tfoot td:first-child { background: #e6a15a; }
+    .goltarif-card.tone-paskabayar .goltarif-table tfoot td:first-child { background: #fbedd9; color: #b45309; }
 
-    .goltarif-table thead th:first-child::after,
-    .goltarif-table tfoot td:first-child::after { background: rgba(255,255,255,.35); }
+    /* Background sekarang pastel/terang, jadi garis pemisah & teks kolom Total/%
+       di footer perlu warna gelap tipis (bukan putih transparan lagi)
+       supaya tetap kontras dengan background barunya. */
+    .goltarif-card.tone-prabayar .goltarif-table thead th:first-child::after,
+    .goltarif-card.tone-prabayar .goltarif-table tfoot td:first-child::after { background: rgba(29,78,216,.25); }
+    .goltarif-card.tone-paskabayar .goltarif-table thead th:first-child::after,
+    .goltarif-card.tone-paskabayar .goltarif-table tfoot td:first-child::after { background: rgba(180,83,9,.25); }
+
+    .goltarif-card.tone-prabayar .goltarif-table tfoot td { border-top-color: rgba(29,78,216,.2); }
+    .goltarif-card.tone-paskabayar .goltarif-table tfoot td { border-top-color: rgba(180,83,9,.2); }
+
+    .goltarif-card.tone-prabayar .goltarif-table tfoot td:nth-last-child(2) { color: #1d4ed8; }
+    .goltarif-card.tone-paskabayar .goltarif-table tfoot td:nth-last-child(2) { color: #b45309; }
+    .goltarif-card.tone-prabayar .goltarif-table tfoot td:last-child { color: rgba(29,78,216,.75); }
+    .goltarif-card.tone-paskabayar .goltarif-table tfoot td:last-child { color: rgba(180,83,9,.75); }
 
     .goltarif-table tbody tr:nth-child(even) { background: #f8f9fc; }
     .goltarif-table tbody tr:hover { background: #eef2fb; }
@@ -249,21 +264,16 @@
         <h2 class="trend-page-title">Laporan Gol Tarif</h2>
         <p style="color:#6b7690;margin:0;font-size:14px;">Distribusi Rp TS berdasarkan golongan tarif &mdash; Prabayar vs Paskabayar</p>
     </div>
-
-    <form method="GET">
-        <div class="filter-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            <select name="tahun" onchange="this.form.submit()" class="filter-select">
-                @forelse ($daftarTahun as $t)
-                    <option value="{{ $t }}" {{ (int) $tahunAktif === (int) $t ? 'selected' : '' }}>{{ $t }}</option>
-                @empty
-                    <option value="">Belum ada data</option>
-                @endforelse
-            </select>
-        </div>
-    </form>
 </div>
 
+@php
+    // Tahun dipindah jadi tab di panel Filter Periode & ULP (bukan
+    // dropdown terpisah lagi di pojok kanan atas) — $tahunAktif &
+    // $daftarTahun udah otomatis ada di halaman ini (dari controller
+    // yang sama, kepake sebelumnya buat dropdown lama), jadi cukup
+    // set flag ini di sini tanpa perlu ubah controller sama sekali.
+    $tampilkanTahunFilter = true;
+@endphp
 @include('laporan.partials.filter-periode-ulp')
 
 <div class="goltarif-grid">
@@ -286,7 +296,10 @@
             </div>
             <div class="goltarif-head-actions">
                 <span class="goltarif-year-badge">{{ $tahunAktif ?: '-' }}</span>
-                <button type="button" class="copy-btn" id="prabayarCopyBtn" onclick="salinTabelGambar('capture-prabayar', this, document.getElementById('prabayarViewSelect').selectedOptions[0].text)">📷 Salin Gambar</button>
+                <button type="button" class="copy-btn" id="prabayarCopyBtn" onclick="salinTabelGambar('capture-prabayar', this, document.getElementById('prabayarViewSelect').selectedOptions[0].text)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Salin Gambar
+                </button>
             </div>
         </div>
 
@@ -400,7 +413,10 @@
             </div>
             <div class="goltarif-head-actions">
                 <span class="goltarif-year-badge">{{ $tahunAktif ?: '-' }}</span>
-                <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-paskabayar', this, 'Gol Tarif Paskabayar')">📷 Salin Gambar</button>
+                <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-paskabayar', this, 'Gol Tarif Paskabayar')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Salin Gambar
+                </button>
             </div>
         </div>
 
@@ -462,7 +478,10 @@
         </div>
         <div class="goltarif-head-actions">
             <span class="goltarif-year-badge">{{ $tahunAktif ?: '-' }}</span>
-            <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-ulp-p', this, 'Rekap KWH per ULP — Golongan P')">📷 Salin Gambar</button>
+            <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-ulp-p', this, 'Rekap KWH per ULP — Golongan P')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Salin Gambar
+            </button>
         </div>
     </div>
 
@@ -542,7 +561,10 @@
         </div>
         <div class="goltarif-head-actions">
             <span class="goltarif-year-badge">{{ $tahunAktif ?: '-' }}</span>
-            <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-ulp-k', this, 'Rekap KWH per ULP — Golongan K')">📷 Salin Gambar</button>
+            <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-ulp-k', this, 'Rekap KWH per ULP — Golongan K')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Salin Gambar
+            </button>
         </div>
     </div>
 

@@ -128,19 +128,51 @@ function salinTabelGambar(elId, btnEl, judul) {
         headerWrap.appendChild(headerClone);
     }
 
-    // Info filter aktif (Tahun/ULP dst — teks halaman, bukan bagian dari
-    // header kartu) ditambahkan sebagai baris BARU di bawah header. Kalau
-    // headernya sendiri udah nampilin badge tahun/filter (mis.
-    // .goltarif-year-badge), baris ini di-skip biar gak dobel nampilin
-    // info yang sama.
+    // Info filter aktif (Tahun/Jenis/Triwulan/Bulan/Tanggal/ULP dst — dari
+    // panel Filter Periode & ULP, teks halaman, bukan bagian dari header
+    // kartu) SELALU ditambahkan sebagai baris baru di bawah header.
+    //
+    // PERBAIKAN: sebelumnya baris ini di-skip kalau header card udah
+    // punya elemen ber-class "badge" apa pun (awalnya dibikin buat
+    // ngatasin badge tahun kecil di Gol Tarif). Tapi hampir semua card
+    // Trend sekarang punya badge sendiri juga (mis. ".chart-badge" buat
+    // info ULP), jadi pengecekan itu keliru nge-skip info filter yang
+    // lebih lengkap (Triwulan/Bulan/Rentang Tanggal/dst dari panel
+    // Filter Periode & ULP) — hasilnya info itu nggak pernah kecapture
+    // sama sekali. Sekarang SELALU ditampilkan kalau ada isinya,
+    // terlepas dari badge apa pun yang ada di header.
+    //
+    // TAMPILAN: dulu cuma satu kalimat teks abu-abu polos. Sekarang tiap
+    // bagian filter (dipisah oleh " · ", persis pola yang dipakai
+    // TrendController::bacaFilterPeriodeUlp()) dirender jadi chip pil
+    // berwarna sendiri-sendiri — senada sama gaya ringkasan filter yang
+    // dipakai di panel Filter Periode & ULP — biar lebih menonjol & enak
+    // di-scan di hasil gambar, bukan tenggelam jadi kalimat panjang.
     var infoEl   = document.getElementById('filter-info-text');
     var infoText = infoEl ? infoEl.textContent.trim() : '';
     var infoBaris = null;
-    var sudahAdaBadge = headerClone ? headerClone.querySelector('[class*="badge"]') : null;
-    if (infoText && !sudahAdaBadge) {
+    if (infoText) {
         infoBaris = document.createElement('div');
-        infoBaris.textContent = infoText;
-        infoBaris.style.cssText = 'font-size:12px; color:#6b7690; margin:10px 0 0; font-family:inherit;';
+        infoBaris.style.cssText = 'display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin:12px 0 0;';
+
+        var ikonKalender = document.createElement('span');
+        ikonKalender.innerHTML =
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">' +
+            '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+        ikonKalender.style.cssText = 'display:inline-flex; color:#6b8fd4; flex-shrink:0; margin-right:2px;';
+        infoBaris.appendChild(ikonKalender);
+
+        infoText.split(' · ').forEach(function (bagian) {
+            bagian = bagian.trim();
+            if (!bagian) return;
+            var chip = document.createElement('span');
+            chip.textContent = bagian;
+            chip.style.cssText =
+                'display:inline-flex; align-items:center; background:#eaf0fb; color:#0b3d91;' +
+                'font-size:12px; font-weight:700; padding:4px 12px; border-radius:999px;' +
+                'white-space:nowrap; font-family:inherit;';
+            infoBaris.appendChild(chip);
+        });
     }
 
     // ---- 2. Clone konten tabel, lepas semua batas scroll/tinggi &
@@ -245,7 +277,8 @@ function salinTabelGambar(elId, btnEl, judul) {
 
     if (headerWrap) {
         headerWrap.style.margin = '-' + PADDING + 'px -' + PADDING + 'px ' + PADDING + 'px -' + PADDING + 'px';
-        headerWrap.style.padding = PADDING + 'px ' + PADDING + 'px 0';
+        headerWrap.style.padding = PADDING + 'px ' + PADDING + 'px ' + (PADDING - 6) + 'px';
+        headerWrap.style.borderBottom = '1px solid #eef1f8';
         panggung.appendChild(headerWrap);
         if (infoBaris) headerWrap.appendChild(infoBaris);
     } else if (infoBaris || judul) {
