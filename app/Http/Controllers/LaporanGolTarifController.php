@@ -216,7 +216,7 @@ class LaporanGolTarifController extends Controller
         // dipakai RingkasanGolTarifService::hitungUlang() (kode tarif
         // diambil dari segmen sebelum '/' pada kolom `daya`), tapi
         // dihitung on-the-fly per request supaya lolosFilterBaris() bisa
-        // diterapkan per baris.
+        // diterapkan per baris. Nilainya SUM(kwh) — bukan Rp TS lagi.
         $peta = $this->pivotTarifLive($laporanAktifIds, $filter);
 
         [$prabayar, $totalPrabayar]     = $this->susunPivot($peta, self::KODE_TARIF_PRABAYAR, prabayar: true);
@@ -224,7 +224,7 @@ class LaporanGolTarifController extends Controller
 
         // ---- Pivot "Gol per Daya" (Prabayar & Paskabayar): baris = string
         // daya lengkap (mis. "R1T/450" untuk Prabayar, "R1/450" untuk
-        // Paskabayar), kolom = P1-P4 + K1-K3. LIVE dari
+        // Paskabayar), kolom = P1-P4 + K1-K3, nilainya SUM(kwh). LIVE dari
         // detail_tagihan_susulans, jadi ikut filter periode + ULP. ----
         [$prabayarPerDaya, $totalPrabayarPerDaya]     = $this->pivotPerDaya($laporanAktifIds, $filter, self::KODE_TARIF_PRABAYAR_T);
         [$paskabayarPerDaya, $totalPaskabayarPerDaya] = $this->pivotPerDaya($laporanAktifIds, $filter, self::KODE_TARIF_PASKABAYAR_DAYA);
@@ -364,7 +364,7 @@ class LaporanGolTarifController extends Controller
      * -> "R1T"), tapi dihitung per request dengan lolosFilterBaris()
      * diterapkan per baris supaya ikut filter periode + ULP.
      *
-     * Hasilnya dipetakan ke $peta[$kodeTarif][$gol] = total_ts, format
+     * Hasilnya dipetakan ke $peta[$kodeTarif][$gol] = total_kwh, format
      * yang sama seperti dulu didapat dari tabel precomputed
      * ringkasan_gol_tarifs, supaya susunPivot() tidak perlu diubah.
      */
@@ -375,7 +375,7 @@ class LaporanGolTarifController extends Controller
             ->whereIn('gol', self::KOLOM_GOL)
             ->whereNotNull('daya')
             ->where('daya', '!=', '')
-            ->select('no_agenda', 'gol', 'daya', 'ts')
+            ->select('no_agenda', 'gol', 'daya', 'kwh')
             ->get();
 
         $peta = [];
@@ -386,24 +386,27 @@ class LaporanGolTarifController extends Controller
 
             $kodeTarif = trim(explode('/', trim($baris->daya))[0] ?? '');
 
-            $peta[$kodeTarif][$baris->gol] = ($peta[$kodeTarif][$baris->gol] ?? 0) + (float) $baris->ts;
+            $peta[$kodeTarif][$baris->gol] = ($peta[$kodeTarif][$baris->gol] ?? 0) + (float) $baris->kwh;
         }
 
         return $peta;
     }
 
     /**
-     * Pivot "Gol per Daya" generik: baris = string daya lengkap
-     * (mis. "R1T/450" untuk Prabayar, "R1/450" untuk Paskabayar),
-     * kolom = golongan P1-P4 + K1-K3. Sumbernya LIVE dari
-     * detail_tagihan_susulans (bukan tabel ringkasan precomputed), jadi
-     * ikut filter periode + ULP seperti tabel Rekap KWH per ULP.
+     * Pivot "Gol per Daya" generik: baris = string daya UTUH (kode tarif +
+     * angka setelah "/", mis. "R1T/450" untuk Prabayar, "R1/450" untuk
+     * Paskabayar) — beda angka daya untuk kode tarif yang sama TIDAK
+     * digabung, jadi tiap kombinasi tarif+daya jadi baris sendiri. Kolom =
+     * golongan P1-P4 + K1-K3, nilainya SUM(kwh) — bukan Rp TS lagi.
+     * Sumbernya LIVE dari detail_tagihan_susulans (bukan tabel ringkasan
+     * precomputed), jadi ikut filter periode + ULP seperti tabel Rekap
+     * KWH per ULP.
      *
-     * $daftarKodeValid menentukan set kode tarif (segmen sebelum '/' pada
-     * kolom `daya`) yang boleh diproses — pakai KODE_TARIF_PRABAYAR_T untuk
-     * Prabayar (kode berakhiran "T") atau KODE_TARIF_PASKABAYAR_DAYA untuk
-     * Paskabayar (kode tanpa akhiran "T"). Dengan begini fungsi yang sama
-     * dipakai ulang untuk kedua jenis pembayaran tanpa duplikasi logika.
+     * $daftarKodeValid menentukan set kode tarif yang boleh diproses —
+     * pakai KODE_TARIF_PRABAYAR_T untuk Prabayar (kode berakhiran "T")
+     * atau KODE_TARIF_PASKABAYAR_DAYA untuk Paskabayar (kode tanpa
+     * akhiran "T"). Dengan begini fungsi yang sama dipakai ulang untuk
+     * kedua jenis pembayaran tanpa duplikasi logika.
      *
      * @return array{0: array, 1: array} [$rows, $total]
      */
@@ -414,7 +417,7 @@ class LaporanGolTarifController extends Controller
             ->whereIn('gol', self::KOLOM_GOL)
             ->whereNotNull('daya')
             ->where('daya', '!=', '')
-            ->select('no_agenda', 'gol', 'daya', 'ts')
+            ->select('no_agenda', 'gol', 'daya', 'kwh')
             ->get();
 
         $peta          = [];
@@ -422,8 +425,8 @@ class LaporanGolTarifController extends Controller
         $grandTotal    = 0;
 
         foreach ($barisMentah as $baris) {
-            $dayaTrim  = trim($baris->daya);
-            $kodeTarif = trim(explode('/', $dayaTrim)[0] ?? '');
+            $dayaMentah = trim($baris->daya);
+            $kodeTarif  = trim(explode('/', $dayaMentah)[0] ?? '');
 
             if (! in_array($kodeTarif, $daftarKodeValid, true)) {
                 continue;
@@ -433,13 +436,17 @@ class LaporanGolTarifController extends Controller
                 continue;
             }
 
-            $peta[$dayaTrim][$baris->gol] = ($peta[$dayaTrim][$baris->gol] ?? 0) + (float) $baris->ts;
+            // Key pakai string daya UTUH (kode tarif + angka setelah "/"),
+            // bukan cuma kode tarif — supaya angka dayanya ikut tampil,
+            // tidak digabung/dijumlah jadi satu baris per kode tarif lagi.
+            // Nilainya SUM(kwh).
+            $peta[$dayaMentah][$baris->gol] = ($peta[$dayaMentah][$baris->gol] ?? 0) + (float) $baris->kwh;
         }
 
         ksort($peta);
 
         $rows = [];
-        foreach ($peta as $daya => $nilaiGol) {
+        foreach ($peta as $labelDaya => $nilaiGol) {
             $nilaiPerKolom = [];
             $totalBaris    = 0;
             foreach (self::KOLOM_GOL as $g) {
@@ -450,7 +457,7 @@ class LaporanGolTarifController extends Controller
             }
             $grandTotal += $totalBaris;
 
-            $rows[] = ['label' => $daya, 'nilai' => $nilaiPerKolom, 'total' => $totalBaris];
+            $rows[] = ['label' => $labelDaya, 'nilai' => $nilaiPerKolom, 'total' => $totalBaris];
         }
 
         foreach ($rows as &$row) {
