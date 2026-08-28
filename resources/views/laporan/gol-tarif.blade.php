@@ -24,10 +24,6 @@
         .goltarif-card { height: auto !important; }
     }
 
-    /* ===== Card Prabayar/Paskabayar — bentuk original dipertahankan
-       (chart di atas, tabel scroll box di bawah dengan header & footer
-       bar penuh warna + kolom pertama sticky), warnanya diganti jadi
-       SOFT/PASTEL, bukan navy/orange solid kuat seperti sebelumnya. ===== */
     .goltarif-card {
         padding: 24px;
         background: #fff;
@@ -78,15 +74,6 @@
 
     .goltarif-chart-wrap.gabungan { margin-bottom: 0; }
 
-    /* Card "Gabungan" berdiri sendiri di luar .goltarif-grid, jadi TIDAK
-       boleh ikut display:flex/flex-direction:column/height:100% milik
-       .goltarif-card biasa. Properti itu cuma aman dipakai di dalam grid
-       yang align-items:stretch (tingginya kekunci sama grid). Di luar
-       grid, kombinasi height:100% (tanpa parent bertinggi pasti) + flex
-       + canvas Chart.js yang responsive bikin resize-loop: container jadi
-       membesar terus tiap kali canvas resize, ujung-ujungnya tingginya
-       bisa sampai ribuan px. Class ini mematikan flex-nya balik ke block
-       biasa supaya tingginya cuma segede isinya. */
     .goltarif-card.gabungan-card {
         display: block;
         height: auto;
@@ -107,7 +94,6 @@
         padding: 11px 14px; text-align: right; border-bottom: 1px solid #f1f3f9; white-space: nowrap;
     }
 
-    /* Kolom pertama (Tarif/Daya) sticky, background solid putih + garis pemisah */
     .goltarif-table th:first-child, .goltarif-table td:first-child {
         text-align: left; position: sticky; left: 0; z-index: 2; background: #fff; padding-right: 16px;
     }
@@ -117,20 +103,14 @@
     .goltarif-table tbody tr:nth-child(even) td:first-child { background: #f8f9fc; }
     .goltarif-table tbody td:first-child { font-weight: 700; color: #1b2559; }
 
-    /* Kolom Total ditonjolkan, kolom % dibuat sekunder/muted */
     .goltarif-table td:nth-last-child(2) { font-weight: 800; color: #1b2559; background: rgba(90,127,214,.04); }
     .goltarif-table td:last-child { color: #6b7690; font-weight: 600; font-size: 11.5px; }
     .goltarif-table thead th:last-child { opacity: .85; }
 
-    /* ===== Header bar & footer bar — soft/pastel, teks putih tetap
-       terbaca karena warnanya masih cukup medium (bukan pucat banget). ===== */
     .goltarif-table thead th {
         color: #fff; font-weight: 700; font-size: 11px; text-transform: uppercase;
         letter-spacing: .04em; white-space: nowrap; position: sticky; top: 0; z-index: 4;
     }
-    /* Sel pojok (header kolom pertama) harus paling atas: sticky top+left sekaligus,
-       jadi wajib z-index lebih tinggi dari td/th kolom pertama biasa (z-index 2),
-       supaya baris body yang lewat di baliknya tidak "menembus" saat scroll ke bawah. */
     .goltarif-table thead th:first-child { z-index: 5; }
     .goltarif-table tfoot td {
         font-weight: 800; color: #fff; border-bottom: none; position: sticky; bottom: 0;
@@ -150,17 +130,11 @@
     .goltarif-card.tone-paskabayar .goltarif-table tfoot td,
     .goltarif-card.tone-paskabayar .goltarif-table tfoot td:first-child { background: #fbedd9; color: #b45309; }
 
-    /* ===== Tone untuk tabel gabungan (dipakai di view per-golongan & per-daya)
-       — warna netral ungu-kebiruan supaya beda dari tone prabayar/paskabayar,
-       tapi tetap konsisten dengan pola header/footer bar full-color di atas. ===== */
     .goltarif-card.tone-gabungan .goltarif-table thead th,
     .goltarif-card.tone-gabungan .goltarif-table thead th:first-child,
     .goltarif-card.tone-gabungan .goltarif-table tfoot td,
     .goltarif-card.tone-gabungan .goltarif-table tfoot td:first-child { background: #7c6fd6; }
 
-    /* Background sekarang pastel/terang, jadi garis pemisah & teks kolom Total/%
-       di footer perlu warna gelap tipis (bukan putih transparan lagi)
-       supaya tetap kontras dengan background barunya. */
     .goltarif-card.tone-prabayar .goltarif-table thead th:first-child::after,
     .goltarif-card.tone-prabayar .goltarif-table tfoot td:first-child::after { background: rgba(29,78,216,.25); }
     .goltarif-card.tone-paskabayar .goltarif-table thead th:first-child::after,
@@ -201,8 +175,6 @@
         width: 11px; height: 11px; color: #9aa4c2; pointer-events: none;
     }
 
-    /* ===== Card Rekap KWH per ULP — tetap struktur & warna pastel per
-       golongan seperti sudah disepakati sebelumnya. ===== */
     .ulp-card {
         padding: 24px; background: #fff; border: 1px solid var(--border);
         border-radius: 16px; box-sizing: border-box; margin-bottom: 20px;
@@ -243,13 +215,6 @@
 
     .ulp-table th, .ulp-table td { box-sizing: border-box; }
 
-    /* Hanya kolom ULP yang di-freeze. Kolom No sengaja tidak sticky lagi supaya
-       tidak perlu dua batas sticky yang harus align pixel-perfect (itu penyebab
-       garis/celah putih sebelumnya) — cukup satu batas sticky di kiri. */
-    /* Kolom ULP sekarang kolom PERTAMA tabel (nomor urut digabung sebagai badge
-       kecil di dalamnya) supaya sticky-nya stabil — sticky di kolom yang bukan
-       kolom pertama gampang salah hitung offset dan ketiban kolom sebelumnya
-       saat discroll. */
     .ulp-table th.col-ulp, .ulp-table td.col-ulp { position: sticky; left: 0; z-index: 2; text-align: left; font-weight: 700; min-width: 170px; background: #fff; }
     .ulp-table td.col-ulp { color: #1b2559; }
     .ulp-table th.col-ulp { color: #1b2559; }
@@ -283,12 +248,6 @@
 @php
     $kolomUlpKTampil = collect($kolomUlpK)->reject(fn ($g) => strtoupper($g) === 'K4')->values();
 
-    /* ===== Data turunan untuk 3 tampilan di card "Gabungan" (per Golongan,
-       per Daya, Keduanya/total keseluruhan). Semua dihitung dari data yang
-       sudah ada (tidak query baru), supaya chart & tabelnya konsisten dengan
-       angka yang sudah ditampilkan di card Prabayar/Paskabayar. ===== */
-
-    // --- per Golongan: gabungkan Prabayar & Paskabayar per kolom golongan ---
     $gabunganPerGolongan = collect($kolomGol)->map(function ($g) use ($totalPrabayar, $totalPaskabayar) {
         $pra = $totalPrabayar[$g] ?? 0;
         $pas = $totalPaskabayar[$g] ?? 0;
@@ -306,7 +265,6 @@
     ];
     $grandTotalGabungan = $totalGabunganPerGolongan['total'];
 
-    // --- per Daya: gabungkan Prabayar & Paskabayar per kategori daya ---
     $prabayarPerDayaByLabel   = collect($prabayarPerDaya)->keyBy('label');
     $paskabayarPerDayaByLabel = collect($paskabayarPerDaya ?? [])->keyBy('label');
 
@@ -330,13 +288,6 @@
         'paskabayar' => $totalPaskabayarPerDaya['grand_total'] ?? 0,
     ];
     $totalGabunganPerDaya['total'] = $totalGabunganPerDaya['prabayar'] + $totalGabunganPerDaya['paskabayar'];
-
-    // --- Keduanya: total keseluruhan Prabayar vs Paskabayar, tanpa breakdown ---
-    $gabunganKeduanya = [
-        ['label' => 'Prabayar', 'nilai' => $totalGabunganPerGolongan['prabayar']],
-        ['label' => 'Pascabayar', 'nilai' => $totalGabunganPerGolongan['paskabayar']],
-    ];
-    $totalGabunganKeduanya = $grandTotalGabungan;
 @endphp
 
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
@@ -347,11 +298,6 @@
 </div>
 
 @php
-    // Tahun dipindah jadi tab di panel Filter Periode & ULP (bukan
-    // dropdown terpisah lagi di pojok kanan atas) — $tahunAktif &
-    // $daftarTahun udah otomatis ada di halaman ini (dari controller
-    // yang sama, kepake sebelumnya buat dropdown lama), jadi cukup
-    // set flag ini di sini tanpa perlu ubah controller sama sekali.
     $tampilkanTahunFilter = true;
 @endphp
 @include('laporan.partials.filter-periode-ulp')
@@ -366,7 +312,6 @@
                     <select id="gabunganViewSelect" class="goltarif-title-select" onchange="toggleGabunganView(this.value)">
                         <option value="golongan">Gabungan per Gol Tarif</option>
                         <option value="daya">Gabungan per Daya</option>
-                        <option value="keduanya">Gabungan Keduanya</option>
                     </select>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                 </div>
@@ -478,45 +423,6 @@
                     </table>
                 @else
                     <p class="goltarif-empty">Belum ada data gabungan per daya untuk filter ini.</p>
-                @endif
-            </div>
-        </div>
-
-        {{-- ===== View: Keduanya (total keseluruhan, tanpa breakdown) ===== --}}
-        <div id="view-gabungan-keduanya" style="display:none;">
-            <div class="goltarif-chart-wrap">
-                <canvas id="chartGabunganKeduanya"></canvas>
-            </div>
-
-            <div class="goltarif-table-scroll">
-                @if ($totalGabunganKeduanya > 0)
-                    <table class="goltarif-table" id="tabel-gabungan-keduanya">
-                        <thead>
-                            <tr>
-                                <th>Jenis</th>
-                                <th>Total Rp TS</th>
-                                <th>%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($gabunganKeduanya as $baris)
-                                <tr>
-                                    <td>{{ $baris['label'] }}</td>
-                                    <td>{{ number_format($baris['nilai'], 0, ',', '.') }}</td>
-                                    <td>{{ number_format($totalGabunganKeduanya > 0 ? ($baris['nilai'] / $totalGabunganKeduanya * 100) : 0, 2, ',', '.') }}%</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td>TOTAL</td>
-                                <td>{{ number_format($totalGabunganKeduanya, 0, ',', '.') }}</td>
-                                <td>100,00%</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                @else
-                    <p class="goltarif-empty">Belum ada data untuk filter ini.</p>
                 @endif
             </div>
         </div>
@@ -976,17 +882,12 @@ function toggleGolTarifViewPaska(view) {
 function toggleGabunganView(view) {
     document.getElementById('view-gabungan-golongan').style.display = view === 'golongan' ? '' : 'none';
     document.getElementById('view-gabungan-daya').style.display     = view === 'daya'     ? '' : 'none';
-    document.getElementById('view-gabungan-keduanya').style.display = view === 'keduanya' ? '' : 'none';
 
     var sub = document.getElementById('gabunganSub');
     if (sub) {
-        if (view === 'golongan') {
-            sub.textContent = 'Perbandingan Rp TS per golongan — Prabayar vs Pascabayar';
-        } else if (view === 'daya') {
-            sub.textContent = 'Perbandingan Rp TS per daya — Prabayar vs Pascabayar';
-        } else {
-            sub.textContent = 'Total keseluruhan Rp TS — Prabayar vs Pascabayar';
-        }
+        sub.textContent = view === 'golongan'
+            ? 'Perbandingan Rp TS per golongan — Prabayar vs Pascabayar'
+            : 'Perbandingan Rp TS per daya — Prabayar vs Pascabayar';
     }
 }
 
@@ -1052,10 +953,6 @@ function toggleGabunganView(view) {
         var existing = Chart.getChart(canvas);
         if (existing) existing.destroy();
 
-        // Cincin dalam (dataset index 0) = Prabayar, cincin luar (index 1) = Paskabayar.
-        // Tiap golongan/daya dapat satu warna dasar yang sama antara kedua cincin,
-        // cuma bedanya shade (biru utk prabayar, oranye utk paskabayar), biar
-        // tetap gampang dicocokkan posisi kategorinya antar cincin.
         var warnaPrabayar   = ['#5a7fd6', '#7c93d6', '#8fa8e0', '#aebdee', '#c3cef4', '#9ab0e6', '#6f89c9', '#b7c6f2'];
         var warnaPaskabayar = ['#e6a15a', '#eab378', '#eec295', '#f2d3b3', '#f6e2d0', '#eebd8a', '#e3a76a', '#f4cba0'];
 
@@ -1145,10 +1042,6 @@ function toggleGabunganView(view) {
     var gabunganDayaPrabayarData   = @json($gabunganPerDaya->pluck('prabayar')->values());
     var gabunganDayaPaskabayarData = @json($gabunganPerDaya->pluck('paskabayar')->values());
     buatDonutGabungan('chartGabunganDaya', gabunganDayaLabels, gabunganDayaPrabayarData, gabunganDayaPaskabayarData);
-
-    var gabunganKeduanyaLabels = @json(collect($gabunganKeduanya)->pluck('label')->values());
-    var gabunganKeduanyaData   = @json(collect($gabunganKeduanya)->pluck('nilai')->values());
-    buatPie('chartGabunganKeduanya', gabunganKeduanyaLabels, gabunganKeduanyaData);
 })();
 </script>
 @include('laporan.partials.copy-image-script')

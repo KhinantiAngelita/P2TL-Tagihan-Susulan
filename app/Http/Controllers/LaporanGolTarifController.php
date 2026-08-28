@@ -70,7 +70,7 @@ class LaporanGolTarifController extends Controller
         'L', 'T', 'C',
     ];
 
-    private const KOLOM_GOL = ['P1', 'P2', 'P3', 'P4'];
+    private const KOLOM_GOL = ['P1', 'P2', 'P3', 'P4', 'K1', 'K2', 'K3'];
 
     private const KOLOM_ULP_P = ['P1', 'P2', 'P3', 'P4'];
     private const KOLOM_ULP_K = ['K1', 'K2', 'K3'];
@@ -224,8 +224,8 @@ class LaporanGolTarifController extends Controller
 
         // ---- Pivot "Gol per Daya" (Prabayar & Paskabayar): baris = string
         // daya lengkap (mis. "R1T/450" untuk Prabayar, "R1/450" untuk
-        // Paskabayar), kolom = P1-P4. LIVE dari detail_tagihan_susulans,
-        // jadi ikut filter periode + ULP. ----
+        // Paskabayar), kolom = P1-P4 + K1-K3. LIVE dari
+        // detail_tagihan_susulans, jadi ikut filter periode + ULP. ----
         [$prabayarPerDaya, $totalPrabayarPerDaya]     = $this->pivotPerDaya($laporanAktifIds, $filter, self::KODE_TARIF_PRABAYAR_T);
         [$paskabayarPerDaya, $totalPaskabayarPerDaya] = $this->pivotPerDaya($laporanAktifIds, $filter, self::KODE_TARIF_PASKABAYAR_DAYA);
 
@@ -395,9 +395,9 @@ class LaporanGolTarifController extends Controller
     /**
      * Pivot "Gol per Daya" generik: baris = string daya lengkap
      * (mis. "R1T/450" untuk Prabayar, "R1/450" untuk Paskabayar),
-     * kolom = golongan P1-P4. Sumbernya LIVE dari detail_tagihan_susulans
-     * (bukan tabel ringkasan precomputed), jadi ikut filter periode + ULP
-     * seperti tabel Rekap KWH per ULP.
+     * kolom = golongan P1-P4 + K1-K3. Sumbernya LIVE dari
+     * detail_tagihan_susulans (bukan tabel ringkasan precomputed), jadi
+     * ikut filter periode + ULP seperti tabel Rekap KWH per ULP.
      *
      * $daftarKodeValid menentukan set kode tarif (segmen sebelum '/' pada
      * kolom `daya`) yang boleh diproses — pakai KODE_TARIF_PRABAYAR_T untuk
