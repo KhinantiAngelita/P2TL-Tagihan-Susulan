@@ -63,9 +63,12 @@
         }
         .sidebar-brand{display:flex;align-items:center;gap:12px;padding:6px 8px 20px;}
         .brand-logo{
-            width:44px;height:44px;background:var(--yellow);color:#03045e;
+            width:44px;height:44px;background:transparent;
             border-radius:10px;display:flex;align-items:center;justify-content:center;
-            font-weight:800;font-size:13px;flex-shrink:0;
+            font-weight:800;font-size:13px;flex-shrink:0;overflow:hidden;
+        }
+        .brand-logo img{
+            width:100%;height:100%;object-fit:contain;display:block;
         }
         .brand-text{display:flex;flex-direction:column;line-height:1.3;white-space:nowrap;}
         .brand-text strong{font-size:14px;}

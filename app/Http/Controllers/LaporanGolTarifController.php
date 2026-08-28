@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\FilterPeriodeUlpTrait;
 use App\Models\DetailTagihanSusulan;
 use App\Models\LaporanSusulan;
-use App\Models\RingkasanGolTarif;
 use App\Models\TargetBulanan;
 use Illuminate\Http\Request;
 
@@ -43,7 +42,7 @@ class LaporanGolTarifController extends Controller
      * Sama persis dengan KODE_TARIF_PRABAYAR tapi sudah diberi akhiran
      * "T" — dipakai buat menyaring baris golongan Prabayar langsung dari
      * kolom `daya` mentah (format "{KODE}T/{angka_daya}", mis. "R1T/450"),
-     * dipakai di pivotPerDaya().
+     * dipakai di pivotPerDaya() dan pivotTarifLive().
      */
     private const KODE_TARIF_PRABAYAR_T = [
         'S1T', 'S2T', 'S3T',
@@ -52,6 +51,23 @@ class LaporanGolTarifController extends Controller
         'I1T', 'I2T', 'I3T', 'I4T',
         'P1T', 'P2T', 'P3T',
         'LT', 'TT', 'CT',
+    ];
+
+    /**
+     * Kode tarif Paskabayar sebagaimana muncul di kolom `daya` mentah
+     * (format "{KODE}/{angka_daya}", mis. "R1/450" — TANPA akhiran "T",
+     * beda dari Prabayar). Dipakai di pivotPerDaya() dan pivotTarifLive()
+     * untuk memilah baris Paskabayar. "NON PLG" sengaja tidak dimasukkan
+     * karena baris NON PLG biasanya tidak punya nilai daya yang bermakna
+     * untuk dipivot per daya.
+     */
+    private const KODE_TARIF_PASKABAYAR_DAYA = [
+        'S1', 'S2', 'S3',
+        'R1', 'R1M', 'R2', 'R3',
+        'B1', 'B2', 'B3',
+        'I1', 'I2', 'I3', 'I4',
+        'P1', 'P2', 'P3',
+        'L', 'T', 'C',
     ];
 
     private const KOLOM_GOL = ['P1', 'P2', 'P3', 'P4'];
@@ -191,25 +207,27 @@ class LaporanGolTarifController extends Controller
             ->where('tahun', $tahunAktif)
             ->pluck('id');
 
-        // ---- Pivot Prabayar/Paskabayar: BELUM bisa ikut filter periode/ULP.
-        // Kolom kode tarif pelanggan (S1, R1, B1, I1, P1-P3 industri, dst)
-        // tidak ada di tabel detail_tagihan_susulans — datanya diisi dari
-        // sumber lain oleh RingkasanGolTarifService. Sementara tetap baca
-        // dari tabel precomputed ini seperti versi awal.
-        $ringkasan = RingkasanGolTarif::where('tahun', $tahunAktif)->get();
-
-        $peta = [];
-        foreach ($ringkasan as $row) {
-            $peta[$row->tarif][$row->gol] = (float) $row->total_ts;
-        }
+        // ---- Pivot Prabayar/Paskabayar: LIVE dari detail_tagihan_susulans,
+        // jadi ikut filter periode + ULP (sebelumnya dibaca dari tabel
+        // precomputed ringkasan_gol_tarifs yang cuma di-agregasi per
+        // tahun tanpa filter — makanya dulu chart/tabel Gol Tarif &
+        // Gabungan tidak berubah walau filter periode/ULP diterapkan).
+        // pivotTarifLive() mereplikasi persis logika agregasi yang
+        // dipakai RingkasanGolTarifService::hitungUlang() (kode tarif
+        // diambil dari segmen sebelum '/' pada kolom `daya`), tapi
+        // dihitung on-the-fly per request supaya lolosFilterBaris() bisa
+        // diterapkan per baris.
+        $peta = $this->pivotTarifLive($laporanAktifIds, $filter);
 
         [$prabayar, $totalPrabayar]     = $this->susunPivot($peta, self::KODE_TARIF_PRABAYAR, prabayar: true);
         [$paskabayar, $totalPaskabayar] = $this->susunPivot($peta, self::KODE_TARIF_PASKABAYAR, prabayar: false);
 
-        // ---- Pivot "Gol per Daya" (khusus Prabayar): baris = string daya
-        // lengkap (mis. "R1T/450"), kolom = P1-P4. LIVE dari
-        // detail_tagihan_susulans, jadi ikut filter periode + ULP. ----
-        [$prabayarPerDaya, $totalPrabayarPerDaya] = $this->pivotPerDaya($laporanAktifIds, $filter);
+        // ---- Pivot "Gol per Daya" (Prabayar & Paskabayar): baris = string
+        // daya lengkap (mis. "R1T/450" untuk Prabayar, "R1/450" untuk
+        // Paskabayar), kolom = P1-P4. LIVE dari detail_tagihan_susulans,
+        // jadi ikut filter periode + ULP. ----
+        [$prabayarPerDaya, $totalPrabayarPerDaya]     = $this->pivotPerDaya($laporanAktifIds, $filter, self::KODE_TARIF_PRABAYAR_T);
+        [$paskabayarPerDaya, $totalPaskabayarPerDaya] = $this->pivotPerDaya($laporanAktifIds, $filter, self::KODE_TARIF_PASKABAYAR_DAYA);
 
         // ---- Tabel Rekap KWH per ULP: live & ikut filter periode + ULP penuh ----
         [$ulpRowsP, $ulpTotalP] = $this->rekapKwhPerUlp($laporanAktifIds, self::KOLOM_ULP_P, $filter);
@@ -219,24 +237,26 @@ class LaporanGolTarifController extends Controller
         $namaUlpMap = collect($daftarUlp)->pluck('nama', 'kode')->all();
 
         return view('laporan.gol-tarif', [
-            'daftarTahun'          => $daftarTahun,
-            'tahunAktif'           => $tahunAktif,
-            'kolomGol'             => self::KOLOM_GOL,
-            'prabayar'             => $prabayar,
-            'totalPrabayar'        => $totalPrabayar,
-            'paskabayar'           => $paskabayar,
-            'totalPaskabayar'      => $totalPaskabayar,
-            'prabayarPerDaya'      => $prabayarPerDaya,
-            'totalPrabayarPerDaya' => $totalPrabayarPerDaya,
-            'kolomUlpP'            => self::KOLOM_ULP_P,
-            'ulpRowsP'             => $ulpRowsP,
-            'ulpTotalP'            => $ulpTotalP,
-            'kolomUlpK'            => self::KOLOM_ULP_K,
-            'ulpRowsK'             => $ulpRowsK,
-            'ulpTotalK'            => $ulpTotalK,
-            'daftarUlp'            => $daftarUlp,
-            'filter'               => $filter,
-            'filterInfoText'       => $this->teksFilterAktif($tahunAktif, $filter, $namaUlpMap),
+            'daftarTahun'            => $daftarTahun,
+            'tahunAktif'             => $tahunAktif,
+            'kolomGol'               => self::KOLOM_GOL,
+            'prabayar'               => $prabayar,
+            'totalPrabayar'          => $totalPrabayar,
+            'paskabayar'             => $paskabayar,
+            'totalPaskabayar'        => $totalPaskabayar,
+            'prabayarPerDaya'        => $prabayarPerDaya,
+            'totalPrabayarPerDaya'   => $totalPrabayarPerDaya,
+            'paskabayarPerDaya'      => $paskabayarPerDaya,
+            'totalPaskabayarPerDaya' => $totalPaskabayarPerDaya,
+            'kolomUlpP'              => self::KOLOM_ULP_P,
+            'ulpRowsP'               => $ulpRowsP,
+            'ulpTotalP'              => $ulpTotalP,
+            'kolomUlpK'              => self::KOLOM_ULP_K,
+            'ulpRowsK'               => $ulpRowsK,
+            'ulpTotalK'              => $ulpTotalK,
+            'daftarUlp'              => $daftarUlp,
+            'filter'                 => $filter,
+            'filterInfoText'         => $this->teksFilterAktif($tahunAktif, $filter, $namaUlpMap),
         ]);
     }
 
@@ -337,16 +357,57 @@ class LaporanGolTarifController extends Controller
     }
 
     /**
-     * Pivot "Gol per Daya" khusus Prabayar: baris = string daya lengkap
-     * (mis. "R1T/450", "S1T/900"), kolom = golongan P1-P4. Sumbernya LIVE
-     * dari detail_tagihan_susulans (bukan tabel ringkasan precomputed),
-     * jadi ikut filter periode + ULP seperti tabel Rekap KWH per ULP.
-     * Cuma baris yang kode tarifnya (segmen sebelum '/') masuk daftar
-     * KODE_TARIF_PRABAYAR_T (berakhiran "T") yang diproses.
+     * Pivot "per tarif" generik untuk card Prabayar/Paskabayar (view
+     * "Gol Tarif") — LIVE dari detail_tagihan_susulans, mereplikasi
+     * persis logika agregasi RingkasanGolTarifService::hitungUlang()
+     * (kode tarif = segmen sebelum '/' pada kolom `daya`, mis. "R1T/450"
+     * -> "R1T"), tapi dihitung per request dengan lolosFilterBaris()
+     * diterapkan per baris supaya ikut filter periode + ULP.
+     *
+     * Hasilnya dipetakan ke $peta[$kodeTarif][$gol] = total_ts, format
+     * yang sama seperti dulu didapat dari tabel precomputed
+     * ringkasan_gol_tarifs, supaya susunPivot() tidak perlu diubah.
+     */
+    private function pivotTarifLive($laporanAktifIds, array $filter): array
+    {
+        $barisMentah = DetailTagihanSusulan::query()
+            ->whereIn('laporan_susulan_id', $laporanAktifIds)
+            ->whereIn('gol', self::KOLOM_GOL)
+            ->whereNotNull('daya')
+            ->where('daya', '!=', '')
+            ->select('no_agenda', 'gol', 'daya', 'ts')
+            ->get();
+
+        $peta = [];
+        foreach ($barisMentah as $baris) {
+            if (! $this->lolosFilterBaris($baris->no_agenda, $filter)) {
+                continue;
+            }
+
+            $kodeTarif = trim(explode('/', trim($baris->daya))[0] ?? '');
+
+            $peta[$kodeTarif][$baris->gol] = ($peta[$kodeTarif][$baris->gol] ?? 0) + (float) $baris->ts;
+        }
+
+        return $peta;
+    }
+
+    /**
+     * Pivot "Gol per Daya" generik: baris = string daya lengkap
+     * (mis. "R1T/450" untuk Prabayar, "R1/450" untuk Paskabayar),
+     * kolom = golongan P1-P4. Sumbernya LIVE dari detail_tagihan_susulans
+     * (bukan tabel ringkasan precomputed), jadi ikut filter periode + ULP
+     * seperti tabel Rekap KWH per ULP.
+     *
+     * $daftarKodeValid menentukan set kode tarif (segmen sebelum '/' pada
+     * kolom `daya`) yang boleh diproses — pakai KODE_TARIF_PRABAYAR_T untuk
+     * Prabayar (kode berakhiran "T") atau KODE_TARIF_PASKABAYAR_DAYA untuk
+     * Paskabayar (kode tanpa akhiran "T"). Dengan begini fungsi yang sama
+     * dipakai ulang untuk kedua jenis pembayaran tanpa duplikasi logika.
      *
      * @return array{0: array, 1: array} [$rows, $total]
      */
-    private function pivotPerDaya($laporanAktifIds, array $filter): array
+    private function pivotPerDaya($laporanAktifIds, array $filter, array $daftarKodeValid): array
     {
         $barisMentah = DetailTagihanSusulan::query()
             ->whereIn('laporan_susulan_id', $laporanAktifIds)
@@ -364,8 +425,7 @@ class LaporanGolTarifController extends Controller
             $dayaTrim  = trim($baris->daya);
             $kodeTarif = trim(explode('/', $dayaTrim)[0] ?? '');
 
-            // Cuma golongan Prabayar (kode berakhiran T) yang diproses di sini.
-            if (! in_array($kodeTarif, self::KODE_TARIF_PRABAYAR_T, true)) {
+            if (! in_array($kodeTarif, $daftarKodeValid, true)) {
                 continue;
             }
 

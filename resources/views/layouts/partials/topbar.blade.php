@@ -23,14 +23,23 @@
     $unreadCount = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0;
 @endphp
 <header class="topbar">
-    <div class="topbar-breadcrumb">
-        @hasSection('breadcrumb')
-            @yield('breadcrumb')
-        @else
-            <a href="{{ route('dashboard') }}">Beranda</a>
-            <span class="sep">›</span>
-            <strong>@yield('title', 'Dashboard')</strong>
-        @endif
+    <div class="topbar-left">
+        {{-- Tombol hamburger — cuma tampil di layar sempit (lihat .hamburger-btn
+             di layout utama). Klik ini yang men-trigger openSidebar() di script
+             layouts/app.blade.php lewat id sidebarToggleBtn. --}}
+        <button type="button" class="hamburger-btn" id="sidebarToggleBtn" aria-label="Buka menu navigasi">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+
+        <div class="topbar-breadcrumb">
+            @hasSection('breadcrumb')
+                @yield('breadcrumb')
+            @else
+                <a href="{{ route('dashboard') }}">Beranda</a>
+                <span class="sep">›</span>
+                <strong>@yield('title', 'Dashboard')</strong>
+            @endif
+        </div>
     </div>
 
     <div class="topbar-right">

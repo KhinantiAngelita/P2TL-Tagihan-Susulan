@@ -53,6 +53,7 @@
     .goltarif-card h3 .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
     .goltarif-card h3 .dot.prabayar   { background: #5a7fd6; }
     .goltarif-card h3 .dot.paskabayar { background: #e6a15a; }
+    .goltarif-card h3 .dot.gabungan   { background: linear-gradient(90deg, #5a7fd6, #e6a15a); }
     .goltarif-card .sub { margin: 0; font-size: 12.5px; color: #6b7690; }
 
     .goltarif-year-badge {
@@ -74,6 +75,22 @@
 
     .goltarif-chart-wrap { position: relative; height: 300px; margin-bottom: 20px; flex-shrink: 0; }
     @media (max-width: 900px) { .goltarif-chart-wrap { height: 260px; } }
+
+    .goltarif-chart-wrap.gabungan { margin-bottom: 0; }
+
+    /* Card "Gabungan" berdiri sendiri di luar .goltarif-grid, jadi TIDAK
+       boleh ikut display:flex/flex-direction:column/height:100% milik
+       .goltarif-card biasa. Properti itu cuma aman dipakai di dalam grid
+       yang align-items:stretch (tingginya kekunci sama grid). Di luar
+       grid, kombinasi height:100% (tanpa parent bertinggi pasti) + flex
+       + canvas Chart.js yang responsive bikin resize-loop: container jadi
+       membesar terus tiap kali canvas resize, ujung-ujungnya tingginya
+       bisa sampai ribuan px. Class ini mematikan flex-nya balik ke block
+       biasa supaya tingginya cuma segede isinya. */
+    .goltarif-card.gabungan-card {
+        display: block;
+        height: auto;
+    }
 
     .goltarif-table-scroll {
         overflow-x: auto; overflow-y: auto;
@@ -132,6 +149,14 @@
     .goltarif-card.tone-paskabayar .goltarif-table thead th:first-child,
     .goltarif-card.tone-paskabayar .goltarif-table tfoot td,
     .goltarif-card.tone-paskabayar .goltarif-table tfoot td:first-child { background: #fbedd9; color: #b45309; }
+
+    /* ===== Tone untuk tabel gabungan (dipakai di view per-golongan & per-daya)
+       — warna netral ungu-kebiruan supaya beda dari tone prabayar/paskabayar,
+       tapi tetap konsisten dengan pola header/footer bar full-color di atas. ===== */
+    .goltarif-card.tone-gabungan .goltarif-table thead th,
+    .goltarif-card.tone-gabungan .goltarif-table thead th:first-child,
+    .goltarif-card.tone-gabungan .goltarif-table tfoot td,
+    .goltarif-card.tone-gabungan .goltarif-table tfoot td:first-child { background: #7c6fd6; }
 
     /* Background sekarang pastel/terang, jadi garis pemisah & teks kolom Total/%
        di footer perlu warna gelap tipis (bukan putih transparan lagi)
@@ -257,12 +282,67 @@
 
 @php
     $kolomUlpKTampil = collect($kolomUlpK)->reject(fn ($g) => strtoupper($g) === 'K4')->values();
+
+    /* ===== Data turunan untuk 3 tampilan di card "Gabungan" (per Golongan,
+       per Daya, Keduanya/total keseluruhan). Semua dihitung dari data yang
+       sudah ada (tidak query baru), supaya chart & tabelnya konsisten dengan
+       angka yang sudah ditampilkan di card Prabayar/Paskabayar. ===== */
+
+    // --- per Golongan: gabungkan Prabayar & Paskabayar per kolom golongan ---
+    $gabunganPerGolongan = collect($kolomGol)->map(function ($g) use ($totalPrabayar, $totalPaskabayar) {
+        $pra = $totalPrabayar[$g] ?? 0;
+        $pas = $totalPaskabayar[$g] ?? 0;
+        return [
+            'label'      => $g,
+            'prabayar'   => $pra,
+            'paskabayar' => $pas,
+            'total'      => $pra + $pas,
+        ];
+    });
+    $totalGabunganPerGolongan = [
+        'prabayar'   => $totalPrabayar['grand_total'] ?? 0,
+        'paskabayar' => $totalPaskabayar['grand_total'] ?? 0,
+        'total'      => ($totalPrabayar['grand_total'] ?? 0) + ($totalPaskabayar['grand_total'] ?? 0),
+    ];
+    $grandTotalGabungan = $totalGabunganPerGolongan['total'];
+
+    // --- per Daya: gabungkan Prabayar & Paskabayar per kategori daya ---
+    $prabayarPerDayaByLabel   = collect($prabayarPerDaya)->keyBy('label');
+    $paskabayarPerDayaByLabel = collect($paskabayarPerDaya ?? [])->keyBy('label');
+
+    $daftarLabelDaya = collect($prabayarPerDaya)->pluck('label')
+        ->merge(collect($paskabayarPerDaya ?? [])->pluck('label'))
+        ->unique()
+        ->values();
+
+    $gabunganPerDaya = $daftarLabelDaya->map(function ($label) use ($prabayarPerDayaByLabel, $paskabayarPerDayaByLabel) {
+        $pra = $prabayarPerDayaByLabel[$label]['total'] ?? 0;
+        $pas = $paskabayarPerDayaByLabel[$label]['total'] ?? 0;
+        return [
+            'label'      => $label,
+            'prabayar'   => $pra,
+            'paskabayar' => $pas,
+            'total'      => $pra + $pas,
+        ];
+    });
+    $totalGabunganPerDaya = [
+        'prabayar'   => $totalPrabayarPerDaya['grand_total'] ?? 0,
+        'paskabayar' => $totalPaskabayarPerDaya['grand_total'] ?? 0,
+    ];
+    $totalGabunganPerDaya['total'] = $totalGabunganPerDaya['prabayar'] + $totalGabunganPerDaya['paskabayar'];
+
+    // --- Keduanya: total keseluruhan Prabayar vs Paskabayar, tanpa breakdown ---
+    $gabunganKeduanya = [
+        ['label' => 'Prabayar', 'nilai' => $totalGabunganPerGolongan['prabayar']],
+        ['label' => 'Pascabayar', 'nilai' => $totalGabunganPerGolongan['paskabayar']],
+    ];
+    $totalGabunganKeduanya = $grandTotalGabungan;
 @endphp
 
 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
     <div>
         <h2 class="trend-page-title">Laporan Gol Tarif</h2>
-        <p style="color:#6b7690;margin:0;font-size:14px;">Distribusi Rp TS berdasarkan golongan tarif &mdash; Prabayar vs Paskabayar</p>
+        <p style="color:#6b7690;margin:0;font-size:14px;">Distribusi Rp TS berdasarkan golongan tarif &mdash; Prabayar vs Pascabayar</p>
     </div>
 </div>
 
@@ -275,6 +355,174 @@
     $tampilkanTahunFilter = true;
 @endphp
 @include('laporan.partials.filter-periode-ulp')
+
+{{-- ===== GABUNGAN PRABAYAR & PASKABAYAR ===== --}}
+<div class="goltarif-card gabungan-card tone-gabungan" style="margin-bottom:20px;">
+    <div class="goltarif-card-head">
+        <div>
+            <h3>
+                <span class="dot gabungan"></span>
+                <div class="goltarif-title-select-wrap">
+                    <select id="gabunganViewSelect" class="goltarif-title-select" onchange="toggleGabunganView(this.value)">
+                        <option value="golongan">Gabungan per Gol Tarif</option>
+                        <option value="daya">Gabungan per Daya</option>
+                        <option value="keduanya">Gabungan Keduanya</option>
+                    </select>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+            </h3>
+            <p class="sub" id="gabunganSub">Perbandingan Rp TS per golongan &mdash; Prabayar vs Pascabayar</p>
+        </div>
+        <div class="goltarif-head-actions">
+            <span class="goltarif-year-badge">{{ $tahunAktif ?: '-' }}</span>
+            <button type="button" class="copy-btn" id="gabunganCopyBtn" onclick="salinTabelGambar('capture-gabungan', this, document.getElementById('gabunganViewSelect').selectedOptions[0].text)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Salin Gambar
+            </button>
+        </div>
+    </div>
+
+    <div id="capture-gabungan">
+
+        {{-- ===== View: per Golongan (default) ===== --}}
+        <div id="view-gabungan-golongan">
+            <div class="goltarif-chart-wrap gabungan">
+                <canvas id="chartGabungan"></canvas>
+            </div>
+            <p style="text-align:center;font-size:12px;color:#6b7690;margin:10px 0 20px;">
+                <span style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;"><span style="width:9px;height:9px;border-radius:50%;background:#5a7fd6;display:inline-block;"></span>Cincin dalam: Prabayar</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;border-radius:50%;background:#e6a15a;display:inline-block;"></span>Cincin luar: Pascabayar</span>
+            </p>
+
+            <div class="goltarif-table-scroll">
+                @if ($gabunganPerGolongan->count() > 0)
+                    <table class="goltarif-table" id="tabel-gabungan-golongan">
+                        <thead>
+                            <tr>
+                                <th>Golongan</th>
+                                <th>Prabayar</th>
+                                <th>Pascabayar</th>
+                                <th>Total</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($gabunganPerGolongan as $baris)
+                                <tr>
+                                    <td>{{ $baris['label'] }}</td>
+                                    <td>{{ number_format($baris['prabayar'], 0, ',', '.') }}</td>
+                                    <td>{{ number_format($baris['paskabayar'], 0, ',', '.') }}</td>
+                                    <td>{{ number_format($baris['total'], 0, ',', '.') }}</td>
+                                    <td>{{ number_format($grandTotalGabungan > 0 ? ($baris['total'] / $grandTotalGabungan * 100) : 0, 2, ',', '.') }}%</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td>TOTAL</td>
+                                <td>{{ number_format($totalGabunganPerGolongan['prabayar'], 0, ',', '.') }}</td>
+                                <td>{{ number_format($totalGabunganPerGolongan['paskabayar'], 0, ',', '.') }}</td>
+                                <td>{{ number_format($totalGabunganPerGolongan['total'], 0, ',', '.') }}</td>
+                                <td>100,00%</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                @else
+                    <p class="goltarif-empty">Belum ada data gabungan per golongan untuk filter ini.</p>
+                @endif
+            </div>
+        </div>
+
+        {{-- ===== View: per Daya ===== --}}
+        <div id="view-gabungan-daya" style="display:none;">
+            <div class="goltarif-chart-wrap gabungan">
+                <canvas id="chartGabunganDaya"></canvas>
+            </div>
+            <p style="text-align:center;font-size:12px;color:#6b7690;margin:10px 0 20px;">
+                <span style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;"><span style="width:9px;height:9px;border-radius:50%;background:#5a7fd6;display:inline-block;"></span>Cincin dalam: Prabayar</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;border-radius:50%;background:#e6a15a;display:inline-block;"></span>Cincin luar: Pascabayar</span>
+            </p>
+
+            <div class="goltarif-table-scroll">
+                @if ($gabunganPerDaya->count() > 0)
+                    <table class="goltarif-table" id="tabel-gabungan-daya">
+                        <thead>
+                            <tr>
+                                <th>Daya</th>
+                                <th>Prabayar</th>
+                                <th>Pascabayar</th>
+                                <th>Total</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($gabunganPerDaya as $baris)
+                                <tr>
+                                    <td>{{ $baris['label'] }}</td>
+                                    <td>{{ number_format($baris['prabayar'], 0, ',', '.') }}</td>
+                                    <td>{{ number_format($baris['paskabayar'], 0, ',', '.') }}</td>
+                                    <td>{{ number_format($baris['total'], 0, ',', '.') }}</td>
+                                    <td>{{ number_format($totalGabunganPerDaya['total'] > 0 ? ($baris['total'] / $totalGabunganPerDaya['total'] * 100) : 0, 2, ',', '.') }}%</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td>TOTAL</td>
+                                <td>{{ number_format($totalGabunganPerDaya['prabayar'], 0, ',', '.') }}</td>
+                                <td>{{ number_format($totalGabunganPerDaya['paskabayar'], 0, ',', '.') }}</td>
+                                <td>{{ number_format($totalGabunganPerDaya['total'], 0, ',', '.') }}</td>
+                                <td>100,00%</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                @else
+                    <p class="goltarif-empty">Belum ada data gabungan per daya untuk filter ini.</p>
+                @endif
+            </div>
+        </div>
+
+        {{-- ===== View: Keduanya (total keseluruhan, tanpa breakdown) ===== --}}
+        <div id="view-gabungan-keduanya" style="display:none;">
+            <div class="goltarif-chart-wrap">
+                <canvas id="chartGabunganKeduanya"></canvas>
+            </div>
+
+            <div class="goltarif-table-scroll">
+                @if ($totalGabunganKeduanya > 0)
+                    <table class="goltarif-table" id="tabel-gabungan-keduanya">
+                        <thead>
+                            <tr>
+                                <th>Jenis</th>
+                                <th>Total Rp TS</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($gabunganKeduanya as $baris)
+                                <tr>
+                                    <td>{{ $baris['label'] }}</td>
+                                    <td>{{ number_format($baris['nilai'], 0, ',', '.') }}</td>
+                                    <td>{{ number_format($totalGabunganKeduanya > 0 ? ($baris['nilai'] / $totalGabunganKeduanya * 100) : 0, 2, ',', '.') }}%</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td>TOTAL</td>
+                                <td>{{ number_format($totalGabunganKeduanya, 0, ',', '.') }}</td>
+                                <td>100,00%</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                @else
+                    <p class="goltarif-empty">Belum ada data untuk filter ini.</p>
+                @endif
+            </div>
+        </div>
+
+    </div>
+</div>
 
 <div class="goltarif-grid">
 
@@ -408,12 +656,21 @@
     <div class="goltarif-card tone-paskabayar">
         <div class="goltarif-card-head">
             <div>
-                <h3><span class="dot paskabayar"></span> Gol Tarif Paskabayar</h3>
-                <p class="sub">Distribusi Rp TS per golongan</p>
+                <h3>
+                    <span class="dot paskabayar"></span>
+                    <div class="goltarif-title-select-wrap">
+                        <select id="paskabayarViewSelect" class="goltarif-title-select" onchange="toggleGolTarifViewPaska(this.value)">
+                            <option value="tarif">Gol Tarif Pascabayar</option>
+                            <option value="daya">Gol per Daya Pascabayar</option>
+                        </select>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                    </div>
+                </h3>
+                <p class="sub" id="paskabayarSub">Distribusi Rp TS per golongan</p>
             </div>
             <div class="goltarif-head-actions">
                 <span class="goltarif-year-badge">{{ $tahunAktif ?: '-' }}</span>
-                <button type="button" class="copy-btn" onclick="salinTabelGambar('capture-paskabayar', this, 'Gol Tarif Paskabayar')">
+                <button type="button" class="copy-btn" id="paskabayarCopyBtn" onclick="salinTabelGambar('capture-paskabayar', this, document.getElementById('paskabayarViewSelect').selectedOptions[0].text)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     Salin Gambar
                 </button>
@@ -421,50 +678,103 @@
         </div>
 
         <div id="capture-paskabayar">
-            <div class="goltarif-chart-wrap">
-                <canvas id="chartPaskabayar"></canvas>
+
+            {{-- ===== View: Gol Tarif (default) ===== --}}
+            <div id="view-tarif-paska">
+                <div class="goltarif-chart-wrap">
+                    <canvas id="chartPaskabayar"></canvas>
+                </div>
+
+                <div class="goltarif-table-scroll">
+                    @if (count($paskabayar) > 0)
+                        <table class="goltarif-table" id="tabel-paskabayar">
+                            <thead>
+                                <tr>
+                                    <th>Tarif</th>
+                                    @foreach ($kolomGol as $g)
+                                        <th>{{ $g }}</th>
+                                    @endforeach
+                                    <th>Total</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($paskabayar as $baris)
+                                    <tr>
+                                        <td>{{ $baris['label'] }}</td>
+                                        @foreach ($kolomGol as $g)
+                                            <td>{{ number_format($baris['nilai'][$g], 0, ',', '.') }}</td>
+                                        @endforeach
+                                        <td>{{ number_format($baris['total'], 0, ',', '.') }}</td>
+                                        <td>{{ number_format($baris['persen'], 2, ',', '.') }}%</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td>TOTAL</td>
+                                    @foreach ($kolomGol as $g)
+                                        <td>{{ number_format($totalPaskabayar[$g], 0, ',', '.') }}</td>
+                                    @endforeach
+                                    <td>{{ number_format($totalPaskabayar['grand_total'], 0, ',', '.') }}</td>
+                                    <td>100,00%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    @else
+                        <p class="goltarif-empty">Belum ada data paskabayar untuk filter ini.</p>
+                    @endif
+                </div>
             </div>
 
-            <div class="goltarif-table-scroll">
-                @if (count($paskabayar) > 0)
-                    <table class="goltarif-table" id="tabel-paskabayar">
-                        <thead>
-                            <tr>
-                                <th>Tarif</th>
-                                @foreach ($kolomGol as $g)
-                                    <th>{{ $g }}</th>
-                                @endforeach
-                                <th>Total</th>
-                                <th>%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($paskabayar as $baris)
+            {{-- ===== View: Gol per Daya ===== --}}
+            <div id="view-daya-paska" style="display:none;">
+                <div class="goltarif-chart-wrap">
+                    <canvas id="chartPaskabayarDaya"></canvas>
+                </div>
+
+                <div class="goltarif-table-scroll">
+                    @if (count($paskabayarPerDaya ?? []) > 0)
+                        <table class="goltarif-table" id="tabel-paskabayar-daya">
+                            <thead>
                                 <tr>
-                                    <td>{{ $baris['label'] }}</td>
+                                    <th>Daya</th>
                                     @foreach ($kolomGol as $g)
-                                        <td>{{ number_format($baris['nilai'][$g], 0, ',', '.') }}</td>
+                                        <th>{{ $g }}</th>
                                     @endforeach
-                                    <td>{{ number_format($baris['total'], 0, ',', '.') }}</td>
-                                    <td>{{ number_format($baris['persen'], 2, ',', '.') }}%</td>
+                                    <th>Total</th>
+                                    <th>%</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td>TOTAL</td>
-                                @foreach ($kolomGol as $g)
-                                    <td>{{ number_format($totalPaskabayar[$g], 0, ',', '.') }}</td>
+                            </thead>
+                            <tbody>
+                                @foreach ($paskabayarPerDaya as $baris)
+                                    <tr>
+                                        <td>{{ $baris['label'] }}</td>
+                                        @foreach ($kolomGol as $g)
+                                            <td>{{ number_format($baris['nilai'][$g], 0, ',', '.') }}</td>
+                                        @endforeach
+                                        <td>{{ number_format($baris['total'], 0, ',', '.') }}</td>
+                                        <td>{{ number_format($baris['persen'], 2, ',', '.') }}%</td>
+                                    </tr>
                                 @endforeach
-                                <td>{{ number_format($totalPaskabayar['grand_total'], 0, ',', '.') }}</td>
-                                <td>100,00%</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                @else
-                    <p class="goltarif-empty">Belum ada data paskabayar untuk filter ini.</p>
-                @endif
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td>TOTAL</td>
+                                    @foreach ($kolomGol as $g)
+                                        <td>{{ number_format($totalPaskabayarPerDaya[$g], 0, ',', '.') }}</td>
+                                    @endforeach
+                                    <td>{{ number_format($totalPaskabayarPerDaya['grand_total'], 0, ',', '.') }}</td>
+                                    <td>100,00%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    @else
+                        <p class="goltarif-empty">Belum ada data gol per daya paskabayar untuk filter ini.</p>
+                    @endif
+                </div>
             </div>
+
         </div>
     </div>
 </div>
@@ -651,6 +961,35 @@ function toggleGolTarifView(view) {
     }
 }
 
+function toggleGolTarifViewPaska(view) {
+    document.getElementById('view-tarif-paska').style.display = view === 'tarif' ? '' : 'none';
+    document.getElementById('view-daya-paska').style.display  = view === 'daya'  ? '' : 'none';
+
+    var sub = document.getElementById('paskabayarSub');
+    if (sub) {
+        sub.textContent = view === 'tarif'
+            ? 'Distribusi Rp TS per golongan'
+            : 'Distribusi Rp TS per daya';
+    }
+}
+
+function toggleGabunganView(view) {
+    document.getElementById('view-gabungan-golongan').style.display = view === 'golongan' ? '' : 'none';
+    document.getElementById('view-gabungan-daya').style.display     = view === 'daya'     ? '' : 'none';
+    document.getElementById('view-gabungan-keduanya').style.display = view === 'keduanya' ? '' : 'none';
+
+    var sub = document.getElementById('gabunganSub');
+    if (sub) {
+        if (view === 'golongan') {
+            sub.textContent = 'Perbandingan Rp TS per golongan — Prabayar vs Pascabayar';
+        } else if (view === 'daya') {
+            sub.textContent = 'Perbandingan Rp TS per daya — Prabayar vs Pascabayar';
+        } else {
+            sub.textContent = 'Total keseluruhan Rp TS — Prabayar vs Pascabayar';
+        }
+    }
+}
+
 (function () {
     if (typeof Chart === 'undefined') {
         console.error('Chart.js belum termuat.');
@@ -665,7 +1004,7 @@ function toggleGolTarifView(view) {
         if (existing) existing.destroy();
 
         new Chart(canvas, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
                 labels: labels,
                 datasets: [{
@@ -678,6 +1017,7 @@ function toggleGolTarifView(view) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '58%',
                 layout: { padding: { bottom: 8 } },
                 plugins: {
                     legend: {
@@ -705,6 +1045,81 @@ function toggleGolTarifView(view) {
         });
     }
 
+    function buatDonutGabungan(canvasId, labels, dataPrabayar, dataPaskabayar) {
+        var canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+
+        var existing = Chart.getChart(canvas);
+        if (existing) existing.destroy();
+
+        // Cincin dalam (dataset index 0) = Prabayar, cincin luar (index 1) = Paskabayar.
+        // Tiap golongan/daya dapat satu warna dasar yang sama antara kedua cincin,
+        // cuma bedanya shade (biru utk prabayar, oranye utk paskabayar), biar
+        // tetap gampang dicocokkan posisi kategorinya antar cincin.
+        var warnaPrabayar   = ['#5a7fd6', '#7c93d6', '#8fa8e0', '#aebdee', '#c3cef4', '#9ab0e6', '#6f89c9', '#b7c6f2'];
+        var warnaPaskabayar = ['#e6a15a', '#eab378', '#eec295', '#f2d3b3', '#f6e2d0', '#eebd8a', '#e3a76a', '#f4cba0'];
+
+        new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Prabayar',
+                        data: dataPrabayar,
+                        backgroundColor: warnaPrabayar.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff',
+                    },
+                    {
+                        label: 'Pascabayar',
+                        data: dataPaskabayar,
+                        backgroundColor: warnaPaskabayar.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '35%',
+                layout: { padding: { bottom: 8 } },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        align: 'center',
+                        labels: {
+                            boxWidth: 10,
+                            font: { size: 11 },
+                            padding: 10,
+                            usePointStyle: true,
+                            generateLabels: function (chart) {
+                                return chart.data.labels.map(function (label, i) {
+                                    return {
+                                        text: label,
+                                        fillStyle: warnaPrabayar[i] || '#9aa4c2',
+                                        strokeStyle: '#fff',
+                                        lineWidth: 1,
+                                        index: i,
+                                    };
+                                });
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                var val = Number(ctx.raw).toLocaleString('id-ID');
+                                return ctx.dataset.label + ' ' + ctx.label + ': Rp ' + val;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     var prabayarLabels = @json(collect($prabayar)->where('total', '>', 0)->pluck('label')->values());
     var prabayarData   = @json(collect($prabayar)->where('total', '>', 0)->pluck('total')->values());
     buatPie('chartPrabayar', prabayarLabels, prabayarData);
@@ -716,6 +1131,24 @@ function toggleGolTarifView(view) {
     var paskabayarLabels = @json(collect($paskabayar)->where('total', '>', 0)->pluck('label')->values());
     var paskabayarData   = @json(collect($paskabayar)->where('total', '>', 0)->pluck('total')->values());
     buatPie('chartPaskabayar', paskabayarLabels, paskabayarData);
+
+    var paskabayarDayaLabels = @json(collect($paskabayarPerDaya ?? [])->where('total', '>', 0)->pluck('label')->values());
+    var paskabayarDayaData   = @json(collect($paskabayarPerDaya ?? [])->where('total', '>', 0)->pluck('total')->values());
+    buatPie('chartPaskabayarDaya', paskabayarDayaLabels, paskabayarDayaData);
+
+    var gabunganLabels         = @json($kolomGol);
+    var gabunganPrabayarData   = @json(collect($kolomGol)->map(fn ($g) => $totalPrabayar[$g] ?? 0)->values());
+    var gabunganPaskabayarData = @json(collect($kolomGol)->map(fn ($g) => $totalPaskabayar[$g] ?? 0)->values());
+    buatDonutGabungan('chartGabungan', gabunganLabels, gabunganPrabayarData, gabunganPaskabayarData);
+
+    var gabunganDayaLabels         = @json($gabunganPerDaya->pluck('label')->values());
+    var gabunganDayaPrabayarData   = @json($gabunganPerDaya->pluck('prabayar')->values());
+    var gabunganDayaPaskabayarData = @json($gabunganPerDaya->pluck('paskabayar')->values());
+    buatDonutGabungan('chartGabunganDaya', gabunganDayaLabels, gabunganDayaPrabayarData, gabunganDayaPaskabayarData);
+
+    var gabunganKeduanyaLabels = @json(collect($gabunganKeduanya)->pluck('label')->values());
+    var gabunganKeduanyaData   = @json(collect($gabunganKeduanya)->pluck('nilai')->values());
+    buatPie('chartGabunganKeduanya', gabunganKeduanyaLabels, gabunganKeduanyaData);
 })();
 </script>
 @include('laporan.partials.copy-image-script')

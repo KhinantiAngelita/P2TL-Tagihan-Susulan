@@ -356,6 +356,18 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         display.addEventListener('keydown', function (e) {
+            // PERBAIKAN: sebelumnya SEMUA tombol yang bukan angka/di luar
+            // daftar "allowed" langsung di-preventDefault(), termasuk
+            // kombinasi Ctrl/Cmd+C, +V, +A, +X, +Z — soalnya e.key buat
+            // shortcut itu cuma huruf biasa (mis. "v" buat Ctrl+V), jadi
+            // ikut ke-anggap "bukan angka" dan ke-blok. Sekarang kalau ada
+            // tombol Ctrl (Windows/Linux) atau Cmd (Mac) yang ditekan
+            // bareng, event-nya dibiarkan lewat dulu sebelum dicek — jadi
+            // copy-paste & shortcut keyboard lain tetap jalan normal,
+            // sementara pembatasan "cuma boleh angka" pas ngetik manual
+            // tetap berlaku seperti sebelumnya.
+            if (e.ctrlKey || e.metaKey) return;
+
             const allowed = ['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'];
             if (allowed.includes(e.key) || /^[0-9]$/.test(e.key)) return;
             e.preventDefault();

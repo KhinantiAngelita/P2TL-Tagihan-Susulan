@@ -65,13 +65,14 @@
             z-index: 2;
         }
         .auth-brand .logo-box {
-            width: 44px; height: 44px;
-            background: var(--yellow);
+            width: 110px; height: 110px;
+            background: transparent;
             border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
+            overflow: hidden;
         }
-        .auth-brand .logo-box svg { width: 24px; height: 24px; }
+        .auth-brand .logo-box img { width: 100%; height: 100%; object-fit: contain; display: block; }
         .auth-brand .logo-text { line-height: 1.1; }
         .auth-brand .logo-text .pln { font-size: 22px; font-weight: 800; letter-spacing: .5px; }
         .auth-brand .logo-text .persero { font-size: 11px; font-weight: 600; letter-spacing: 3px; color: #b9c2e0; }
@@ -192,13 +193,7 @@
     <div class="auth-side">
         <div class="auth-brand">
             <div class="logo-box">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="#0a1a52"/>
-                </svg>
-            </div>
-            <div class="logo-text">
-                <div class="pln">PLN</div>
-                <div class="persero">PERSERO</div>
+                <img src="{{ asset('logo/Logo 2.png') }}" alt="Logo PLN">
             </div>
         </div>
 

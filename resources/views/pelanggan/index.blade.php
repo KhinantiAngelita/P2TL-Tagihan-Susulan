@@ -24,19 +24,18 @@
 
     .plg-card {
         padding: 0; overflow: hidden; background: #fff;
-        border: 1px solid var(--border); border-radius: 16px; box-sizing: border-box;
-        box-shadow: 0 1px 2px rgba(16,24,64,.04);
+        border: 1px solid #eef0f7; border-radius: 16px; box-sizing: border-box;
+        box-shadow: 0 1px 3px rgba(16,24,64,.04);
     }
 
-    /* ===== Header card — ikon + judul + deskripsi + badge jumlah,
-       senada pola trend-table-head di halaman lain. ===== */
+    /* ===== Header card — ikon + judul + deskripsi + badge jumlah ===== */
     .plg-card-head {
         display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        padding: 20px 22px; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+        padding: 20px 22px; border-bottom: 1px solid var(--plg-border); flex-wrap: wrap;
     }
     .plg-card-head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
     .plg-card-head-icon {
-        width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+        width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
         display: flex; align-items: center; justify-content: center;
         background: #eaf0fb; color: #0b3d91;
     }
@@ -46,10 +45,10 @@
 
     .plg-count-badge {
         background: #eaf0fb;
-        color: var(--blue-primary);
+        color: #0b3d91;
         font-size: 12px;
         font-weight: 700;
-        padding: 5px 12px;
+        padding: 6px 14px;
         border-radius: 999px;
         white-space: nowrap;
         flex-shrink: 0;
@@ -59,10 +58,10 @@
     .plg-toolbar {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
         flex-wrap: wrap;
         padding: 16px 22px;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid var(--plg-border);
         background: #fbfcfe;
     }
     .plg-search-wrap { position: relative; flex: 1 1 240px; min-width: 200px; }
@@ -73,13 +72,18 @@
     .plg-search-input {
         width: 100%;
         box-sizing: border-box;
-        border: 1px solid var(--border);
+        border: 1px solid var(--plg-border);
         border-radius: 10px;
         padding: 9px 14px 9px 36px;
         font-size: 13px;
         background: #fff;
+        transition: border-color .15s, box-shadow .15s;
     }
-    .plg-search-input:focus { outline: none; border-color: var(--blue-primary); }
+    .plg-search-input:focus {
+        outline: none;
+        border-color: var(--plg-navy);
+        box-shadow: 0 0 0 3px rgba(11,61,145,.1);
+    }
 
     .filter-wrap { position: relative; }
     .filter-wrap svg {
@@ -87,7 +91,7 @@
         width: 14px; height: 14px; color: #9aa4c2; pointer-events: none;
     }
     .filter-select {
-        border: 1px solid var(--border);
+        border: 1px solid var(--plg-border);
         border-radius: 10px;
         padding: 8px 14px 8px 34px;
         font-size: 13px;
@@ -97,21 +101,24 @@
         appearance: none;
         min-width: 140px;
         cursor: pointer;
+        transition: border-color .15s;
     }
-    .filter-select:focus { outline: none; border-color: var(--blue-primary, #0b3d91); }
+    .filter-select:focus { outline: none; border-color: var(--plg-navy); }
 
     .plg-search-btn {
-        background: #0b3d91; color: #fff; border: none; border-radius: 10px;
-        padding: 9px 20px; font-size: 13px; font-weight: 700; cursor: pointer;
-        transition: background .15s;
+        background: #2f5fa8;
+        color: #fff; border: none; border-radius: 10px;
+        padding: 9px 22px; font-size: 13px; font-weight: 700; cursor: pointer;
+        transition: background .15s, transform .1s;
     }
-    .plg-search-btn:hover { background: #092f70; }
+    .plg-search-btn:hover { background: #274f8c; }
+    .plg-search-btn:active { transform: scale(0.98); }
 
     /* ===== Tabel — garis pemisah kolom soft di semua sel ===== */
     .plg-table-scroll { overflow-x: auto; }
     .plg-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 780px; }
     .plg-table th, .plg-table td {
-        padding: 12px 16px;
+        padding: 13px 16px;
         text-align: left;
         border-bottom: 1px solid #eef0f6;
         border-right: 1px solid #eef0f6;
@@ -120,14 +127,17 @@
     .plg-table th:last-child, .plg-table td:last-child { border-right: none; }
 
     .plg-table thead th {
-        background: #0b3d91;
-        color: #fff;
+        background: #eaf0fb;
+        color: #294a86;
         font-weight: 700;
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: .03em;
-        border-right-color: rgba(255,255,255,.18);
+        border-right-color: #dbe4f7;
+        position: sticky;
+        top: 0;
     }
+    .plg-table tbody tr { transition: background .12s ease; }
     .plg-table tbody tr:nth-child(even) { background: #f8f9fc; }
     .plg-table tbody tr:hover { background: #eef2fb; }
     .plg-table td.plg-nama { font-weight: 700; color: #1b2559; }
@@ -138,25 +148,27 @@
         padding: 3px 10px; border-radius: 999px;
         font-size: 11.5px; font-weight: 700;
         background: #eaf0fb; color: #0b3d91;
+        letter-spacing: .01em;
     }
 
     .plg-detail-btn {
-        border: 1px solid var(--border);
+        border: 1px solid var(--plg-border);
         background: #fff;
         color: #0b3d91;
         font-size: 12px;
         font-weight: 700;
-        padding: 6px 12px;
+        padding: 6px 14px;
         border-radius: 999px;
         cursor: pointer;
         white-space: nowrap;
-        transition: background .15s;
+        transition: background .15s, border-color .15s, transform .1s;
     }
-    .plg-detail-btn:hover { background: #eaf0fb; }
+    .plg-detail-btn:hover { background: #eaf0fb; border-color: #c7d3f0; }
+    .plg-detail-btn:active { transform: scale(0.96); }
 
-    .plg-empty { text-align: center; color: #9aa4c2; padding: 40px; font-size: 13px; }
+    .plg-empty { text-align: center; color: #9aa4c2; padding: 48px 20px; font-size: 13px; }
 
-    .plg-pagination { padding: 16px 22px; border-top: 1px solid var(--border); }
+    .plg-pagination { padding: 16px 22px; border-top: 1px solid var(--plg-border); }
 
     /* ===== Rapikan pagination bawaan Laravel ===== */
     .plg-pagination nav { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
@@ -179,13 +191,14 @@
         height: 34px;
         padding: 0 8px;
         border-radius: 8px;
-        border: 1px solid var(--border);
+        border: 1px solid var(--plg-border);
         background: #fff;
         color: #4a5578;
         font-size: 13px;
         font-weight: 600;
         text-decoration: none;
         box-sizing: border-box;
+        transition: background .15s, border-color .15s, color .15s;
     }
 
     .plg-pagination nav a:hover {
@@ -195,8 +208,8 @@
     }
 
     .plg-pagination nav span[aria-current="page"] span {
-        background: #0b3d91 !important;
-        border-color: #0b3d91 !important;
+        background: #2f5fa8 !important;
+        border-color: #2f5fa8 !important;
         color: #fff !important;
     }
 
@@ -206,14 +219,12 @@
         color: #c3c9dc;
     }
 
-    /* ===== Modal Detail Pelanggan — gaya disamakan dengan Profil Saya
-       (cover navy gradient + avatar kuning overlapping + badge + meta-list
-       + section title beriskon+deskripsi), tapi READ-ONLY: field
-       ditampilkan sebagai kotak nilai statis, bukan <input>. ===== */
+    /* ===== Modal Detail Pelanggan (read-only) ===== */
     .plg-modal-overlay {
         display: none;
         position: fixed; inset: 0;
         background: rgba(15, 23, 60, .5);
+        backdrop-filter: blur(2px);
         z-index: 1000;
         align-items: flex-start;
         justify-content: center;
@@ -247,6 +258,7 @@
         display: flex; align-items: center; justify-content: center;
         font-size: 26px; font-weight: 800;
         border: 4px solid #fff;
+        box-shadow: 0 4px 12px rgba(0,0,0,.12);
     }
 
     .plg-modal-close {
@@ -255,6 +267,7 @@
         background: rgba(255,255,255,.18);
         border: none; color: #fff; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
+        transition: background .15s;
     }
     .plg-modal-close:hover { background: rgba(255,255,255,.3); }
     .plg-modal-close svg { width: 15px; height: 15px; }
@@ -404,9 +417,13 @@
                 </thead>
                 <tbody>
                     @foreach ($pelanggan as $p)
+                        {{-- Nama dirapikan: spasi ganda/berlebih di awal, tengah,
+                             atau akhir (biasanya sisa dari import Excel/PDF)
+                             diringkas jadi satu spasi saja. --}}
+                        @php $namaRapi = trim(preg_replace('/\s+/', ' ', (string) $p->nama)); @endphp
                         <tr>
                             <td class="plg-idpel">{{ $p->idpel }}</td>
-                            <td class="plg-nama">{{ $p->nama }}</td>
+                            <td class="plg-nama">{{ $namaRapi }}</td>
                             <td><span class="plg-gol-badge">{{ $p->gol }}</span></td>
                             <td>{{ $p->daya }}</td>
                             <td>{{ \App\Models\DetailTagihanSusulan::namaUlp($p->ulp_kode) ?? '-' }}</td>
@@ -472,9 +489,20 @@ function formatTanggal(v) {
     if (isNaN(d)) return v;
     return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
 }
+
+/**
+ * Rapikan teks: buang spasi ganda/berlebih di tengah, serta spasi
+ * nyasar di awal/akhir. Dipakai untuk nama & field teks lain yang
+ * datang dari hasil import Excel/PDF (sering ada spasi bertumpuk).
+ */
+function rapikanTeks(v) {
+    return (v || '').toString().replace(/\s+/g, ' ').trim();
+}
+
 function ambilInisial(nama) {
+    nama = rapikanTeks(nama);
     if (!nama) return '--';
-    var parts = nama.trim().split(/\s+/);
+    var parts = nama.split(' ');
     var inisial = parts[0].charAt(0);
     if (parts.length > 1) inisial += parts[parts.length - 1].charAt(0);
     return inisial.toUpperCase();
@@ -482,8 +510,7 @@ function ambilInisial(nama) {
 
 /**
  * Bikin satu field read-only bergaya kotak (icon di kiri + nilai),
- * dipakai berulang di tiap section modal — samain sama .pf-input-wrap
- * di Profil Saya tapi <div> statis, bukan <input>.
+ * dipakai berulang di tiap section modal.
  */
 function fieldValue(label, value, iconSvg, span2) {
     return '' +
@@ -530,9 +557,12 @@ function bukaDetailPelanggan(id) {
             return res.json();
         })
         .then(function (d) {
-            document.getElementById('plgModalNama').textContent = d.nama || '-';
+            var namaRapi = rapikanTeks(d.nama);
+            var alamatRapi = rapikanTeks(d.alamat);
+
+            document.getElementById('plgModalNama').textContent = namaRapi || '-';
             document.getElementById('plgModalIdpel').textContent = 'ID Pelanggan: ' + (d.idpel || '-');
-            document.getElementById('plgModalAvatar').textContent = ambilInisial(d.nama);
+            document.getElementById('plgModalAvatar').textContent = ambilInisial(namaRapi);
 
             document.getElementById('plgModalBadges').innerHTML =
                 '<span class="plg-modal-badge">' + (d.gol || '-') + '</span>' +
@@ -549,7 +579,7 @@ function bukaDetailPelanggan(id) {
                     fieldValue('Golongan', d.gol, ICON_BOLT) +
                     fieldValue('Daya', d.daya, ICON_BOLT) +
                     fieldValue('ULP', d.ulp_nama || d.ulp_kode, ICON_MAP) +
-                    fieldValue('Alamat', d.alamat, ICON_HOME, true) +
+                    fieldValue('Alamat', alamatRapi, ICON_HOME, true) +
                 '</div>' +
 
                 '<hr class="plg-modal-divider">' +

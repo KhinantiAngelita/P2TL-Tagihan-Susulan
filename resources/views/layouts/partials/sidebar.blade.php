@@ -5,7 +5,9 @@
 --}}
 <aside class="sidebar" id="mainSidebar">
     <div class="sidebar-brand">
-        <div class="brand-logo">PLN</div>
+        <div class="brand-logo">
+            <img src="{{ asset('logo/Logo 1.png') }}" alt="Logo PLN">
+        </div>
         <div class="brand-text">
             <strong>PT PLN (Persero)</strong>
             <span>Sistem Laporan</span>
