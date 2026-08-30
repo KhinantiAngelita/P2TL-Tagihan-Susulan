@@ -244,7 +244,9 @@
                 </tbody>
                 <tfoot>
                     @php
-                        if ($totalPersen < 70) {
+                        if ($totalTarget <= 0) {
+                            $classTotalPersen = 'tone-abu';
+                        } elseif ($totalPersen < 70) {
                             $classTotalPersen = 'tone-merah';
                         } elseif ($totalPersen < 100) {
                             $classTotalPersen = 'tone-kuning';
@@ -257,7 +259,11 @@
                         <td data-label="Target">{{ number_format($totalTarget, 0, ',', '.') }}</td>
                         <td data-label="Realisasi">{{ number_format($totalRealisasi, 0, ',', '.') }}</td>
                         <td data-label="% Pencapaian">
-                            <span class="persen-badge {{ $classTotalPersen }}">{{ number_format($totalPersen, 2, ',', '.') }}%</span>
+                            @if ($totalTarget <= 0)
+                                <span class="persen-badge tone-abu">Belum ada target</span>
+                            @else
+                                <span class="persen-badge {{ $classTotalPersen }}">{{ number_format($totalPersen, 2, ',', '.') }}%</span>
+                            @endif
                         </td>
                     </tr>
                 </tfoot>

@@ -138,6 +138,12 @@
         margin-top: 1px;
     }
     .target-info-bar strong { color: #1b2559; }
+    .target-info-bar .info-note {
+        display: block;
+        margin-top: 4px;
+        font-weight: 400;
+        color: #6b7690;
+    }
 
     .target-grid {
         display: grid;
@@ -181,6 +187,18 @@
     }
     .target-field input[type="text"]:focus { outline: none; }
     .target-field input[type="text"]::placeholder { color: #c3c9dc; font-weight: 400; }
+
+    /* Mode rekap "Semua ULP" — field jadi non-aktif secara visual */
+    .target-field input[type="text"][readonly] {
+        color: #6b7690;
+        cursor: default;
+    }
+    .target-field:has(input[readonly]) {
+        background: #f1f2f6;
+    }
+    .target-field:has(input[readonly]):hover {
+        border-color: var(--border);
+    }
 
     .target-save-btn {
         display: flex;
@@ -271,9 +289,9 @@
         <div class="filter-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v18"/><path d="M2 22h20M10 6h.01M14 6h.01M10 10h.01M14 10h.01M10 14h.01M14 14h.01M10 18h4"/></svg>
             <select name="ulp" onchange="this.form.submit()" class="filter-select">
-                <option value="" {{ ! $ulpAktif ? 'selected' : '' }}>Semua ULP (target global)</option>
+                <option value="" {{ ! $ulpAktif ? 'selected' : '' }}>Semua ULP (UP3)</option>
                 @foreach ($daftarUlp as $kode => $nama)
-                    <option value="{{ $kode }}" {{ $ulpAktif === $kode ? 'selected' : '' }}>{{ $nama }} ({{ $kode }})</option>
+                    <option value="{{ $kode }}" {{ (string) $ulpAktif === (string) $kode ? 'selected' : '' }}>{{ $nama }} ({{ $kode }})</option>
                 @endforeach
             </select>
         </div>
@@ -282,11 +300,21 @@
     <div class="target-info-bar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
         <span>
-            Mengisi target untuk:
+            @if ($isSemuaUlp)
+                Menampilkan rekap untuk:
+            @else
+                Mengisi target untuk:
+            @endif
             <strong>
                 {{ $jenisOptions[$jenis] }} &mdash; Tahun {{ $tahun }} &mdash;
-                {{ $ulpAktif ? ($daftarUlp[$ulpAktif] ?? $ulpAktif) . " ($ulpAktif)" : 'Semua ULP' }}
+                {{ $ulpAktif ? ($daftarUlp[$ulpAktif] ?? $ulpAktif) . " ($ulpAktif)" : 'Semua ULP (UP3)' }}
             </strong>
+            @if ($isSemuaUlp)
+                <span class="info-note">
+                    Ini rekap otomatis &mdash; penjumlahan target seluruh ULP per bulan &mdash; dan tidak bisa diedit di sini.
+                    Pilih salah satu ULP di atas untuk mengisi atau mengubah nilainya.
+                </span>
+            @endif
         </span>
     </div>
 
@@ -304,10 +332,12 @@
                 @endphp
                 <div class="target-field">
                     <label>{{ $bulanNama }}</label>
-                    {{-- Input yang terlihat: text + format titik ribuan otomatis --}}
+                    {{-- Input yang terlihat: text + format titik ribuan otomatis.
+                         Readonly kalau lagi mode rekap "Semua ULP". --}}
                     <input type="text" inputmode="numeric"
                         class="target-number-input"
                         placeholder="0"
+                        @if ($isSemuaUlp) readonly @endif
                         value="{{ $nilaiTersimpan == 0 ? '' : number_format($nilaiTersimpan, 0, ',', '.') }}">
                     {{-- Input asli yang dikirim ke server: angka polos tanpa titik --}}
                     <input type="hidden"
@@ -318,12 +348,14 @@
             @endforeach
         </div>
 
-        <div class="target-save-btn">
-            <button type="submit" class="btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><polyline points="20 6 9 17 4 12"/></svg>
-                Simpan Target
-            </button>
-        </div>
+        @if (! $isSemuaUlp)
+            <div class="target-save-btn">
+                <button type="submit" class="btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><polyline points="20 6 9 17 4 12"/></svg>
+                    Simpan Target
+                </button>
+            </div>
+        @endif
     </form>
 </div>
 
@@ -343,6 +375,12 @@ document.addEventListener('DOMContentLoaded', function () {
     fields.forEach(function (field) {
         const display = field.querySelector('.target-number-input');
         const hidden = field.querySelector('.target-number-raw');
+
+        // Mode rekap "Semua ULP": input readonly, tidak perlu pasang
+        // listener format/keydown sama sekali.
+        if (display.hasAttribute('readonly')) {
+            return;
+        }
 
         display.addEventListener('input', function () {
             const cursorFromEnd = display.value.length - display.selectionStart;
@@ -375,8 +413,22 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Jaga-jaga: pastikan nilai mentah tersinkron sebelum form dikirim
-    document.getElementById('form-edit-target').addEventListener('submit', function () {
-        document.querySelectorAll('.target-number-input').forEach(function (display) {
+    // (kalau ada field yang lolos JS di atas / hidden-nya belum ke-update).
+    const form = document.getElementById('form-edit-target');
+    form.addEventListener('submit', function (e) {
+        // Ekstra pengaman di sisi klien: form ini seharusnya tidak pernah
+        // ter-render dengan tombol submit saat mode "Semua ULP" (lihat
+        // kondisi isSemuaUlp di atas), tapi kalau sampai submit terjadi
+        // tanpa ulp terisi, batalkan — server juga sudah memvalidasi
+        // 'ulp' => 'required', ini cuma lapis tambahan biar tidak nge-hit
+        // server sia-sia.
+        const ulpInput = form.querySelector('input[name="ulp"]');
+        if (! ulpInput.value) {
+            e.preventDefault();
+            return;
+        }
+
+        document.querySelectorAll('.target-number-input:not([readonly])').forEach(function (display) {
             const hidden = display.closest('.target-field').querySelector('.target-number-raw');
             hidden.value = display.value.replace(/[^0-9]/g, '');
         });

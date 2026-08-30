@@ -73,20 +73,21 @@
         {{-- Submenu Laporan (Ikon Grafik Analitik / Bar Chart) --}}
         <div class="nav-group">
             <button type="button"
-                    class="nav-item nav-item-toggle {{ request()->routeIs('laporan.gol-tarif', 'laporan.komposisi-temuan', 'laporan.target-realisasi') ? 'active' : '' }}"
+                    class="nav-item nav-item-toggle {{ request()->routeIs('laporan.gol-tarif', 'laporan.komposisi-temuan', 'laporan.target-realisasi', 'laporan.penetapan-berulang') ? 'active' : '' }}"
                     id="laporanMenuToggle"
                     aria-controls="laporanSubmenu"
-                    aria-expanded="{{ request()->routeIs('laporan.gol-tarif', 'laporan.komposisi-temuan', 'laporan.target-realisasi') ? 'true' : 'false' }}">
+                    aria-expanded="{{ request()->routeIs('laporan.gol-tarif', 'laporan.komposisi-temuan', 'laporan.target-realisasi', 'laporan.penetapan-berulang') ? 'true' : 'false' }}">
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 </span>
                 <span class="nav-text">Laporan</span>
                 <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </button>
-            <div class="nav-submenu {{ request()->routeIs('laporan.gol-tarif', 'laporan.komposisi-temuan', 'laporan.target-realisasi') ? 'is-open' : '' }}" id="laporanSubmenu">
+            <div class="nav-submenu {{ request()->routeIs('laporan.gol-tarif', 'laporan.komposisi-temuan', 'laporan.target-realisasi', 'laporan.penetapan-berulang') ? 'is-open' : '' }}" id="laporanSubmenu">
                 <a href="{{ route('laporan.target-realisasi') }}" class="nav-subitem {{ request()->routeIs('laporan.target-realisasi') ? 'active' : '' }}">Target vs Realisasi</a>
                 <a href="{{ route('laporan.gol-tarif') }}" class="nav-subitem {{ request()->routeIs('laporan.gol-tarif') ? 'active' : '' }}">Gol Tarif</a>
                 <a href="{{ route('laporan.komposisi-temuan') }}" class="nav-subitem {{ request()->routeIs('laporan.komposisi-temuan') ? 'active' : '' }}">Komposisi Temuan</a>
+                <a href="{{ route('laporan.penetapan-berulang') }}" class="nav-subitem {{ request()->routeIs('laporan.penetapan-berulang') ? 'active' : '' }}">Penetapan Berulang</a>
             </div>
         </div>
 

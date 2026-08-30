@@ -58,14 +58,14 @@
 
         .auth-brand {
             position: absolute;
-            top: 48px; left: 48px;
+            top: 5px; left: 32px;
             display: flex;
             align-items: center;
             gap: 12px;
             z-index: 2;
         }
         .auth-brand .logo-box {
-            width: 110px; height: 110px;
+            width: 150px; height: 150px;
             background: transparent;
             border-radius: 12px;
             display: flex; align-items: center; justify-content: center;

@@ -209,6 +209,41 @@ class TrendController extends Controller
     }
 
     /**
+     * Ambil target per bulan (tahun + jenis tertentu), di-scope ke ULP
+     * yang relevan, lalu di-SUM per bulan.
+     *
+     * PENTING — sengaja SELALU dibatasi ke kode ULP yang dikenal sistem
+     * (array_keys($daftarUlpAssoc)), bukan cuma saat ada filter ULP
+     * spesifik:
+     * - Kalau user pilih ULP tertentu -> whereIn ke ULP itu saja.
+     * - Kalau "Semua ULP" (filter kosong) -> whereIn ke SEMUA kode ULP
+     *   yang terdaftar di PETA_NAMA_ULP, BUKAN "semua baris apa adanya".
+     *   Ini disamakan persis dengan logic rekap di
+     *   EditTargetController::index(), supaya total yang tampil di Edit
+     *   Target dan di Trend/Pencapaian selalu identik.
+     *
+     * Tanpa pembatasan ini, baris `target_bulanans` peninggalan lama
+     * (mis. ulp = null dari sebelum fitur distribusi-ke-semua-ULP
+     * dihapus, atau kode ULP yang sudah tidak dipakai lagi) ikut
+     * kejumlah di sini padahal tidak kejumlah di rekap Edit Target —
+     * itulah sumber angka target yang "tidak sesuai dengan yang
+     * diinput".
+     */
+    private function ambilTargetPerBulan(int $tahunAktif, string $jenis, array $filter, array $daftarUlpAssoc)
+    {
+        $kodeUlpUntukSum = ! empty($filter['ulpTerpilih'])
+            ? $filter['ulpTerpilih']
+            : array_keys($daftarUlpAssoc);
+
+        return TargetBulanan::where('tahun', $tahunAktif)
+            ->where('jenis', $jenis)
+            ->whereIn('ulp', $kodeUlpUntukSum)
+            ->get()
+            ->groupBy('bulan')
+            ->map(fn ($rows) => $rows->sum('nilai_target'));
+    }
+
+    /**
      * Logic bersama buat kedua submenu Trend — bedanya cuma kolom yang
      * di-SUM (kwh vs ts) dan teks/label yang ditampilkan di view.
      */
@@ -273,14 +308,10 @@ class TrendController extends Controller
             ->keyBy(fn ($row) => self::URUTAN_BULAN[$row->bulan] ?? 0);
 
         // ===== TARGET =====
-        // Di-whereIn ULP kalau ada yang dipilih; kalau kosong (Semua ULP)
-        // dijumlah dari SEMUA ULP yang ada per bulan.
-        $targetPerBulan = TargetBulanan::where('tahun', $tahunAktif)
-            ->where('jenis', $jenis)
-            ->when(! empty($filter['ulpTerpilih']), fn ($q) => $q->whereIn('ulp', $filter['ulpTerpilih']))
-            ->get()
-            ->groupBy('bulan')
-            ->map(fn ($rows) => $rows->sum('nilai_target'));
+        // Lihat dokumentasi lengkap di ambilTargetPerBulan() — selalu
+        // di-scope ke kode ULP yang dikenal sistem, baik saat ULP
+        // spesifik dipilih maupun saat "Semua ULP".
+        $targetPerBulan = $this->ambilTargetPerBulan($tahunAktif, $jenis, $filter, $daftarUlpAssoc);
 
         // Susun bulan-bulan AKTIF saja (bukan selalu Jan-Des penuh —
         // lihat catatan "bulan aktif" di bacaFilterPeriodeUlp), sekalian
@@ -417,12 +448,10 @@ class TrendController extends Controller
             ->get()
             ->keyBy(fn ($row) => self::URUTAN_BULAN[$row->bulan] ?? 0);
 
-        $targetPerBulan = TargetBulanan::where('tahun', $tahunAktif)
-            ->where('jenis', $jenis)
-            ->when(! empty($filter['ulpTerpilih']), fn ($q) => $q->whereIn('ulp', $filter['ulpTerpilih']))
-            ->get()
-            ->groupBy('bulan')
-            ->map(fn ($rows) => $rows->sum('nilai_target'));
+        // Sama seperti render() — selalu di-scope ke kode ULP yang
+        // dikenal sistem, biar total di sini identik dengan rekap di
+        // Edit Target.
+        $targetPerBulan = $this->ambilTargetPerBulan($tahunAktif, $jenis, $filter, $daftarUlpAssoc);
 
         $labels = [];
         $dataAktual = [];

@@ -161,7 +161,13 @@
                                 <td class="label">{{ $r['nama'] }}</td>
                                 <td>{{ number_format($r['target'], 0, ',', '.') }}</td>
                                 <td>{{ number_format($r['realisasi'], 0, ',', '.') }}</td>
-                                <td>{{ number_format($r['persen'], 2, ',', '.') }}%</td>
+                                <td>
+                                    @if ($r['target'] > 0)
+                                        {{ number_format($r['persen'], 2, ',', '.') }}%
+                                    @else
+                                        <span style="color:#9aa4c2;font-style:italic;font-weight:normal;">Belum ada target</span>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -170,7 +176,13 @@
                             <td class="label">UID JABAR</td>
                             <td>{{ number_format($d['totalTarget'], 0, ',', '.') }}</td>
                             <td>{{ number_format($d['totalRealisasi'], 0, ',', '.') }}</td>
-                            <td>{{ number_format($d['totalPersen'], 2, ',', '.') }}%</td>
+                            <td>
+                                @if ($d['totalTarget'] > 0)
+                                    {{ number_format($d['totalPersen'], 2, ',', '.') }}%
+                                @else
+                                    <span style="color:#0b3d91;font-style:italic;">Belum ada target</span>
+                                @endif
+                            </td>
                         </tr>
                     </tfoot>
                 </table>

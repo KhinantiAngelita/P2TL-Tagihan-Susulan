@@ -8,6 +8,16 @@ use Illuminate\Http\Request;
 trait FilterPeriodeUlpTrait
 {
     /**
+     * Nama bulan (uppercase, sesuai format kolom laporan_susulans.bulan) -> angka 1-12.
+     * Dipakai lolosFilterBaris() buat konversi bulan laporan jadi angka.
+     */
+    protected const BULAN_ANGKA = [
+        'JANUARI' => 1, 'FEBRUARI' => 2, 'MARET' => 3, 'APRIL' => 4,
+        'MEI' => 5, 'JUNI' => 6, 'JULI' => 7, 'AGUSTUS' => 8,
+        'SEPTEMBER' => 9, 'OKTOBER' => 10, 'NOVEMBER' => 11, 'DESEMBER' => 12,
+    ];
+
+    /**
      * Ambil & normalisasi semua parameter filter periode + ULP dari request.
      * Triwulan, Bulan, dan Rentang Tanggal bisa dikombinasikan bebas — hasil
      * akhirnya adalah IRISAN (AND) dari semua filter periode yang sedang
@@ -94,8 +104,24 @@ trait FilterPeriodeUlpTrait
      * bulan efektif + rentang tanggal presisi hari + ULP.
      * Return kode ULP hasil parsing kalau lolos, atau null kalau tidak
      * (baik karena no_agenda tidak valid maupun karena kesaring filter).
+     *
+     * PERBAIKAN: parameter $bulanLaporan (nilai kolom laporan_susulans.bulan
+     * milik baris ini, mis. "APRIL") ditambahkan. Sebelumnya filter
+     * Triwulan/Bulan di method ini nentuin "bulan" dari tanggal yang
+     * ke-parsing di no_agenda (segmen ke-3) — beda sumber dari
+     * TrendController dkk yang konsisten pakai laporan_susulans.bulan
+     * (bulan yang di-declare pas laporan di-upload). Cross-check ke Excel
+     * nemuin 62 baris yang bulan laporannya beda dari bulan tanggal
+     * agenda-nya (mis. laporan "APRIL" tapi tanggal agenda tercatat akhir
+     * Maret) — baris begini kesaring beda antara halaman Target vs
+     * Realisasi/Gol Tarif/Komposisi Temuan (pakai method ini) dengan
+     * halaman Trend/Pencapaian (pakai laporan_susulans.bulan), bikin total
+     * per ULP beda meski ULP-nya kebaca sama persis di dua sisi.
+     * Filter rentang tanggal presisi hari (tgl_mulai/tgl_selesai) TETAP
+     * pakai tanggal hasil parsing no_agenda — itu memang soal tanggal
+     * kejadian spesifik, bukan bucket bulan pelaporan.
      */
-    protected function lolosFilterBaris(?string $noAgenda, array $filter): ?string
+    protected function lolosFilterBaris(?string $noAgenda, ?string $bulanLaporan, array $filter): ?string
     {
         $parts      = explode('/', (string) $noAgenda);
         $kodeUlp    = $parts[1] ?? null;
@@ -109,9 +135,11 @@ trait FilterPeriodeUlpTrait
             return null;
         }
 
-        $bulan = (int) substr($tanggalStr, 4, 2);
-        if ($filter['bulanEfektif'] !== null && ! in_array($bulan, $filter['bulanEfektif'], true)) {
-            return null;
+        if ($filter['bulanEfektif'] !== null) {
+            $bulanAngka = self::BULAN_ANGKA[strtoupper((string) $bulanLaporan)] ?? null;
+            if ($bulanAngka === null || ! in_array($bulanAngka, $filter['bulanEfektif'], true)) {
+                return null;
+            }
         }
 
         $tanggalPenuh = substr($tanggalStr, 0, 4) . '-' . substr($tanggalStr, 4, 2) . '-' . substr($tanggalStr, 6, 2);

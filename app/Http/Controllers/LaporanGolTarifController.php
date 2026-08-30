@@ -124,20 +124,23 @@ class LaporanGolTarifController extends Controller
         }
 
         // ---- Realisasi: SUM(kwh) golongan P & K per ULP, difilter periode + ULP
-        // (bulan/tanggal diambil dari tanggal_agenda hasil parsing no_agenda) ----
-        $laporanAktifIds = LaporanSusulan::aktif()
-            ->where('tahun', $tahunAktif)
-            ->pluck('id');
+        // (bulan diambil dari laporan_susulans.bulan — lihat PERBAIKAN di
+        // lolosFilterBaris(); rentang tanggal presisi hari tetap dari
+        // tanggal_agenda hasil parsing no_agenda) ----
+        $laporanAktif      = LaporanSusulan::aktif()->where('tahun', $tahunAktif)->get(['id', 'bulan']);
+        $laporanAktifIds   = $laporanAktif->pluck('id');
+        $bulanPerLaporanId = $laporanAktif->pluck('bulan', 'id');
 
         $barisMentah = DetailTagihanSusulan::query()
             ->whereIn('laporan_susulan_id', $laporanAktifIds)
             ->whereIn('gol', array_merge(self::KOLOM_ULP_P, self::KOLOM_ULP_K))
-            ->select('no_agenda', 'kwh')
+            ->select('laporan_susulan_id', 'no_agenda', 'kwh')
             ->get();
 
         $realisasiPerUlp = [];
         foreach ($barisMentah as $baris) {
-            $kodeUlp = $this->lolosFilterBaris($baris->no_agenda, $filter);
+            $bulanLaporan = $bulanPerLaporanId[$baris->laporan_susulan_id] ?? null;
+            $kodeUlp = $this->lolosFilterBaris($baris->no_agenda, $bulanLaporan, $filter);
             if (! $kodeUlp) {
                 continue;
             }
@@ -203,9 +206,9 @@ class LaporanGolTarifController extends Controller
         $tahunAktif = (int) ($request->input('tahun') ?: $daftarTahun->first());
         $filter     = $this->ambilFilter($request, $tahunAktif);
 
-        $laporanAktifIds = LaporanSusulan::aktif()
-            ->where('tahun', $tahunAktif)
-            ->pluck('id');
+        $laporanAktif      = LaporanSusulan::aktif()->where('tahun', $tahunAktif)->get(['id', 'bulan']);
+        $laporanAktifIds   = $laporanAktif->pluck('id');
+        $bulanPerLaporanId = $laporanAktif->pluck('bulan', 'id');
 
         // ---- Pivot Prabayar/Paskabayar: LIVE dari detail_tagihan_susulans,
         // jadi ikut filter periode + ULP (sebelumnya dibaca dari tabel
@@ -217,7 +220,7 @@ class LaporanGolTarifController extends Controller
         // diambil dari segmen sebelum '/' pada kolom `daya`), tapi
         // dihitung on-the-fly per request supaya lolosFilterBaris() bisa
         // diterapkan per baris. Nilainya SUM(kwh) — bukan Rp TS lagi.
-        $peta = $this->pivotTarifLive($laporanAktifIds, $filter);
+        $peta = $this->pivotTarifLive($laporanAktifIds, $bulanPerLaporanId, $filter);
 
         [$prabayar, $totalPrabayar]     = $this->susunPivot($peta, self::KODE_TARIF_PRABAYAR, prabayar: true);
         [$paskabayar, $totalPaskabayar] = $this->susunPivot($peta, self::KODE_TARIF_PASKABAYAR, prabayar: false);
@@ -226,12 +229,12 @@ class LaporanGolTarifController extends Controller
         // daya lengkap (mis. "R1T/450" untuk Prabayar, "R1/450" untuk
         // Paskabayar), kolom = P1-P4 + K1-K3, nilainya SUM(kwh). LIVE dari
         // detail_tagihan_susulans, jadi ikut filter periode + ULP. ----
-        [$prabayarPerDaya, $totalPrabayarPerDaya]     = $this->pivotPerDaya($laporanAktifIds, $filter, self::KODE_TARIF_PRABAYAR_T);
-        [$paskabayarPerDaya, $totalPaskabayarPerDaya] = $this->pivotPerDaya($laporanAktifIds, $filter, self::KODE_TARIF_PASKABAYAR_DAYA);
+        [$prabayarPerDaya, $totalPrabayarPerDaya]     = $this->pivotPerDaya($laporanAktifIds, $bulanPerLaporanId, $filter, self::KODE_TARIF_PRABAYAR_T);
+        [$paskabayarPerDaya, $totalPaskabayarPerDaya] = $this->pivotPerDaya($laporanAktifIds, $bulanPerLaporanId, $filter, self::KODE_TARIF_PASKABAYAR_DAYA);
 
         // ---- Tabel Rekap KWH per ULP: live & ikut filter periode + ULP penuh ----
-        [$ulpRowsP, $ulpTotalP] = $this->rekapKwhPerUlp($laporanAktifIds, self::KOLOM_ULP_P, $filter);
-        [$ulpRowsK, $ulpTotalK] = $this->rekapKwhPerUlp($laporanAktifIds, self::KOLOM_ULP_K, $filter);
+        [$ulpRowsP, $ulpTotalP] = $this->rekapKwhPerUlp($laporanAktifIds, $bulanPerLaporanId, self::KOLOM_ULP_P, $filter);
+        [$ulpRowsK, $ulpTotalK] = $this->rekapKwhPerUlp($laporanAktifIds, $bulanPerLaporanId, self::KOLOM_ULP_K, $filter);
 
         $daftarUlp  = $this->daftarUlpTahunIni($laporanAktifIds, array_merge(self::KOLOM_ULP_P, self::KOLOM_ULP_K));
         $namaUlpMap = collect($daftarUlp)->pluck('nama', 'kode')->all();
@@ -273,19 +276,20 @@ class LaporanGolTarifController extends Controller
         $tahunAktif = (int) ($request->input('tahun') ?: $daftarTahun->first());
         $filter     = $this->ambilFilter($request, $tahunAktif);
 
-        $laporanAktifIds = LaporanSusulan::aktif()
-            ->where('tahun', $tahunAktif)
-            ->pluck('id');
+        $laporanAktif      = LaporanSusulan::aktif()->where('tahun', $tahunAktif)->get(['id', 'bulan']);
+        $laporanAktifIds   = $laporanAktif->pluck('id');
+        $bulanPerLaporanId = $laporanAktif->pluck('bulan', 'id');
 
         $barisMentah = DetailTagihanSusulan::query()
             ->whereIn('laporan_susulan_id', $laporanAktifIds)
             ->whereIn('gol', array_merge(self::KOLOM_ULP_P, self::KOLOM_ULP_K))
-            ->select('no_agenda', 'gol', 'kwh', 'ts')
+            ->select('laporan_susulan_id', 'no_agenda', 'gol', 'kwh', 'ts')
             ->get();
 
         $petaUlp = [];
         foreach ($barisMentah as $baris) {
-            $kodeUlp = $this->lolosFilterBaris($baris->no_agenda, $filter);
+            $bulanLaporan = $bulanPerLaporanId[$baris->laporan_susulan_id] ?? null;
+            $kodeUlp = $this->lolosFilterBaris($baris->no_agenda, $bulanLaporan, $filter);
             if (! $kodeUlp) {
                 continue;
             }
@@ -368,19 +372,20 @@ class LaporanGolTarifController extends Controller
      * yang sama seperti dulu didapat dari tabel precomputed
      * ringkasan_gol_tarifs, supaya susunPivot() tidak perlu diubah.
      */
-    private function pivotTarifLive($laporanAktifIds, array $filter): array
+    private function pivotTarifLive($laporanAktifIds, $bulanPerLaporanId, array $filter): array
     {
         $barisMentah = DetailTagihanSusulan::query()
             ->whereIn('laporan_susulan_id', $laporanAktifIds)
             ->whereIn('gol', self::KOLOM_GOL)
             ->whereNotNull('daya')
             ->where('daya', '!=', '')
-            ->select('no_agenda', 'gol', 'daya', 'kwh')
+            ->select('laporan_susulan_id', 'no_agenda', 'gol', 'daya', 'kwh')
             ->get();
 
         $peta = [];
         foreach ($barisMentah as $baris) {
-            if (! $this->lolosFilterBaris($baris->no_agenda, $filter)) {
+            $bulanLaporan = $bulanPerLaporanId[$baris->laporan_susulan_id] ?? null;
+            if (! $this->lolosFilterBaris($baris->no_agenda, $bulanLaporan, $filter)) {
                 continue;
             }
 
@@ -410,14 +415,14 @@ class LaporanGolTarifController extends Controller
      *
      * @return array{0: array, 1: array} [$rows, $total]
      */
-    private function pivotPerDaya($laporanAktifIds, array $filter, array $daftarKodeValid): array
+    private function pivotPerDaya($laporanAktifIds, $bulanPerLaporanId, array $filter, array $daftarKodeValid): array
     {
         $barisMentah = DetailTagihanSusulan::query()
             ->whereIn('laporan_susulan_id', $laporanAktifIds)
             ->whereIn('gol', self::KOLOM_GOL)
             ->whereNotNull('daya')
             ->where('daya', '!=', '')
-            ->select('no_agenda', 'gol', 'daya', 'kwh')
+            ->select('laporan_susulan_id', 'no_agenda', 'gol', 'daya', 'kwh')
             ->get();
 
         $peta          = [];
@@ -432,7 +437,8 @@ class LaporanGolTarifController extends Controller
                 continue;
             }
 
-            if (! $this->lolosFilterBaris($baris->no_agenda, $filter)) {
+            $bulanLaporan = $bulanPerLaporanId[$baris->laporan_susulan_id] ?? null;
+            if (! $this->lolosFilterBaris($baris->no_agenda, $bulanLaporan, $filter)) {
                 continue;
             }
 
@@ -483,17 +489,18 @@ class LaporanGolTarifController extends Controller
      *
      * @return array{0: array, 1: array} [$rows, $total]
      */
-    private function rekapKwhPerUlp($laporanAktifIds, array $daftarGol, array $filter): array
+    private function rekapKwhPerUlp($laporanAktifIds, $bulanPerLaporanId, array $daftarGol, array $filter): array
     {
         $barisMentah = DetailTagihanSusulan::query()
             ->whereIn('laporan_susulan_id', $laporanAktifIds)
             ->whereIn('gol', $daftarGol)
-            ->select('no_agenda', 'gol', 'kwh')
+            ->select('laporan_susulan_id', 'no_agenda', 'gol', 'kwh')
             ->get();
 
         $petaUlp = [];
         foreach ($barisMentah as $baris) {
-            $kodeUlp = $this->lolosFilterBaris($baris->no_agenda, $filter);
+            $bulanLaporan = $bulanPerLaporanId[$baris->laporan_susulan_id] ?? null;
+            $kodeUlp = $this->lolosFilterBaris($baris->no_agenda, $bulanLaporan, $filter);
             if (! $kodeUlp) {
                 continue;
             }

@@ -13,6 +13,7 @@ use App\Http\Controllers\EditTargetController;
 use App\Http\Controllers\LaporanGolTarifController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\ExportPdfController;
+use App\Http\Controllers\PenetapanBerulangController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,6 +51,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan/gol-tarif', [LaporanGolTarifController::class, 'golTarif'])->name('laporan.gol-tarif');
     Route::get('/laporan/komposisi-temuan', [LaporanGolTarifController::class, 'komposisiTemuan'])->name('laporan.komposisi-temuan');
     Route::get('/laporan/target-realisasi', [LaporanGolTarifController::class, 'targetRealisasi'])->name('laporan.target-realisasi');
+
+    // Penetapan Berulang — pelanggan yang muncul lebih dari sekali di data
+    // temuan P2TL, direkap per ULP x jumlah kemunculan. Ditaruh sejajar
+    // dengan gol-tarif/komposisi-temuan/target-realisasi di atas (bukan di
+    // dalam Route::prefix('laporan') group di bawah), supaya gak perlu
+    // mikirin urutan terhadap wildcard route {laporan} di group itu.
+    Route::get('/laporan/penetapan-berulang', [PenetapanBerulangController::class, 'index'])->name('laporan.penetapan-berulang');
 
     /*
     |----------------------------------------------------------------------

@@ -83,33 +83,51 @@
 
     .trend-chart-canvas-wrap { position: relative; height: 350px; width: 100%; }
 
-    /* ===== Tabel horizontal (bulan = kolom, Target/Realisasi/%/Pelanggan
-       = baris) ===== */
-    .trend-hz-table-wrap { padding: 0; overflow: hidden; }
-    .trend-hz-table-head {
-        display: flex; align-items: center; gap: 12px;
-        padding: 18px 22px; border-bottom: 1px solid var(--border);
-        background: #fafbfe;
+    /* ===== Tabel Target, Realisasi, Jumlah Pelanggan & % Pencapaian
+       tepat di bawah grafik — kolom per bulan sejajar dengan batang di
+       atasnya. Ini satu-satunya tabel rincian per bulan di halaman ini
+       (card "Rincian per Bulan" terpisah sudah dihapus, datanya
+       digabung ke sini). ===== */
+    .trend-chart-tr-wrap {
+        margin-top: 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
     }
-    .trend-hz-table-head .icon {
-        width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center;
-        background: #eaf0fb; color: #0b3d91;
+    .trend-chart-tr-note {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 11px; color: #9aa4c2; padding: 9px 14px;
+        background: #fafbfe; border-bottom: 1px solid var(--border);
     }
-    .trend-hz-table-head .icon svg { width: 17px; height: 17px; }
-    .trend-hz-table-head strong { font-size: 14.5px; color: #1b2559; display: block; }
-    .trend-hz-table-head span { font-size: 12px; color: #9aa4c2; }
+    .trend-chart-tr-note svg { width: 12px; height: 12px; flex-shrink: 0; }
 
-    .trend-hz-table { width: 100%; border-collapse: collapse; }
+    /* ===== Tabel horizontal (bulan = kolom, Target/Realisasi/Pelanggan/%
+       = baris), dipakai di dalam .trend-chart-tr-wrap tepat di bawah
+       grafik.
+       RAPIH-RAPIH: lebar kolom bulan diseragamkan (min-width tetap)
+       biar gak "lompat-lompat" tiap baris, angka pakai tabular-nums
+       biar rata kanan-per-digit, border vertikal dibikin lebih tipis
+       (cuma pemisah halus, bukan garis tebal), dan tiap baris dikasih
+       tint warna sangat tipis senada ikonnya biar mata gampang nyortir
+       baris mana lagi dilihat tanpa harus baca label kiri berulang. ===== */
+    .trend-hz-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     .trend-hz-table th, .trend-hz-table td {
-        padding: 13px 16px; font-size: 13px; text-align: center; white-space: nowrap;
-        border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);
+        padding: 12px 14px; font-size: 12.5px; text-align: center; white-space: nowrap;
+        border-bottom: 1px solid var(--border); border-right: 1px solid #eef0f6;
         transition: background .12s;
+        font-variant-numeric: tabular-nums;
     }
+    .trend-hz-table th:not(:first-child), .trend-hz-table td:not(:first-child) {
+        width: 100px;
+    }
+    .trend-hz-table th:last-child, .trend-hz-table td:last-child { border-right: none; }
     .trend-hz-table th:first-child, .trend-hz-table td:first-child {
+        width: 168px;
         text-align: left; font-weight: 700; color: var(--text-dark);
         background: #fafbfe; position: sticky; left: 0; z-index: 1;
         display: flex; align-items: center; gap: 8px;
+        border-right: 1px solid var(--border);
+        box-shadow: 2px 0 4px rgba(20,30,80,.04);
     }
     .trend-hz-table th:first-child .row-icon,
     .trend-hz-table td:first-child .row-icon {
@@ -123,8 +141,9 @@
     .row-icon.tone-pelanggan { background: #eaf0fb; color: #0f6bd9; }
 
     .trend-hz-table thead th {
-        color: var(--text-muted); font-weight: 700; font-size: 11.5px;
+        color: var(--text-muted); font-weight: 700; font-size: 11px;
         text-transform: uppercase; letter-spacing: .03em; background: #fafbfe;
+        border-bottom: 2px solid var(--border);
     }
     .trend-hz-table thead th:first-child {
         text-align: left;
@@ -132,22 +151,22 @@
         font-weight: 600;
         text-transform: none;
         letter-spacing: normal;
-        padding-left: 16px;
+        padding-left: 14px;
         display: table-cell;
     }
     .trend-hz-table thead th:not(:first-child) { transition: background .12s; cursor: default; }
     .trend-hz-table thead th:not(:first-child):hover,
     .trend-hz-table tbody tr td:not(:first-child):hover {
-        background: #f4f7ff;
+        background: #eef2ff !important;
     }
     .trend-hz-table tbody tr:last-child td { border-bottom: none; }
     .trend-hz-table tbody td { color: var(--text-dark); font-weight: 500; }
 
-    .trend-hz-table tbody tr.row-target td:not(:first-child) { color: #c0246b; }
+    .trend-hz-table tbody tr.row-target td:not(:first-child) { color: #c0246b; background: rgba(192,36,107,.035); }
     .trend-hz-table tbody tr.row-realisasi td:not(:first-child) {
-        color: #1a9c4a; font-weight: 700;
+        color: #1a9c4a; font-weight: 700; background: rgba(26,156,74,.045);
     }
-    .trend-hz-table tbody tr.row-pelanggan td:not(:first-child) { color: #0f6bd9; font-weight: 600; }
+    .trend-hz-table tbody tr.row-pelanggan td:not(:first-child) { color: #0f6bd9; font-weight: 600; background: rgba(15,107,217,.035); }
     .persen-text { font-weight: 700; }
     td.tone-hijau { background: #eafaf0; }
     td.tone-hijau .persen-text { color: #16803c; }
@@ -207,8 +226,9 @@
         .trend-chart-head { flex-direction: column; align-items: flex-start; }
         .chart-badge { align-self: flex-start; }
 
-        .trend-hz-table th, .trend-hz-table td { padding: 10px 12px; font-size: 12px; }
-        .trend-hz-table-head { padding: 14px 16px; }
+        .trend-hz-table th, .trend-hz-table td { padding: 9px 10px; font-size: 12px; }
+        .trend-hz-table th:not(:first-child), .trend-hz-table td:not(:first-child) { width: 78px; }
+        .trend-hz-table th:first-child, .trend-hz-table td:first-child { width: 140px; }
     }
 
     @media (max-width: 420px) {
@@ -216,7 +236,9 @@
         .trend-filter-form { flex-direction: column; align-items: stretch; }
         .trend-filter-form select { width: 100%; }
         .trend-chart-canvas-wrap { height: 260px; }
-        .trend-hz-table th, .trend-hz-table td { padding: 8px 10px; font-size: 11.5px; }
+        .trend-hz-table th, .trend-hz-table td { padding: 8px 8px; font-size: 11.5px; }
+        .trend-hz-table th:not(:first-child), .trend-hz-table td:not(:first-child) { width: 70px; }
+        .trend-hz-table th:first-child, .trend-hz-table td:first-child { width: 122px; }
     }
 </style>
 @endpush
@@ -348,96 +370,92 @@
     <div id="capture-trend-chart">
         <p class="trend-chart-note">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            Angka di atas tiap batang = % pencapaian &amp; jumlah pelanggan bulan itu.
+            Angka lengkap Target, Realisasi, Jumlah Pelanggan &amp; % Pencapaian ada di tabel bawah grafik.
         </p>
 
         <div class="trend-chart-canvas-wrap">
             <canvas id="trendChart"></canvas>
         </div>
-    </div>
-</div>
 
-<div class="card trend-hz-table-wrap copyable-card">
-    <div class="trend-hz-table-head">
-        <div class="icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        {{-- Tabel Target, Realisasi, Jumlah Pelanggan & % Pencapaian
+             tepat di bawah grafik — kolom per bulan sejajar dengan
+             urutan batang di atasnya. Menggantikan card "Rincian per
+             Bulan" yang dulu terpisah di bawah halaman (sudah dihapus).
+             Angka T/R/Pelanggan/% dulu sempat ditulis mengambang di
+             atas tiap batang, sekarang batangnya cuma nampilin ringkasan
+             % & jumlah pelanggan di dalamnya (lihat drawBarLabelsPlugin),
+             sementara angka lengkapnya ada di tabel ini. --}}
+        <div class="trend-chart-tr-wrap">
+            <p class="trend-chart-tr-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                Target, Realisasi, Jumlah Pelanggan &amp; % Pencapaian per bulan (angka lengkap, sejajar dengan batang di atas)
+            </p>
+            <div class="table-scroll">
+                <table class="trend-hz-table">
+                    <thead>
+                        <tr>
+                            <th>Kategori</th>
+                            @foreach ($labels as $label)
+                                <th>{{ $label }}</th>
+                            @endforeach
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="row-target">
+                            <td>
+                                <span class="row-icon tone-target">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".5" fill="currentColor"/></svg>
+                                </span>
+                                Target
+                            </td>
+                            @foreach ($targetData as $nilaiTarget)
+                                <td>{{ number_format($nilaiTarget, 0, ',', '.') }}</td>
+                            @endforeach
+                        </tr>
+                        <tr class="row-realisasi">
+                            <td>
+                                <span class="row-icon tone-realisasi">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                </span>
+                                Realisasi
+                            </td>
+                            @foreach ($data as $nilaiRealisasi)
+                                <td>{{ number_format($nilaiRealisasi, 0, ',', '.') }}</td>
+                            @endforeach
+                        </tr>
+                        <tr class="row-pelanggan">
+                            <td>
+                                <span class="row-icon tone-pelanggan">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                </span>
+                                Jumlah Pelanggan
+                            </td>
+                            @foreach ($jumlahPelangganData as $jmlPelanggan)
+                                <td>{{ $jmlPelanggan !== null ? number_format($jmlPelanggan, 0, ',', '.') : '-' }}</td>
+                            @endforeach
+                        </tr>
+                        <tr class="row-persen">
+                            <td>
+                                <span class="row-icon tone-persen">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+                                </span>
+                                % Pencapaian
+                            </td>
+                            @foreach ($persenPerBulanMentah as $persen)
+                                @php
+                                    $toneP = $persen === null
+                                        ? 'abu'
+                                        : ($persen >= 100 ? 'hijau' : ($persen >= 80 ? 'oren' : 'merah'));
+                                @endphp
+                                <td class="tone-{{ $toneP }}">
+                                    <span class="persen-text">{{ $persen === null ? '-' : $persen . '%' }}</span>
+                                </td>
+                            @endforeach
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div>
-            <strong>Rincian per Bulan</strong>
-            <span>Target, Realisasi, % Pencapaian &amp; Jumlah Pelanggan — Tahun {{ $tahunAktif ?: '-' }}</span>
-        </div>
-        <button type="button" class="copy-btn" style="margin-left:auto;" onclick="salinTabelGambar('capture-trend-tabel', this, 'Rincian per Bulan — {{ $metric === 'kwh' ? 'kWh' : 'Rp TS' }}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            Salin Gambar
-        </button>
-    </div>
-
-    <div id="capture-trend-tabel">
-    <div class="table-scroll">
-        <table class="trend-hz-table">
-            <thead>
-                <tr>
-                    <th>Kategori</th>
-                    @foreach ($labels as $label)
-                        <th>{{ $label }}</th>
-                    @endforeach
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="row-target">
-                    <td>
-                        <span class="row-icon tone-target">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".5" fill="currentColor"/></svg>
-                        </span>
-                        Target
-                    </td>
-                    @foreach ($targetData as $nilaiTarget)
-                        <td>{{ number_format($nilaiTarget, 2, ',', '.') }}</td>
-                    @endforeach
-                </tr>
-                <tr class="row-realisasi">
-                    <td>
-                        <span class="row-icon tone-realisasi">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                        </span>
-                        Realisasi
-                    </td>
-                    @foreach ($data as $nilaiRealisasi)
-                        <td>{{ number_format($nilaiRealisasi, 2, ',', '.') }}</td>
-                    @endforeach
-                </tr>
-                <tr class="row-pelanggan">
-                    <td>
-                        <span class="row-icon tone-pelanggan">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                        </span>
-                        Jumlah Pelanggan
-                    </td>
-                    @foreach ($jumlahPelangganData as $jmlPelanggan)
-                        <td>{{ $jmlPelanggan !== null ? number_format($jmlPelanggan, 0, ',', '.') : '-' }}</td>
-                    @endforeach
-                </tr>
-                <tr class="row-persen">
-                    <td>
-                        <span class="row-icon tone-persen">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
-                        </span>
-                        % Pencapaian
-                    </td>
-                    @foreach ($persenPerBulanMentah as $persen)
-                        @php
-                            $toneP = $persen === null
-                                ? 'abu'
-                                : ($persen >= 100 ? 'hijau' : ($persen >= 80 ? 'oren' : 'merah'));
-                        @endphp
-                        <td class="tone-{{ $toneP }}">
-                            <span class="persen-text">{{ $persen === null ? '-' : $persen . '%' }}</span>
-                        </td>
-                    @endforeach
-                </tr>
-            </tbody>
-        </table>
-    </div>
     </div>
 </div>
 @endsection
@@ -460,32 +478,14 @@
     var persenPerBulan = @json($persenPerBulanMentah);
     var jumlahPelangganPerBulan = @json($jumlahPelangganData);
     var nilaiRealisasiPerBulan = @json($data);
-    var nilaiTargetPerBulan = @json($targetData);
-    var metricPrefix = {!! json_encode($metric === 'kwh' ? '' : 'Rp ') !!};
-    var metricSuffix = {!! json_encode($metric === 'kwh' ? ' KWH' : '') !!};
 
-    // Format angka disingkat (rb/jt/M/T) khusus buat label yang nempel
-    // permanen di atas tiap batang chart — kalau dibiarkan angka penuh
-    // (mis. "4.200.000"), labelnya kepanjangan & numpuk pas banyak bulan
-    // ditampilkan berdampingan. Tooltip pas di-hover TETAP nampilin angka
-    // penuh presisi (lihat callback tooltip di bawah, gak lewat fungsi
-    // ini) — jadi yang disingkat cuma teks permanen di atas batang.
-    function formatSingkat(v) {
-        v = Number(v) || 0;
-        var abs = Math.abs(v);
-        var opsi = { maximumFractionDigits: 1, minimumFractionDigits: 0 };
-
-        if (abs >= 1e12) return (v / 1e12).toLocaleString('id-ID', opsi) + ' T';
-        if (abs >= 1e9)  return (v / 1e9).toLocaleString('id-ID', opsi) + ' M';
-        if (abs >= 1e6)  return (v / 1e6).toLocaleString('id-ID', opsi) + ' jt';
-        if (abs >= 1e3)  return (v / 1e3).toLocaleString('id-ID', opsi) + ' rb';
-        return v.toLocaleString('id-ID');
-    }
-
-    function formatNilai(v) {
-        return metricPrefix + formatSingkat(v) + metricSuffix;
-    }
-
+    // Plugin buat nulis % Pencapaian & Jumlah Pelanggan LANGSUNG DI
+    // DALAM tiap batang (vertically centered), bukan lagi mengambang di
+    // atas batang. Info Target (T) & Realisasi (R) sekarang dipindah ke
+    // tabel di bawah grafik (lihat .trend-chart-tr-wrap di HTML) —
+    // dengan begitu batangnya lebih bersih, cuma nampilin ringkasan
+    // performa (% & jumlah pelanggan) yang paling relevan dilihat
+    // sekilas per batang.
     var drawBarLabelsPlugin = {
         id: 'drawBarLabels',
         afterDatasetsDraw: function (chart) {
@@ -494,54 +494,44 @@
             if (!barDataset || !barDataset.data) return;
 
             ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            var lineGap = 13;
 
             barDataset.data.forEach(function (bar, i) {
                 var persen = persenPerBulan[i];
                 var jumlahPelanggan = jumlahPelangganPerBulan[i];
                 var nilaiRealisasi = nilaiRealisasiPerBulan[i];
-                var nilaiTarget = nilaiTargetPerBulan[i];
 
+                // Gak ada batang yang keliatan (realisasi 0/kosong) ->
+                // gak ada "di dalam batang" buat ditulisin apa-apa.
                 var adaRealisasi = nilaiRealisasi !== null && nilaiRealisasi !== undefined && nilaiRealisasi > 0;
-                var adaTarget = nilaiTarget !== null && nilaiTarget !== undefined && nilaiTarget > 0;
-                if (!adaRealisasi && !adaTarget && persen === null && (jumlahPelanggan === null || jumlahPelanggan === undefined)) {
-                    return;
-                }
+                if (!adaRealisasi) return;
 
                 var teksPersen = persen === null ? '-' : persen + '%';
                 var teksPelanggan = (jumlahPelanggan === null || jumlahPelanggan === undefined)
                     ? '-'
                     : Number(jumlahPelanggan).toLocaleString('id-ID') + ' plg';
-                var teksRealisasi = adaRealisasi ? 'R: ' + formatNilai(nilaiRealisasi) : null;
-                var teksTarget = adaTarget ? 'T: ' + formatNilai(nilaiTarget) : null;
 
-                var x = bar.x;
-                var y = bar.y - 8;
-                var lineGap = 12;
+                var warnaPersen = persen === null
+                    ? '#d7e0f5'
+                    : (persen >= 100 ? '#8CFFB8' : '#FFB3B3');
 
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'alphabetic';
+                var baris = [
+                    { text: teksPersen, font: '700 11px inherit', color: warnaPersen },
+                    { text: teksPelanggan, font: '600 9.5px inherit', color: '#e6edfb' },
+                ];
 
-                var baris = [];
+                var xTengah = bar.x;
+                var yTengahBatang = (bar.y + bar.base) / 2;
+                var yMulai = yTengahBatang - ((baris.length - 1) * lineGap) / 2;
 
-                if (teksTarget) {
-                    baris.push({ text: teksTarget, font: '600 9.5px inherit', color: '#b8860b' });
-                }
-                if (teksRealisasi) {
-                    baris.push({ text: teksRealisasi, font: '700 9.5px inherit', color: '#0b3d91' });
-                }
-                baris.push({
-                    text: teksPersen,
-                    font: '700 10.5px inherit',
-                    color: (persen !== null && persen >= 100) ? '#16803c' : (persen === null ? '#9aa4c2' : '#c62828')
+                baris.forEach(function (line, idx) {
+                    ctx.font = line.font;
+                    ctx.fillStyle = line.color;
+                    ctx.fillText(line.text, xTengah, yMulai + idx * lineGap);
                 });
-                baris.push({ text: teksPelanggan, font: '600 9.5px inherit', color: '#0f6bd9' });
-
-                for (var b = baris.length - 1; b >= 0; b--) {
-                    var offsetIndex = baris.length - 1 - b;
-                    ctx.font = baris[b].font;
-                    ctx.fillStyle = baris[b].color;
-                    ctx.fillText(baris[b].text, x, y - (offsetIndex * lineGap));
-                }
             });
 
             ctx.restore();
@@ -579,7 +569,7 @@
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
-            layout: { padding: { top: 58 } },
+            layout: { padding: { top: 16 } },
             plugins: {
                 legend: {
                     display: true,
@@ -599,7 +589,7 @@
                         // atas, sekali per dataset) — nampilin % Pencapaian
                         // & Jumlah Pelanggan bulan itu juga, biar tooltip
                         // pas di-hover isinya lengkap sama kayak yang
-                        // ditulis permanen di atas batangnya.
+                        // ditulis di dalam batangnya.
                         afterBody: function (tooltipItems) {
                             if (!tooltipItems.length) return [];
                             var i = tooltipItems[0].dataIndex;

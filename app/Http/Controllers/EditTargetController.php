@@ -9,9 +9,14 @@ use Illuminate\Http\Request;
 class EditTargetController extends Controller
 {
     /**
-     * Halaman "Edit Target" — form input target per bulan (kWh atau Rp TS),
-     * bisa dipilih per tahun & per ULP, atau "Semua ULP" untuk mendistribusikan
-     * nilai yang sama ke seluruh ULP sekaligus (lihat catatan di update()).
+     * Halaman "Edit Target" — form input target per bulan (kWh atau Rp TS)
+     * per tahun & per ULP.
+     *
+     * Opsi "Semua ULP (UP3)" BUKAN entitas yang bisa diisi/disimpan.
+     * Kalau dipilih, halaman ini cuma menampilkan REKAP: penjumlahan
+     * (SUM) nilai_target dari seluruh ULP yang dikenal sistem, per bulan.
+     * Read-only — untuk mengubah angka, pengguna wajib pilih ULP spesifik
+     * di filter.
      *
      * Route: GET /edit-target -> name('edit-target.index')
      */
@@ -19,7 +24,7 @@ class EditTargetController extends Controller
     {
         $tahun = (int) $request->input('tahun', now()->year);
         $jenis = $request->input('jenis', 'kwh');
-        $ulp   = $request->input('ulp'); // null/'' = Semua ULP
+        $ulp   = $request->input('ulp'); // null/'' = Semua ULP (rekap)
 
         if (! array_key_exists($jenis, TargetBulanan::JENIS)) {
             $jenis = 'kwh';
@@ -27,20 +32,26 @@ class EditTargetController extends Controller
 
         $daftarUlp = DetailTagihanSusulan::PETA_NAMA_ULP;
 
-        // ---- Nilai yang ditampilkan di form. Kalau filter "Semua ULP"
-        // dipilih, tampilkan nilai ULP PERTAMA di daftar sebagai representasi
-        // (karena sejak Solusi A, submit "Semua ULP" mendistribusikan nilai
-        // yang SAMA ke semua ULP — jadi ULP mana pun yang dibaca nilainya
-        // akan sama, selama tidak pernah di-override individual sesudahnya).
-        // Kalau sebagian ULP pernah di-override manual, nilai yang tampil di
-        // sini bisa saja tidak representatif untuk SEMUA ULP lagi — itu
-        // risiko yang disadari dari desain override per-ULP. ----
-        $ulpUntukBaca = $ulp ?: array_key_first($daftarUlp);
-
-        $existing = TargetBulanan::where('tahun', $tahun)
-            ->where('jenis', $jenis)
-            ->where('ulp', $ulpUntukBaca)
-            ->pluck('nilai_target', 'bulan');
+        if ($ulp) {
+            // ---- ULP spesifik -> baca nilai target aslinya per bulan. ----
+            $existing = TargetBulanan::where('tahun', $tahun)
+                ->where('jenis', $jenis)
+                ->where('ulp', $ulp)
+                ->pluck('nilai_target', 'bulan');
+        } else {
+            // ---- "Semua ULP (UP3)" -> REKAP. Jumlahkan nilai_target dari
+            // setiap kode ULP yang terdaftar di PETA_NAMA_ULP (bukan
+            // sembarang baris — supaya kalau ada baris "sampah"/ulp tidak
+            // dikenal di tabel, tidak ikut kehitung), dikelompokkan per
+            // bulan. Ini murni tampilan, tidak pernah ditulis balik ke DB
+            // dari sisi "Semua ULP". ----
+            $existing = TargetBulanan::where('tahun', $tahun)
+                ->where('jenis', $jenis)
+                ->whereIn('ulp', array_keys($daftarUlp))
+                ->selectRaw('bulan, SUM(nilai_target) as total')
+                ->groupBy('bulan')
+                ->pluck('total', 'bulan');
+        }
 
         $targetBulanan = collect(range(1, 12))->mapWithKeys(function ($bulan) use ($existing) {
             return [$bulan => $existing->get($bulan, 0)];
@@ -52,6 +63,7 @@ class EditTargetController extends Controller
             'tahun'         => $tahun,
             'jenis'         => $jenis,
             'ulpAktif'      => $ulp,
+            'isSemuaUlp'    => ! $ulp,
             'targetBulanan' => $targetBulanan,
             'daftarTahun'   => $daftarTahun,
             'daftarUlp'     => $daftarUlp,
@@ -64,75 +76,43 @@ class EditTargetController extends Controller
      * Simpan 12 nilai target sekaligus (upsert per bulan) untuk kombinasi
      * tahun + jenis + ulp yang dipilih.
      *
-     * PERILAKU "Semua ULP" (ulp kosong/null saat submit):
-     * Nilai yang diisi didistribusikan (di-upsert) ke SETIAP kode ULP yang
-     * ada di DetailTagihanSusulan::PETA_NAMA_ULP — BUKAN disimpan sebagai
-     * satu baris global (ulp = null) seperti sebelumnya. Jadi kalau ada 7
-     * ULP, submit ini menghasilkan 7 baris TargetBulanan per bulan (7 x 12
-     * = 84 baris), semuanya bernilai sama persis dengan yang diinput.
-     *
-     * PERILAKU ULP spesifik (ulp diisi kode tertentu):
-     * Tetap seperti semula — cuma meng-upsert baris untuk ULP itu saja,
-     * dipakai untuk override manual satu unit yang targetnya beda dari
-     * ULP lain (dijalankan SETELAH submit "Semua ULP", supaya override-nya
-     * tidak ketiban ulang oleh distribusi massal berikutnya).
+     * Tidak ada lagi mode "Semua ULP" di sini. 'ulp' WAJIB kode ULP
+     * spesifik yang dikenal sistem — request tanpa ulp (atau ulp kosong)
+     * ditolak di level validasi, jadi tidak mungkin ada submit yang
+     * mendistribusikan/menimpa banyak ULP sekaligus lagi.
      *
      * Route: POST /edit-target -> name('edit-target.update')
      */
     public function update(Request $request)
     {
+        $daftarUlp = DetailTagihanSusulan::PETA_NAMA_ULP;
+
         $validated = $request->validate([
             'tahun'    => 'required|integer|min:2000|max:2100',
             'jenis'    => 'required|in:kwh,ts',
-            'ulp'      => 'nullable|string|max:20',
+            'ulp'      => 'required|string|max:20|in:' . implode(',', array_keys($daftarUlp)),
             'target'   => 'required|array',
             'target.*' => 'required|numeric|min:0',
         ]);
 
-        $ulpDipilih = $validated['ulp'] ?: null;
-
-        // ---- "Semua ULP" -> distribusikan ke SETIAP kode ULP yang
-        // dikenal sistem, bukan disimpan sebagai satu baris ulp=null. ----
-        if ($ulpDipilih === null) {
-            $semuaKodeUlp = array_keys(DetailTagihanSusulan::PETA_NAMA_ULP);
-
-            foreach ($semuaKodeUlp as $kodeUlp) {
-                foreach ($validated['target'] as $bulan => $nilai) {
-                    TargetBulanan::updateOrCreate(
-                        [
-                            'tahun' => $validated['tahun'],
-                            'bulan' => $bulan,
-                            'jenis' => $validated['jenis'],
-                            'ulp'   => $kodeUlp,
-                        ],
-                        ['nilai_target' => $nilai]
-                    );
-                }
-            }
-        } else {
-            // ---- ULP spesifik -> override cuma untuk unit itu saja. ----
-            foreach ($validated['target'] as $bulan => $nilai) {
-                TargetBulanan::updateOrCreate(
-                    [
-                        'tahun' => $validated['tahun'],
-                        'bulan' => $bulan,
-                        'jenis' => $validated['jenis'],
-                        'ulp'   => $ulpDipilih,
-                    ],
-                    ['nilai_target' => $nilai]
-                );
-            }
+        foreach ($validated['target'] as $bulan => $nilai) {
+            TargetBulanan::updateOrCreate(
+                [
+                    'tahun' => $validated['tahun'],
+                    'bulan' => $bulan,
+                    'jenis' => $validated['jenis'],
+                    'ulp'   => $validated['ulp'],
+                ],
+                ['nilai_target' => $nilai]
+            );
         }
 
         return redirect()
             ->route('edit-target.index', [
                 'tahun' => $validated['tahun'],
                 'jenis' => $validated['jenis'],
-                'ulp'   => $ulpDipilih,
+                'ulp'   => $validated['ulp'],
             ])
-            ->with('success', $ulpDipilih === null
-                ? 'Target berhasil didistribusikan ke semua ULP.'
-                : 'Target ULP ' . ($ulpDipilih) . ' berhasil disimpan.'
-            );
+            ->with('success', 'Target ULP ' . $validated['ulp'] . ' berhasil disimpan.');
     }
 }

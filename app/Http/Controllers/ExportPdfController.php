@@ -104,6 +104,12 @@ class ExportPdfController extends Controller
         ],
     ];
 
+    /**
+     * Halaman form Export PDF. Variabel yang dikirim ke view HARUS persis
+     * cocok dengan yang dipakai export-pdf/index.blade.php: daftarTahun,
+     * tahunAktif, sectionMeta, daftarUlp, triwulanLabel, bulanLabel — gak
+     * lebih, gak kurang.
+     */
     public function index(Request $request)
     {
         $daftarTahun = LaporanSusulan::aktif()
@@ -168,7 +174,7 @@ class ExportPdfController extends Controller
             'narasi'      => $narasi,
             'sectionMeta' => self::SECTION_META,
             'filterInfo'  => $filterInfo,
-        ])->setPaper('a4', 'portrait');
+        ])->setPaper('a4', 'landscape');
 
         $namaFile = 'laporan-p2tl-' . $tahun . '-' . now()->format('Ymd-His') . '.pdf';
 
@@ -180,6 +186,24 @@ class ExportPdfController extends Controller
     {
         $parts = explode('/', (string) $noAgenda);
         return $parts[1] ?? null;
+    }
+
+    /**
+     * Kode ULP yang dipakai untuk men-scope query TargetBulanan: kalau user
+     * memilih ULP tertentu di form export, pakai persis pilihan itu; kalau
+     * tidak (mode "Seluruh ULP"), batasi ke kode ULP yang memang dikenal
+     * sistem (PETA_NAMA_ULP) — BUKAN "semua baris apa adanya".
+     *
+     * Pola yang sama dengan ambilTargetPerBulan() di TrendController dan
+     * rekap di EditTargetController. Tanpa pembatasan ini, baris
+     * TargetBulanan peninggalan lama (ulp = null dari sebelum fitur
+     * distribusi-per-ULP dihapus, atau kode usang/typo) ikut kejumlah,
+     * sehingga total target di PDF bisa tidak match dengan yang kejumlah
+     * di halaman web.
+     */
+    private function kodeUlpUntukTarget(?array $ulpKode): array
+    {
+        return $ulpKode ?: array_keys(DetailTagihanSusulan::PETA_NAMA_ULP);
     }
 
     /** Ubah pilihan triwulan / rentang bulan dari form jadi array angka bulan (null = seluruh tahun). */
@@ -198,7 +222,7 @@ class ExportPdfController extends Controller
         return null;
     }
 
-    /** Ringkasan filter yang dipakai user, untuk ditampilkan di form & di kop PDF. */
+    /** Ringkasan filter yang dipakai user, untuk ditampilkan di kop PDF. */
     private function ringkasanFilter(int $tahun, array $validated, ?array $ulpKode): array
     {
         $periode = 'Sepanjang Tahun ' . $tahun;
@@ -233,6 +257,7 @@ class ExportPdfController extends Controller
             ->where('laporan_susulans.tahun', $tahun)
             ->select(
                 'detail_tagihan_susulans.no_agenda',
+                'detail_tagihan_susulans.idpel',
                 'detail_tagihan_susulans.gol',
                 'detail_tagihan_susulans.kwh',
                 'detail_tagihan_susulans.ts',
@@ -273,9 +298,9 @@ class ExportPdfController extends Controller
     // ================= TARGET VS REALISASI =================
     private function dataTargetRealisasi(int $tahun, ?array $bulanList, ?array $ulpKode): array
     {
-        $targetQuery = TargetBulanan::where('tahun', $tahun)->where('jenis', 'kwh')->whereNotNull('ulp');
+        $targetQuery = TargetBulanan::where('tahun', $tahun)->where('jenis', 'kwh')
+            ->whereIn('ulp', $this->kodeUlpUntukTarget($ulpKode));
         if ($bulanList) $targetQuery->whereIn('bulan', $bulanList);
-        if ($ulpKode) $targetQuery->whereIn('ulp', $ulpKode);
         $targetPerUlp = $targetQuery->get()->groupBy('ulp')->map(fn ($rows) => $rows->sum('nilai_target'));
 
         $realisasiPerUlp = [];
@@ -437,9 +462,13 @@ class ExportPdfController extends Controller
             $aktualPerBulan[$angka] += (float) $r->{$kolom};
         }
 
-        // Catatan: target bulanan di sini diasumsikan tidak per-ULP (sesuai kode asli).
-        // Kalau TargetBulanan kamu juga punya kolom ulp untuk jenis ini, tambahkan whereIn('ulp', $ulpKode).
+        // Target di-scope ke ULP pilihan user (atau seluruh kode ULP yang
+        // dikenal sistem kalau tidak difilter) — konsisten dengan
+        // $aktualPerBulan di atas yang sudah di-scope ke ULP yang sama
+        // lewat ambilDetail(). Tanpa ini persentase pencapaian salah kalau
+        // user memfilter ke ULP tertentu.
         $targetPerBulan = TargetBulanan::where('tahun', $tahun)->where('jenis', $jenis)
+            ->whereIn('ulp', $this->kodeUlpUntukTarget($ulpKode))
             ->get()->groupBy('bulan')->map(fn ($rows) => $rows->sum('nilai_target'));
 
         $bulanTampil = $bulanList ?: range(1, 12);
@@ -461,11 +490,6 @@ class ExportPdfController extends Controller
     }
 
     // ================= NARASI DESKRIPTIF PER BAGIAN =================
-    /**
-     * Susun narasi per bagian laporan. Ditulis lebih panjang dari versi sebelumnya,
-     * tapi tetap dijaga supaya kalimatnya wajar dan enak dibaca (bukan gaya template kaku),
-     * dengan variasi kalimat dan sedikit konteks tambahan di tiap bagian.
-     */
     private function narasi(string $section, array $d, array $validated = []): string
     {
         $periodeTeks = $this->periodeTeksNarasi($validated);
@@ -483,7 +507,7 @@ class ExportPdfController extends Controller
             ),
             'gol_tarif' => sprintf(
                 'Rekap tagihan susulan untuk %s menunjukkan total sebesar Rp%s dari pelanggan prabayar dan Rp%s dari pelanggan paskabayar. Bagian ini memang selalu disusun secara tahunan dan tidak mengikuti filter triwulan atau ULP tertentu, karena sumber datanya adalah ringkasan golongan tarif yang direkap per tahun, bukan per temuan individual. Perbandingan antara kedua tipe pelanggan ini biasanya berguna untuk melihat segmen mana yang menyumbang nilai tagihan susulan paling besar, sekaligus jadi acuan kalau ada evaluasi kebijakan terkait golongan tarif tertentu ke depannya.',
-                'tahun ' . ($periodeTeksTahun = $this->tahunDariValidated($validated)),
+                'tahun ' . $this->tahunDariValidated($validated),
                 number_format($d['prabayar']['total']['grand_total'], 0, ',', '.'),
                 number_format($d['paskabayar']['total']['grand_total'], 0, ',', '.'),
             ),
@@ -509,7 +533,7 @@ class ExportPdfController extends Controller
                 number_format($d['total'], 0, ',', '.'),
             ),
             'pencapaian' => sprintf(
-                'Untuk %s, realisasi kWh yang tercapai adalah %s kWh dari target sebesar %s kWh, atau setara dengan pencapaian rata-rata sekitar %s%%. Angka persentase per bulan pada tabel di bawah menunjukkan bulan mana saja yang sudah memenuhi atau bahkan melampaui target, dan bulan mana yang masih di bawahnya. Perlu dicatat juga bahwa target bulanan pada bagian ini disusun secara umum dan belum tentu dipecah per ULP, jadi angka pencapaiannya sebaiknya dibaca sebagai gambaran keseluruhan, bukan evaluasi kinerja satu unit tertentu.',
+                'Untuk %s, realisasi kWh yang tercapai adalah %s kWh dari target sebesar %s kWh, atau setara dengan pencapaian rata-rata sekitar %s%%. Angka persentase per bulan pada tabel di bawah menunjukkan bulan mana saja yang sudah memenuhi atau bahkan melampaui target, dan bulan mana yang masih di bawahnya. Target bulanan pada bagian ini sudah mengikuti filter ULP yang dipilih di atas, sehingga persentasenya sebanding dengan realisasi yang ditampilkan.',
                 $periodeTeks,
                 number_format($d['totalAktual'], 0, ',', '.'),
                 number_format($d['totalTarget'], 0, ',', '.'),
