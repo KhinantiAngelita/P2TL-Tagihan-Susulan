@@ -18,6 +18,72 @@ class PelangganController extends Controller
     private const ULP_SQL = "SUBSTRING_INDEX(SUBSTRING_INDEX(detail_tagihan_susulans.no_agenda, '/', 2), '/', -1)";
 
     /**
+     * Rapikan whitespace pada suatu teks: gabung segala jenis whitespace
+     * (spasi ganda, tab, newline, non-breaking space \u00A0, dan beberapa
+     * varian spasi unicode lain yang kerap nyelip dari hasil import
+     * Excel/PDF) jadi satu spasi biasa, lalu buang spasi nyasar di
+     * awal/akhir. Modifier /u wajib supaya \x{...} unicode code point
+     * dikenali oleh PCRE.
+     */
+    private static function rapikanSpasi(?string $teks): string
+    {
+        $teks = (string) $teks;
+
+        return trim(preg_replace(
+            '/[\x{00A0}\x{2000}-\x{200B}\x{202F}\x{205F}\x{3000}\s]+/u',
+            ' ',
+            $teks
+        ));
+    }
+
+    /**
+     * Rapikan nama pelanggan. Selain rapikan spasi, sebagian nama di
+     * database (hasil ekstraksi PDF/Excel) punya huruf yang "kepisah"
+     * jadi token satu-huruf berturut-turut, misal "A C A N G" yang
+     * seharusnya "ACANG". Fungsi ini menggabungkan RUN 2 token satu-huruf
+     * atau lebih yang berurutan jadi satu kata, tapi TIDAK menyentuh
+     * token satu huruf yang berdiri sendiri di antara kata utuh (biasanya
+     * inisial nama asli, mis. "A DENDY S" tetap dibiarkan "A DENDY S").
+     */
+    private static function rapikanNama(?string $nama): string
+    {
+        $nama = self::rapikanSpasi($nama);
+
+        if ($nama === '') {
+            return '';
+        }
+
+        $token  = explode(' ', $nama);
+        $hasil  = [];
+        $buffer = [];
+
+        foreach ($token as $t) {
+            if (mb_strlen($t) === 1) {
+                $buffer[] = $t;
+                continue;
+            }
+
+            if (count($buffer) >= 2) {
+                $hasil[] = implode('', $buffer);
+            } elseif (count($buffer) === 1) {
+                $hasil[] = $buffer[0];
+            }
+            $buffer = [];
+
+            $hasil[] = $t;
+        }
+
+        // Flush sisa buffer di akhir string (kalau nama diakhiri huruf lepas).
+        if (count($buffer) >= 2) {
+            $hasil[] = implode('', $buffer);
+        } elseif (count($buffer) === 1) {
+            $hasil[] = $buffer[0];
+        }
+
+        return implode(' ', $hasil);
+    }
+
+    /**
      * Halaman "Daftar Pelanggan" — daftar SEMUA pelanggan unik (per idpel)
      * dari seluruh dokumen yang sudah diupload (laporan berstatus aktif).
      * Kalau satu idpel muncul di lebih dari satu laporan (mis. beberapa
@@ -69,6 +135,14 @@ class PelangganController extends Controller
             ->orderBy('detail_tagihan_susulans.nama')
             ->paginate(15)
             ->withQueryString();
+
+        // Tempelkan versi nama yang sudah dirapikan (spasi + huruf yang
+        // kepisah-pisah) ke tiap baris, supaya blade tinggal pakai
+        // langsung tanpa perlu regex lagi di view.
+        $pelanggan->getCollection()->transform(function ($item) {
+            $item->nama_tampil = self::rapikanNama($item->nama);
+            return $item;
+        });
 
         // Daftar opsi filter golongan & ULP — diambil dari seluruh
         // pelanggan unik (independen dari filter yang sedang aktif),
@@ -137,9 +211,9 @@ class PelangganController extends Controller
 
         return response()->json([
             'idpel'             => $detail->idpel,
-            'nama'              => $detail->nama,
+            'nama'              => self::rapikanNama($detail->nama),
             'gol'               => $detail->gol,
-            'alamat'            => $detail->alamat,
+            'alamat'            => self::rapikanSpasi($detail->alamat),
             'daya'              => $detail->daya,
             'ulp_kode'          => $kodeUlp,
             'ulp_nama'          => $kodeUlp ? DetailTagihanSusulan::namaUlp($kodeUlp) : null,

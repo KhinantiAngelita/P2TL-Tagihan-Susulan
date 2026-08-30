@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Dashboard') — Sistem Laporan P2TL</title>
+
+    {{-- Favicon (ikon tab browser) — pakai file logo yang sama dengan
+         yang dipakai di sidebar (.brand-logo img). --}}
+    <link rel="icon" type="image/jpg" href="{{ asset('logo/Logo 3.jpg') }}">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <style>
         :root{

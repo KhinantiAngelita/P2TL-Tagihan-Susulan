@@ -417,13 +417,15 @@
                 </thead>
                 <tbody>
                     @foreach ($pelanggan as $p)
-                        {{-- Nama dirapikan: spasi ganda/berlebih di awal, tengah,
-                             atau akhir (biasanya sisa dari import Excel/PDF)
-                             diringkas jadi satu spasi saja. --}}
-                        @php $namaRapi = trim(preg_replace('/\s+/', ' ', (string) $p->nama)); @endphp
+                        {{-- $p->nama_tampil sudah dirapikan di controller:
+                             whitespace digabung jadi satu spasi, dan huruf
+                             yang "kepisah spasi satu-satu" hasil ekstraksi
+                             Excel/PDF (mis. "A C A N G") digabung jadi satu
+                             kata ("ACANG"), tanpa menyentuh inisial asli
+                             (mis. "A DENDY S" tetap dibiarkan apa adanya). --}}
                         <tr>
                             <td class="plg-idpel">{{ $p->idpel }}</td>
-                            <td class="plg-nama">{{ $namaRapi }}</td>
+                            <td class="plg-nama">{{ $p->nama_tampil }}</td>
                             <td><span class="plg-gol-badge">{{ $p->gol }}</span></td>
                             <td>{{ $p->daya }}</td>
                             <td>{{ \App\Models\DetailTagihanSusulan::namaUlp($p->ulp_kode) ?? '-' }}</td>
@@ -491,12 +493,18 @@ function formatTanggal(v) {
 }
 
 /**
- * Rapikan teks: buang spasi ganda/berlebih di tengah, serta spasi
- * nyasar di awal/akhir. Dipakai untuk nama & field teks lain yang
- * datang dari hasil import Excel/PDF (sering ada spasi bertumpuk).
+ * Rapikan teks: gabungkan semua jenis whitespace (spasi ganda/berlebih
+ * di tengah, tab, newline, non-breaking space \u00A0, serta beberapa
+ * spasi unicode lain yang sering nyangkut dari hasil import Excel/PDF)
+ * jadi satu spasi biasa, lalu buang spasi nyasar di awal/akhir.
+ * Dipakai untuk nama, alamat, & field teks lain yang datang dari hasil
+ * import (sering ada spasi bertumpuk atau NBSP yang nggak kelihatan).
  */
 function rapikanTeks(v) {
-    return (v || '').toString().replace(/\s+/g, ' ').trim();
+    return (v || '')
+        .toString()
+        .replace(/[\u00A0\u2000-\u200B\u202F\u205F\u3000\s]+/g, ' ')
+        .trim();
 }
 
 function ambilInisial(nama) {
