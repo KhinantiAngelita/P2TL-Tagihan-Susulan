@@ -74,6 +74,14 @@
     .trend-chart-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
     .trend-chart-head h3 { margin: 0 0 2px; font-size: 16px; color: #1b2559; }
     .trend-chart-head p { margin: 0; font-size: 12.5px; color: #6b7690; }
+    .trend-chart-mode-toggle {
+        display: inline-flex; background: #f0f2f8; border-radius: 8px; padding: 3px; gap: 2px; margin-bottom: 10px;
+    }
+    .trend-chart-mode-toggle a {
+        padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 6px;
+        text-decoration: none; color: var(--text-muted);
+    }
+    .trend-chart-mode-toggle a.active { background: #fff; color: var(--blue-primary); box-shadow: 0 1px 3px rgba(20,30,80,.12); }
 
     .trend-chart-note {
         display: flex; align-items: center; gap: 6px;
@@ -355,6 +363,12 @@
 <div class="card trend-chart-card copyable-card">
     <div class="trend-chart-head">
         <div>
+            <div class="trend-chart-mode-toggle">
+                <a href="{{ route('trend.' . $metric, array_merge(request()->except('mode'), ['mode' => 'kumulatif'])) }}"
+                class="{{ $mode === 'kumulatif' ? 'active' : '' }}">Komulatif</a>
+                <a href="{{ route('trend.' . $metric, array_merge(request()->except('mode'), ['mode' => 'bulanan'])) }}"
+                class="{{ $mode === 'bulanan' ? 'active' : '' }}">Bulanan</a>
+            </div>
             <h3>{{ $mode === 'kumulatif' ? 'Trend Komulatif' : 'Trend Bulanan' }} — {{ $metric === 'kwh' ? 'kWh' : 'Rp TS' }}</h3>
             <p>{{ $mode === 'kumulatif' ? 'Akumulasi nilai dari bulan pertama sampai bulan berjalan' : 'Nilai per bulan (tidak diakumulasi)' }} &mdash; Tahun {{ $tahunAktif ?: '-' }}</p>
         </div>

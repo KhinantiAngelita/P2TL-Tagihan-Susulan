@@ -102,7 +102,7 @@ function salinTabelGambar(elId, btnEl, judul) {
     var headerClone = null;
     if (headerAsli) {
         headerClone = headerAsli.cloneNode(true);
-        Array.prototype.forEach.call(headerClone.querySelectorAll('button, .copy-btn'), function (b) {
+        Array.prototype.forEach.call(headerClone.querySelectorAll('button, .copy-btn, .trend-chart-mode-toggle'), function (b) {
             b.remove();
         });
         // Dropdown pemilih tampilan (mis. "Gol Tarif Prabayar" / "Gol per

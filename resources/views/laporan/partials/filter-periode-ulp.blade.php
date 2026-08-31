@@ -570,4 +570,42 @@ function fpFilterUlp(kata) {
         row.style.display = row.dataset.nama.indexOf(kata) !== -1 ? '' : 'none';
     });
 }
+
+(function () {
+    var SCROLL_KEY = 'scrollpos-' + window.location.pathname;
+
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+
+    function simpanScroll() {
+        try { sessionStorage.setItem(SCROLL_KEY, String(window.scrollY)); } catch (e) {}
+    }
+
+    // Delegated: nyakup SEMUA <a href> di halaman (tab filter, tab
+    // Komulatif/Bulanan, tab Trend kWh/Rp TS/Pencapaian) + submit form
+    // filter — bukan cuma tombol reset tertentu.
+    document.addEventListener('click', function (e) {
+        var a = e.target.closest('a[href]');
+        if (a && a.origin === window.location.origin) simpanScroll();
+    }, true);
+
+    var fpForm = document.getElementById('fp-form');
+    if (fpForm) fpForm.addEventListener('submit', simpanScroll, true);
+
+    window.addEventListener('load', function () {
+        var saved;
+        try { saved = sessionStorage.getItem(SCROLL_KEY); } catch (e) { saved = null; }
+        if (saved === null) return;
+
+        var y = parseInt(saved, 10) || 0;
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                window.scrollTo(0, y);
+                try { sessionStorage.removeItem(SCROLL_KEY); } catch (e) {}
+            });
+        });
+    });
+})();
+
 </script>
