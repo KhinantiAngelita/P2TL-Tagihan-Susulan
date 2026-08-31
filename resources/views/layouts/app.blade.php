@@ -152,7 +152,17 @@
 
         /* ===== Sidebar diciutkan (desktop only) ===== */
         .sidebar.is-collapsed{width:var(--sidebar-w-collapsed);padding-left:10px;padding-right:10px;}
-        .sidebar.is-collapsed .sidebar-brand{justify-content:center;padding-left:0;padding-right:0;}
+
+        /* Baris brand pas diciutkan: logo & tombol toggle ditumpuk
+           vertikal (bukan sejajar berdempetan kayak sebelumnya) biar
+           gak sempit — logo di atas, tombol toggle bulat kecil di
+           bawahnya, keduanya center. */
+        .sidebar.is-collapsed .sidebar-brand{
+            flex-direction:column;
+            justify-content:center;
+            gap:10px;
+            padding:4px 0 18px;
+        }
         .sidebar.is-collapsed .brand-text,
         .sidebar.is-collapsed .sidebar-label,
         .sidebar.is-collapsed .nav-text,
@@ -160,7 +170,14 @@
         .sidebar.is-collapsed .nav-caret,
         .sidebar.is-collapsed .nav-submenu,
         .sidebar.is-collapsed .user-info{display:none;}
-        .sidebar.is-collapsed .sidebar-collapse-btn{margin-left:0;transform:rotate(180deg);}
+        .sidebar.is-collapsed .sidebar-collapse-btn{
+            margin-left:0;
+            width:26px;height:26px;
+            border-radius:50%;
+            background:rgba(255,255,255,.1);
+            transform:rotate(180deg);
+        }
+        .sidebar.is-collapsed .sidebar-collapse-btn:hover{background:rgba(255,255,255,.2);}
         .sidebar.is-collapsed .nav-item,
         .sidebar.is-collapsed .nav-item-toggle{justify-content:center;padding:11px 0;gap:0;}
         .sidebar.is-collapsed .sidebar-user{justify-content:center;padding:14px 0;}

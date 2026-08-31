@@ -208,7 +208,7 @@
                     </tr>
                     <tr class="sub-row">
                         <th class="col-target">Target</th>
-                        <th class="col-realisasi">Realisasi</th>
+                        <th class="col-realisasi">Aktual</th>
                         <th>%</th>
                     </tr>
                 </thead>
