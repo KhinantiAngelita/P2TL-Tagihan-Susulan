@@ -269,7 +269,7 @@ class TrendController extends Controller
             ->pluck('tahun');
 
         $tahunAktif = (int) ($request->input('tahun') ?: $daftarTahun->first());
-        $mode       = $request->input('mode', 'bulanan');
+        $mode       = $request->input('mode', 'bulananan'); // default ke kumulatif biar konsisten sama halaman Pencapaian
 
         // Daftar ULP buat dropdown/checklist filter — pakai peta resmi
         // yang sudah didefinisikan di model, satu sumber data yang sama

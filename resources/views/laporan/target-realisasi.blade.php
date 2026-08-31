@@ -279,4 +279,4 @@
 
 @push('scripts')
 @include('laporan.partials.copy-image-script')
-@endpushcomposer create-project laravel/laravel EPM-Bogor
+@endpush
