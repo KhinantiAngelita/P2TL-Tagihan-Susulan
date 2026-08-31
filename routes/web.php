@@ -57,7 +57,11 @@ Route::middleware('auth')->group(function () {
     // dengan gol-tarif/komposisi-temuan/target-realisasi di atas (bukan di
     // dalam Route::prefix('laporan') group di bawah), supaya gak perlu
     // mikirin urutan terhadap wildcard route {laporan} di group itu.
+    // Route "export" ditaruh SEBELUM tidak masalah urutannya terhadap
+    // route index di atas (sama-sama GET tapi path beda, bukan wildcard),
+    // tapi tetap dikelompokkan bersebelahan biar gampang dibaca.
     Route::get('/laporan/penetapan-berulang', [PenetapanBerulangController::class, 'index'])->name('laporan.penetapan-berulang');
+    Route::get('/laporan/penetapan-berulang/export', [PenetapanBerulangController::class, 'exportExcel'])->name('laporan.penetapan-berulang.export');
 
     /*
     |----------------------------------------------------------------------

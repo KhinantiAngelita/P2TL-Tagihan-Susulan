@@ -12,9 +12,10 @@
     .pb-page-title { font-size: clamp(18px, 4.2vw, 22px); margin: 0 0 3px; color: #1b2559; font-weight: 700; }
 
     .pb-header {
-        display: flex; align-items: center; gap: 14px;
-        margin-bottom: 18px;
+        display: flex; align-items: center; justify-content: space-between; gap: 14px;
+        margin-bottom: 18px; flex-wrap: wrap;
     }
+    .pb-header-left { display: flex; align-items: center; gap: 14px; }
     .pb-header-icon {
         width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
         background: linear-gradient(135deg, #0b3d91, #4f7fff);
@@ -23,6 +24,17 @@
     }
     .pb-header-icon svg { width: 21px; height: 21px; }
     .pb-header p { margin: 0; font-size: 14px; color: #6b7690; }
+
+    .pb-export-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        border: none; background: linear-gradient(135deg, #1e7e34, #2fa84f);
+        color: #fff; font-size: 13px; font-weight: 700;
+        padding: 10px 18px; border-radius: 10px; cursor: pointer;
+        text-decoration: none; box-shadow: 0 4px 12px rgba(30,126,52,.28);
+        transition: opacity .15s, transform .15s;
+    }
+    .pb-export-btn:hover { opacity: .92; transform: translateY(-1px); }
+    .pb-export-btn svg { width: 15px; height: 15px; }
 
     .pb-info-banner {
         display: flex; align-items: flex-start; gap: 10px;
@@ -34,16 +46,9 @@
     .pb-info-banner p { margin: 0; font-size: 12.5px; color: #3d4566; line-height: 1.55; }
     .pb-info-banner strong { color: #1b2559; }
 
-    .pb-filter-card {
-        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-        padding: 14px 20px; margin-bottom: 18px;
-        background: #fafbfe; border: 1px solid var(--border);
-    }
-    .pb-filter-label {
-        font-size: 11px; font-weight: 800; color: #9aa4c2;
-        text-transform: uppercase; letter-spacing: .05em;
-        margin-right: 2px;
-    }
+    .pb-jumlah-filter { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .pb-jumlah-filter label { font-size: 12.5px; font-weight: 600; color: #6b7690; }
+
     .filter-wrap { position: relative; }
     .filter-wrap svg {
         position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
@@ -57,58 +62,6 @@
     }
     .filter-select:hover { border-color: #c9d3f5; }
     .filter-select:focus { outline: none; border-color: var(--blue-primary, #0b3d91); box-shadow: 0 0 0 3px rgba(11,61,145,.1); }
-
-    /* ===== Dropdown checkbox Golongan Temuan — pakai <details>/<summary>
-       native biar gak perlu JS buat toggle buka/tutup. ===== */
-    .filter-golongan { position: relative; }
-    .filter-golongan summary {
-        list-style: none; display: inline-flex; align-items: center; gap: 8px;
-        border: 1px solid var(--border); border-radius: 9px;
-        padding: 9px 14px 9px 34px; font-size: 13px; font-weight: 600;
-        background: #fff; color: #1b2559; cursor: pointer; position: relative;
-    }
-    .filter-golongan summary::-webkit-details-marker { display: none; }
-    .filter-golongan summary svg.icon-filter {
-        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-        width: 14px; height: 14px; color: #9aa4c2; pointer-events: none;
-    }
-    .filter-golongan summary svg.icon-caret {
-        width: 13px; height: 13px; color: #9aa4c2; transition: transform .15s;
-    }
-    .filter-golongan[open] summary svg.icon-caret { transform: rotate(180deg); }
-    .filter-golongan-badge {
-        background: #eaf0fb; color: var(--blue-primary, #0b3d91);
-        font-size: 11px; font-weight: 800; border-radius: 999px;
-        padding: 1px 7px;
-    }
-    .filter-golongan-panel {
-        position: absolute; top: calc(100% + 6px); left: 0; z-index: 20;
-        background: #fff; border: 1px solid var(--border); border-radius: 10px;
-        box-shadow: 0 8px 24px rgba(20,30,80,.12);
-        padding: 10px; min-width: 220px;
-        display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;
-    }
-    .filter-golongan-item {
-        display: flex; align-items: center; gap: 7px;
-        padding: 6px 8px; border-radius: 7px; font-size: 13px; color: #1b2559;
-        cursor: pointer;
-    }
-    .filter-golongan-item:hover { background: #f4f7ff; }
-    .filter-golongan-item input { width: 14px; height: 14px; accent-color: var(--blue-primary, #0b3d91); cursor: pointer; }
-    .filter-golongan-actions {
-        grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 8px;
-        margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border);
-    }
-    .filter-golongan-actions button {
-        border: none; border-radius: 7px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer;
-    }
-    .btn-pilih-semua-golongan { background: none; color: var(--blue-primary, #0b3d91); padding: 6px 4px; }
-    .btn-pilih-semua-golongan:hover { text-decoration: underline; }
-    .btn-terapkan-golongan { background: var(--blue-primary, #0b3d91); color: #fff; }
-    .btn-terapkan-golongan:hover { background: #092f70; }
-
-    .pb-jumlah-filter { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .pb-jumlah-filter label { font-size: 12.5px; font-weight: 600; color: #6b7690; }
 
     .pb-search-wrap { position: relative; }
     .pb-search-wrap svg {
@@ -232,7 +185,6 @@
     .idpel-text { font-variant-numeric: tabular-nums; color: #6b7690; font-size: 12.5px; }
     .nama-text { font-weight: 700; color: #1b2559; }
 
-    /* ===== Tombol aksi & modal detail riwayat temuan ===== */
     .icon-btn {
         width: 34px; height: 34px; border: none; border-radius: 9px; cursor: pointer;
         display: flex; justify-content: center; align-items: center;
@@ -274,13 +226,23 @@
 @section('content')
 
 <div class="pb-header">
-    <span class="pb-header-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M8 16H3v5"/></svg>
-    </span>
-    <div>
-        <h2 class="pb-page-title">Penetapan Berulang</h2>
-        <p>Pelanggan yang muncul lebih dari sekali di data temuan P2TL.</p>
+    <div class="pb-header-left">
+        <span class="pb-header-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M8 16H3v5"/></svg>
+        </span>
+        <div>
+            <h2 class="pb-page-title">Penetapan Berulang</h2>
+            <p>Pelanggan yang muncul lebih dari sekali di data temuan P2TL.</p>
+        </div>
     </div>
+
+    {{-- Export Excel — bawa SEMUA query string filter yang lagi aktif
+         (Tahun/TW/Bulan/Tanggal/ULP/Golongan/Non-Pelanggan/Jumlah/Search),
+         jadi file yang di-download selalu sesuai apa yang lagi ditampilkan. --}}
+    <a href="{{ route('laporan.penetapan-berulang.export', request()->query()) }}" class="pb-export-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M6 9l6 6 6-6"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+        Export Excel
+    </a>
 </div>
 
 @if ($modeNonPelanggan !== 'sembunyikan' && $adaNonPelanggan)
@@ -296,75 +258,12 @@
     </div>
 @endif
 
-{{-- Filter Tahun & ULP --}}
-<form method="GET" class="card pb-filter-card">
-    <span class="pb-filter-label">Filter</span>
-
-    <div class="filter-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        <select name="tahun" onchange="this.form.submit()" class="filter-select">
-            <option value="" {{ ! $tahunAktif ? 'selected' : '' }}>Semua Tahun</option>
-            @foreach ($daftarTahun as $t)
-                <option value="{{ $t }}" {{ (string) $tahunAktif === (string) $t ? 'selected' : '' }}>{{ $t }}</option>
-            @endforeach
-        </select>
-    </div>
-
-    <div class="filter-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <select name="ulp" onchange="this.form.submit()" class="filter-select">
-            <option value="" {{ ! $ulpFilter ? 'selected' : '' }}>Semua ULP</option>
-            @foreach ($daftarUlp as $kode => $nama)
-                <option value="{{ $kode }}" {{ (string) $ulpFilter === (string) $kode ? 'selected' : '' }}>{{ $nama }} ({{ $kode }})</option>
-            @endforeach
-        </select>
-    </div>
-
-    {{-- Golongan Temuan — dropdown checkbox, jadi bisa pilih beberapa
-         sekaligus. Filter ini mengubah data yang DIHITUNG (bukan cuma
-         tampilan tabel bawah) — kemunculan dengan golongan yang gak
-         dicentang gak ikut dianggap "muncul" sama sekali. --}}
-    <details class="filter-golongan">
-        <summary>
-            <svg class="icon-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"/></svg>
-            Golongan Temuan
-            @if ($golonganFilter)
-                <span class="filter-golongan-badge">{{ count($golonganFilter) }}</span>
-            @endif
-            <svg class="icon-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-        </summary>
-        <div class="filter-golongan-panel">
-            @foreach ($daftarGolongan as $g)
-                <label class="filter-golongan-item">
-                    <input type="checkbox" name="golongan[]" class="pb-golongan-checkbox" value="{{ $g }}" {{ (! $golonganFilter || in_array($g, $golonganFilter, true)) ? 'checked' : '' }}>
-                    <span>{{ $g }}</span>
-                </label>
-            @endforeach
-            <div class="filter-golongan-actions">
-                <button type="button" class="btn-pilih-semua-golongan" onclick="pbToggleSemuaGolongan()">Pilih/Batalkan Semua</button>
-                <button type="submit" class="btn-terapkan-golongan">Terapkan</button>
-            </div>
-        </div>
-    </details>
-
-    {{-- Sertakan Non-Pelanggan (IDPEL "NONPELANG") — checkbox tunggal,
-         default GAK dicentang. Kalau dicentang, temuan non-pelanggan
-         ikut disertakan (dikelompokkan per Nama, bukan IDPEL — lihat
-         catatan di controller). --}}
-    <div class="filter-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/></svg>
-        <select name="nonpelang" onchange="this.form.submit()" class="filter-select">
-            <option value="sembunyikan" {{ $modeNonPelanggan === 'sembunyikan' ? 'selected' : '' }}>Sembunyikan Non-Pelanggan</option>
-            <option value="sertakan" {{ $modeNonPelanggan === 'sertakan' ? 'selected' : '' }}>Sertakan Non-Pelanggan</option>
-            <option value="hanya" {{ $modeNonPelanggan === 'hanya' ? 'selected' : '' }}>Hanya Non-Pelanggan</option>
-        </select>
-    </div>
-
-    {{-- Filter "jumlah" dibawa terus lewat hidden input biar gak ke-reset
-         pas ganti Tahun/ULP/Golongan, kecuali user memang lagi mau ganti
-         filter itu (lewat dropdown Jumlah Muncul di tabel Daftar Pelanggan). --}}
-    <input type="hidden" name="jumlah" value="{{ $jumlahFilter }}">
-</form>
+{{-- Filter Periode & ULP — partial yang sama dengan Menu Trend, plus
+     tab Golongan Temuan & Non-Pelanggan yang cuma muncul di sini
+     (dipicu flag $tampilkanGolonganFilter / $tampilkanNonPelangganFilter
+     dari controller). TIDAK ada lagi filter card manual seperti
+     versi lama (yang dulu pakai $ulpFilter tunggal) di bawah sini. --}}
+@include('laporan.partials.filter-periode-ulp')
 
 {{-- Ringkasan --}}
 <div class="dash-stats" style="margin-bottom:16px;">
@@ -387,7 +286,7 @@
             <h3>ULP Terdampak</h3>
         </div>
         <div class="dash-stat-value">{{ number_format($totalUlpTerdampak, 0, ',', '.') }}</div>
-        <div class="dash-stat-sub">Dari {{ count($daftarUlp) }} ULP terdaftar</div>
+        <div class="dash-stat-sub">Dari {{ $daftarUlp->count() }} ULP terdaftar</div>
     </div>
 
     <div class="dash-stat-card tone-yellow">
@@ -451,7 +350,7 @@
                         <th class="col-ulp">ULP</th>
                         @foreach ($daftarJumlah as $j)
                             <th class="{{ $j === $pengulanganTertinggi ? 'col-max' : '' }}">
-                                <a href="{{ route('laporan.penetapan-berulang', array_filter(['tahun' => $tahunAktif, 'ulp' => $ulpFilter, 'golongan' => $golonganFilter, 'nonpelang' => $modeNonPelanggan !== 'sembunyikan' ? $modeNonPelanggan : null, 'jumlah' => $j])) }}#daftar-pelanggan">{{ $j }}</a>
+                                <a href="{{ url()->current() }}?{{ http_build_query(array_merge(request()->except('jumlah'), ['jumlah' => $j])) }}#daftar-pelanggan">{{ $j }}</a>
                             </th>
                         @endforeach
                         <th>Grand Total</th>
@@ -492,20 +391,19 @@
             <p>{{ $daftarPelanggan->count() }} pelanggan sesuai filter</p>
         </div>
 
-        {{-- Filter Jumlah Muncul — form GET terpisah, tapi tetap
-             membawa Tahun/ULP/Golongan yang sedang aktif lewat hidden
-             input biar gak ke-reset. --}}
+        {{-- Filter Jumlah Muncul & pencarian — form GET terpisah, tapi
+             tetap membawa SEMUA filter Periode/ULP/Golongan/Non-Pelanggan
+             yang sedang aktif lewat hidden input biar gak ke-reset. --}}
         <form method="GET" class="pb-jumlah-filter">
-            <input type="hidden" name="tahun" value="{{ $tahunAktif }}">
-            <input type="hidden" name="ulp" value="{{ $ulpFilter }}">
-            @if ($golonganFilter)
-                @foreach ($golonganFilter as $g)
-                    <input type="hidden" name="golongan[]" value="{{ $g }}">
-                @endforeach
-            @endif
-            @if ($modeNonPelanggan !== 'sembunyikan')
-                <input type="hidden" name="nonpelang" value="{{ $modeNonPelanggan }}">
-            @endif
+            @foreach (request()->except(['jumlah', 'search', '_token']) as $key => $value)
+                @if (is_array($value))
+                    @foreach ($value as $v)
+                        <input type="hidden" name="{{ $key }}[]" value="{{ $v }}">
+                    @endforeach
+                @else
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endif
+            @endforeach
 
             <div class="pb-search-wrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -525,7 +423,7 @@
         </form>
     </div>
 
-    @if ($jumlahFilter || $ulpFilter || $golonganFilter || $searchFilter)
+    @if ($jumlahFilter || $searchFilter)
         <div class="pb-active-filter">
             <span>
                 Menampilkan pelanggan
@@ -536,15 +434,8 @@
                 @if ($jumlahFilter)
                     yang muncul <strong>{{ $jumlahFilter }}x</strong>
                 @endif
-                @if (($jumlahFilter || $searchFilter) && $ulpFilter) di @endif
-                @if ($ulpFilter)
-                    ULP <strong>{{ $daftarUlp[$ulpFilter] ?? $ulpFilter }}</strong>
-                @endif
-                @if ($golonganFilter)
-                    &middot; Golongan <strong>{{ implode(', ', $golonganFilter) }}</strong>
-                @endif
             </span>
-            <a href="{{ route('laporan.penetapan-berulang', array_filter(['tahun' => $tahunAktif])) }}">Reset Filter</a>
+            <a href="{{ url()->current() }}?{{ http_build_query(request()->except(['jumlah', 'search'])) }}">Reset Filter Tabel</a>
         </div>
     @endif
 
@@ -556,6 +447,9 @@
                     <th>Nama</th>
                     <th>ULP</th>
                     <th>Golongan Terakhir</th>
+                    <th>Daya</th>
+                    <th>Nomor Agenda</th>
+                    <th>Tanggal Penetapan</th>
                     <th class="num">Jumlah Muncul</th>
                     <th class="num">Total KWH</th>
                     <th class="num">Total TS</th>
@@ -564,11 +458,21 @@
             </thead>
             <tbody>
                 @forelse ($daftarPelanggan as $p)
+                    @php
+                        // Golongan/Daya/Nomor Agenda/Tanggal Penetapan yang
+                        // ditampilkan adalah dari temuan PALING BARU (temuan
+                        // sudah diurutkan kronologis di controller), sama
+                        // pola-nya kayak "Golongan Terakhir" sebelumnya.
+                        $temuanTerakhir = end($p['temuan']);
+                    @endphp
                     <tr>
                         <td><span class="idpel-text">{{ $p['idpel'] }}</span></td>
                         <td><span class="nama-text">{{ $p['nama'] }}</span></td>
-                        <td>{{ $daftarUlp[$p['ulp']] ?? $p['ulp'] }}</td>
-                        <td><span class="gol-pill">{{ end($p['temuan'])['gol'] ?? '-' }}</span></td>
+                        <td>{{ $daftarUlpAssoc[$p['ulp']] ?? $p['ulp'] }}</td>
+                        <td><span class="gol-pill">{{ $temuanTerakhir['gol'] ?? '-' }}</span></td>
+                        <td>{{ $temuanTerakhir['daya'] ?? '-' }}</td>
+                        <td class="idpel-text">{{ $temuanTerakhir['no_agenda'] ?? '-' }}</td>
+                        <td>{{ $temuanTerakhir['tanggal_register'] ? \Carbon\Carbon::parse($temuanTerakhir['tanggal_register'])->format('d M Y') : '-' }}</td>
                         <td class="num"><span class="jumlah-badge">{{ $p['jumlah'] }}x</span></td>
                         <td class="num">{{ number_format($p['total_kwh'], 0, ',', '.') }}</td>
                         <td class="num">{{ number_format($p['total_ts'], 0, ',', '.') }}</td>
@@ -587,7 +491,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" style="text-align:center;color:#9aa4c2;padding:32px;">Tidak ada pelanggan yang cocok dengan filter ini.</td>
+                        <td colspan="11" style="text-align:center;color:#9aa4c2;padding:32px;">Tidak ada pelanggan yang cocok dengan filter ini.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -633,15 +537,6 @@
 @include('laporan.partials.copy-image-script')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Toggle centang semua/kosongkan semua checkbox Golongan Temuan.
-    // Cuma ubah tampilan centangnya di sini — filter beneran baru
-    // diterapkan begitu tombol "Terapkan" (submit form) ditekan.
-    function pbToggleSemuaGolongan() {
-        var boxes = document.querySelectorAll('.pb-golongan-checkbox');
-        var adaYangKosong = Array.prototype.some.call(boxes, function (b) { return !b.checked; });
-        boxes.forEach(function (b) { b.checked = adaYangKosong; });
-    }
-
     document.addEventListener('DOMContentLoaded', function () {
         function formatTanggal(iso) {
             if (! iso) return '-';

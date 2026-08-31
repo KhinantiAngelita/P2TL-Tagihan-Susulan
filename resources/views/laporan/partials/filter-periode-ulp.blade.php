@@ -5,19 +5,21 @@
     $ulpTerpilih    = $filter['ulpTerpilih'] ?? [];
     $tglMulai       = $filter['tglMulai'] ?? null;
     $tglSelesai     = $filter['tglSelesai'] ?? null;
-    $jumlahFilterAktif = count($twTerpilih) + count($bulanTerpilih) + count($ulpTerpilih) + ($tglMulai || $tglSelesai ? 1 : 0);
 
-    // ===== Tab tambahan khusus Menu Trend (Tahun/Jenis/Tampilan) — SEMUA
-    // opt-in, cuma nongol kalau halaman yang manggil partial ini emang
-    // ngirim datanya. Menu Laporan gak pernah ngirim $jenisOptions atau
-    // $mode, dan gak set $tampilkanTahunFilter, jadi tab-tab ini otomatis
-    // gak pernah muncul di Laporan — TIDAK MENGUBAH APAPUN di sana. =====
     $tampilkanTahunFilter = $tampilkanTahunFilter ?? false;
     $tampilkanJenisFilter = isset($jenisOptions);
     $tampilkanModeFilter  = isset($mode);
 
-    // Susun daftar tab sidebar secara DINAMIS (bukan index tetap), biar
-    // JS switch-tab-nya gak keliru kalau ada tab opsional yang gak aktif.
+    // Opsi "Semua Tahun" di tab Tahun — CUMA buat Penetapan Berulang
+    // (Trend selalu maksa 1 tahun terpilih, jadi flag ini default false
+    // di sana dan opsi ini gak pernah nongol).
+    $tampilkanSemuaTahunOpsi = $tampilkanSemuaTahunOpsi ?? false;
+
+    // Tab Golongan Temuan & Non-Pelanggan — opt-in KHUSUS Penetapan
+    // Berulang, dikontrol lewat flag eksplisit.
+    $tampilkanGolonganFilter     = $tampilkanGolonganFilter ?? false;
+    $tampilkanNonPelangganFilter = $tampilkanNonPelangganFilter ?? false;
+
     $tabFilter = [];
     if ($tampilkanTahunFilter) $tabFilter[] = 'tahun';
     if ($tampilkanJenisFilter) $tabFilter[] = 'jenis';
@@ -25,7 +27,11 @@
     $tabFilter[] = 'bulan';
     $tabFilter[] = 'tanggal';
     $tabFilter[] = 'ulp';
+    if ($tampilkanGolonganFilter) $tabFilter[] = 'golongan';
+    if ($tampilkanNonPelangganFilter) $tabFilter[] = 'nonpelang';
     if ($tampilkanModeFilter) $tabFilter[] = 'mode';
+
+    $tabPertama = $tabFilter[0] ?? 'tw';
 @endphp
 
 @push('styles')
@@ -55,9 +61,6 @@
         font-weight: 800;
     }
 
-    /* Card Rangkuman Filter Aktif — sekarang nampilin tiap kategori
-       filter sebagai chip terpisah (bukan satu baris teks panjang
-       digabung tanda "·"), lebih enak di-scan sekilas. */
     .fp-active-card {
         background: #f8f9fc;
         border: 1px solid #eef0f6;
@@ -110,7 +113,6 @@
     }
     .fp-btn-ubah:hover { background: #f3f4f6; }
 
-    /* Panel Modal / Dropdown */
     .fp-panel {
         display: none;
         background: #fff;
@@ -136,7 +138,6 @@
     .fp-panel-head svg { width: 14px; height: 14px; }
     .fp-close-btn { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; font-weight: bold; }
 
-    /* Layout Menu Pilihan Kategori vs Detail */
     .fp-body-layout {
         display: grid;
         grid-template-columns: 240px 1fr;
@@ -199,6 +200,12 @@
         text-transform: uppercase;
         letter-spacing: .03em;
         margin: 0 0 12px;
+    }
+    .fp-group-desc {
+        font-size: 12px;
+        color: #6b7690;
+        margin: -8px 0 14px;
+        line-height: 1.5;
     }
 
     .fp-pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -269,6 +276,44 @@
     .fp-ulp-row:hover { background: #f8f9fc; }
     .fp-ulp-empty { font-size: 12px; color: #9aa4c2; }
 
+    .fp-golongan-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+    .fp-golongan-item {
+        display: flex; align-items: center; gap: 7px;
+        padding: 8px 10px; border-radius: 8px;
+        font-size: 13px; color: #1b2559;
+        border: 1px solid #e5e9f5;
+        cursor: pointer;
+        transition: background .15s, border-color .15s;
+    }
+    .fp-golongan-item:hover { background: #f4f7ff; }
+    .fp-golongan-item input { width: 14px; height: 14px; accent-color: #0b3d91; cursor: pointer; }
+    .fp-golongan-pilih-semua {
+        background: none; border: none; color: #0b3d91;
+        font-size: 12px; font-weight: 700; cursor: pointer;
+        padding: 4px 0; margin-bottom: 8px;
+    }
+    .fp-golongan-pilih-semua:hover { text-decoration: underline; }
+    .fp-golongan-empty { font-size: 12px; color: #9aa4c2; }
+
+    .fp-radio-row {
+        display: flex; flex-direction: column; gap: 8px;
+    }
+    .fp-radio-item {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 10px 12px; border-radius: 9px;
+        border: 1px solid #e5e9f5; cursor: pointer;
+        transition: background .15s, border-color .15s;
+    }
+    .fp-radio-item:hover { background: #f8f9fc; }
+    .fp-radio-item input { margin-top: 3px; width: 14px; height: 14px; accent-color: #0b3d91; cursor: pointer; flex-shrink: 0; }
+    .fp-radio-item-text strong { display: block; font-size: 13px; color: #1b2559; margin-bottom: 2px; }
+    .fp-radio-item-text span { font-size: 11.5px; color: #6b7690; line-height: 1.4; }
+
     .fp-footer {
         display: flex;
         align-items: center;
@@ -300,17 +345,24 @@
 @endpush
 
 @php
-    // Href tombol "Reset" — selalu balik ke tahun/jenis/mode SAAT INI
-    // (dianggap konteks pokok halaman, bukan "filter" yang di-reset),
-    // cuma tw/bulan/ulp/tanggal yang dibuang.
     $resetQuery = ['tahun' => $tahunAktif];
     if ($tampilkanJenisFilter) $resetQuery['jenis'] = $jenisAktif ?? array_key_first($jenisOptions);
     if ($tampilkanModeFilter)  $resetQuery['mode']  = $mode;
     $resetHref = url()->current() . '?' . http_build_query($resetQuery);
+
+    $golonganDianggapAktif = $tampilkanGolonganFilter
+        && $golonganFilter
+        && count($golonganFilter) < (isset($daftarGolongan) ? count($daftarGolongan) : 0);
+    $nonPelangganDianggapAktif = $tampilkanNonPelangganFilter
+        && ($modeNonPelanggan ?? 'sembunyikan') !== 'sembunyikan';
+
+    $jumlahFilterAktif = count($twTerpilih) + count($bulanTerpilih) + count($ulpTerpilih)
+        + ($tglMulai || $tglSelesai ? 1 : 0)
+        + ($golonganDianggapAktif ? 1 : 0)
+        + ($nonPelangganDianggapAktif ? 1 : 0);
 @endphp
 
 <div style="margin-bottom:18px;">
-    <!-- Tombol Pemicu Utama -->
     <button type="button" class="fp-trigger" onclick="fpTogglePanel()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         Filter Periode &amp; ULP
@@ -320,16 +372,9 @@
     </button>
 
     @php
-        // Card ringkasan ini SELALU tampil khusus di halaman Trend (yang
-        // tab Tahun/Jenis/Tampilan-nya aktif) — karena di sana card info
-        // "Filter Trend/Pencapaian" yang lama udah dihapus, jadi ini jadi
-        // satu-satunya tempat nampilin konteks dasar (Jenis/Tahun/ULP).
-        // Di Menu Laporan, perilakunya TETAP SAMA seperti sebelumnya:
-        // cuma muncul kalau ada filter tambahan yang aktif.
-        $tampilkanRingkasanSelalu = $tampilkanTahunFilter || $tampilkanJenisFilter || $tampilkanModeFilter;
+        $tampilkanRingkasanSelalu = $tampilkanTahunFilter || $tampilkanJenisFilter || $tampilkanModeFilter || $tampilkanGolonganFilter || $tampilkanNonPelangganFilter;
     @endphp
 
-    <!-- Card Ringkasan Filter -->
     @if ($jumlahFilterAktif || $tampilkanRingkasanSelalu)
         <div class="fp-active-card">
             <div class="fp-active-card-left">
@@ -348,7 +393,6 @@
         </div>
     @endif
 
-    <!-- Panel Interaktif Pilihan Kategori -->
     <div id="filter-panel" class="fp-panel">
         <div class="fp-panel-head">
             <div class="fp-panel-head-title">
@@ -360,15 +404,9 @@
 
         <form method="GET" id="fp-form">
             @unless ($tampilkanTahunFilter)
-                {{-- Tahun BUKAN bagian dari panel ini (halaman punya select
-                     tahun sendiri di luar) — dipertahankan sebagai hidden
-                     field biar gak ke-reset pas filter panel di-submit. --}}
                 <input type="hidden" name="tahun" value="{{ $tahunAktif }}">
             @endunless
             @if ($tampilkanJenisFilter && !isset($jenisAktif))
-                {{-- Jaga-jaga: kalau $jenisAktif kelupaan dikirim tapi
-                     $jenisOptions ada, tetap kunci ke value saat ini lewat
-                     request supaya gak keliru ke opsi pertama. --}}
                 <input type="hidden" name="jenis" value="{{ request('jenis', array_key_first($jenisOptions)) }}">
             @endif
             @isset($mode)
@@ -377,22 +415,28 @@
                 @endunless
             @endisset
 
+            @if (request()->has('jumlah'))
+                <input type="hidden" name="jumlah" value="{{ request('jumlah') }}">
+            @endif
+            @if (request()->has('search'))
+                <input type="hidden" name="search" value="{{ request('search') }}">
+            @endif
+
             <div class="fp-body-layout">
-                <!-- Sidebar Menu Kategori -->
                 <div class="fp-menu-sidebar">
                     @if ($tampilkanTahunFilter)
-                        <button type="button" class="fp-menu-item active" data-target="tahun">
+                        <button type="button" class="fp-menu-item {{ $tabPertama === 'tahun' ? 'active' : '' }}" data-target="tahun">
                             <span>Tahun</span>
                         </button>
                     @endif
 
                     @if ($tampilkanJenisFilter)
-                        <button type="button" class="fp-menu-item {{ !$tampilkanTahunFilter ? 'active' : '' }}" data-target="jenis">
+                        <button type="button" class="fp-menu-item {{ $tabPertama === 'jenis' ? 'active' : '' }}" data-target="jenis">
                             <span>Jenis</span>
                         </button>
                     @endif
 
-                    <button type="button" class="fp-menu-item {{ !$tampilkanTahunFilter && !$tampilkanJenisFilter ? 'active' : '' }}" data-target="tw">
+                    <button type="button" class="fp-menu-item {{ $tabPertama === 'tw' ? 'active' : '' }}" data-target="tw">
                         <span>Triwulan</span>
                         @if(count($twTerpilih)) <span class="fp-menu-badge">{{ count($twTerpilih) }}</span> @endif
                     </button>
@@ -409,6 +453,20 @@
                         @if(count($ulpTerpilih)) <span class="fp-menu-badge">{{ count($ulpTerpilih) }}</span> @endif
                     </button>
 
+                    @if ($tampilkanGolonganFilter)
+                        <button type="button" class="fp-menu-item" data-target="golongan">
+                            <span>Golongan Temuan</span>
+                            @if($golonganDianggapAktif) <span class="fp-menu-badge">{{ count($golonganFilter) }}</span> @endif
+                        </button>
+                    @endif
+
+                    @if ($tampilkanNonPelangganFilter)
+                        <button type="button" class="fp-menu-item" data-target="nonpelang">
+                            <span>Non-Pelanggan</span>
+                            @if($nonPelangganDianggapAktif) <span class="fp-menu-badge">1</span> @endif
+                        </button>
+                    @endif
+
                     @if ($tampilkanModeFilter)
                         <button type="button" class="fp-menu-item" data-target="mode">
                             <span>Tampilan</span>
@@ -416,16 +474,20 @@
                     @endif
                 </div>
 
-                <!-- Area Konten Detail Filter -->
                 <div class="fp-content-area">
-                    {{-- Tab Tahun (opt-in, cuma buat Menu Trend) --}}
                     @if ($tampilkanTahunFilter)
-                        <div id="section-tahun" class="fp-section-content active">
+                        <div id="section-tahun" class="fp-section-content {{ $tabPertama === 'tahun' ? 'active' : '' }}">
                             <p class="fp-group-label">Pilih Tahun</p>
                             <div class="fp-pill-row">
+                                @if ($tampilkanSemuaTahunOpsi)
+                                    <label class="fp-chip">
+                                        <input type="radio" name="tahun" value="" {{ ! $tahunAktif ? 'checked' : '' }}>
+                                        <span>Semua Tahun</span>
+                                    </label>
+                                @endif
                                 @forelse ($daftarTahun as $t)
                                     <label class="fp-chip">
-                                        <input type="radio" name="tahun" value="{{ $t }}" {{ (int) $tahunAktif === (int) $t ? 'checked' : '' }}>
+                                        <input type="radio" name="tahun" value="{{ $t }}" {{ (string) $tahunAktif === (string) $t ? 'checked' : '' }}>
                                         <span>{{ $t }}</span>
                                     </label>
                                 @empty
@@ -435,9 +497,8 @@
                         </div>
                     @endif
 
-                    {{-- Tab Jenis (opt-in, cuma buat Menu Trend > Data Pencapaian) --}}
                     @if ($tampilkanJenisFilter)
-                        <div id="section-jenis" class="fp-section-content {{ !$tampilkanTahunFilter ? 'active' : '' }}">
+                        <div id="section-jenis" class="fp-section-content {{ $tabPertama === 'jenis' ? 'active' : '' }}">
                             <p class="fp-group-label">Pilih Jenis</p>
                             <div class="fp-pill-row">
                                 @foreach ($jenisOptions as $key => $label)
@@ -450,8 +511,7 @@
                         </div>
                     @endif
 
-                    <!-- 1. Konten Triwulan -->
-                    <div id="section-tw" class="fp-section-content {{ !$tampilkanTahunFilter && !$tampilkanJenisFilter ? 'active' : '' }}">
+                    <div id="section-tw" class="fp-section-content {{ $tabPertama === 'tw' ? 'active' : '' }}">
                         <p class="fp-group-label">Pilih Triwulan</p>
                         <div class="fp-pill-row">
                             @foreach (['I','II','III','IV'] as $i => $labelTw)
@@ -463,7 +523,6 @@
                         </div>
                     </div>
 
-                    <!-- 2. Konten Bulan -->
                     <div id="section-bulan" class="fp-section-content">
                         <p class="fp-group-label">Pilih Bulan</p>
                         <div class="fp-pill-row">
@@ -476,7 +535,6 @@
                         </div>
                     </div>
 
-                    <!-- 3. Konten Rentang Tanggal -->
                     <div id="section-tanggal" class="fp-section-content">
                         <p class="fp-group-label">Pilih Rentang Tanggal</p>
                         <div class="fp-tgl-field">
@@ -489,7 +547,6 @@
                         </div>
                     </div>
 
-                    <!-- 4. Konten ULP -->
                     <div id="section-ulp" class="fp-section-content">
                         <p class="fp-group-label">Pilih ULP</p>
                         @if (count($daftarUlp))
@@ -507,7 +564,62 @@
                         @endif
                     </div>
 
-                    {{-- Tab Tampilan/Mode (opt-in, cuma buat Menu Trend kWh/Rp TS) --}}
+                    @if ($tampilkanGolonganFilter)
+                        <div id="section-golongan" class="fp-section-content">
+                            <p class="fp-group-label">Golongan Temuan</p>
+                            <p class="fp-group-desc">
+                                Kemunculan dengan golongan yang tidak dicentang tidak ikut
+                                dihitung sebagai "muncul", baik di pivot maupun ringkasan.
+                            </p>
+                            @if (count($daftarGolongan))
+                                <button type="button" class="fp-golongan-pilih-semua" onclick="fpToggleSemuaGolongan()">Pilih/Batalkan Semua</button>
+                                <div class="fp-golongan-grid">
+                                    @foreach ($daftarGolongan as $g)
+                                        <label class="fp-golongan-item">
+                                            <input type="checkbox" name="golongan[]" class="fp-golongan-checkbox" value="{{ $g }}" {{ (! $golonganFilter || in_array($g, $golonganFilter, true)) ? 'checked' : '' }}>
+                                            <span>{{ $g }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @else
+                                <span class="fp-golongan-empty">Belum ada data golongan.</span>
+                            @endif
+                        </div>
+                    @endif
+
+                    @if ($tampilkanNonPelangganFilter)
+                        <div id="section-nonpelang" class="fp-section-content">
+                            <p class="fp-group-label">Perlakuan Non-Pelanggan</p>
+                            <p class="fp-group-desc">
+                                IDPEL "NONPELANG" dipakai bersama oleh banyak temuan berbeda
+                                (bukan pelanggan terdaftar).
+                            </p>
+                            <div class="fp-radio-row">
+                                <label class="fp-radio-item">
+                                    <input type="radio" name="nonpelang" value="sembunyikan" {{ ($modeNonPelanggan ?? 'sembunyikan') === 'sembunyikan' ? 'checked' : '' }}>
+                                    <span class="fp-radio-item-text">
+                                        <strong>Sembunyikan Non-Pelanggan</strong>
+                                        <span>Temuan NONPELANG tidak ikut dihitung sama sekali (default).</span>
+                                    </span>
+                                </label>
+                                <label class="fp-radio-item">
+                                    <input type="radio" name="nonpelang" value="sertakan" {{ ($modeNonPelanggan ?? '') === 'sertakan' ? 'checked' : '' }}>
+                                    <span class="fp-radio-item-text">
+                                        <strong>Sertakan Non-Pelanggan</strong>
+                                        <span>Ikut dihitung, dikelompokkan per Nama (bukan IDPEL).</span>
+                                    </span>
+                                </label>
+                                <label class="fp-radio-item">
+                                    <input type="radio" name="nonpelang" value="hanya" {{ ($modeNonPelanggan ?? '') === 'hanya' ? 'checked' : '' }}>
+                                    <span class="fp-radio-item-text">
+                                        <strong>Hanya Non-Pelanggan</strong>
+                                        <span>Pelanggan biasa (IDPEL asli) disembunyikan.</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    @endif
+
                     @if ($tampilkanModeFilter)
                         <div id="section-mode" class="fp-section-content">
                             <p class="fp-group-label">Tampilan Grafik</p>
@@ -546,9 +658,6 @@ function fpTogglePanel() {
     panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
 }
 
-// Switch tab sidebar filter. Dibaca dari atribut data-target (bukan
-// index tetap) — jadi kebal walau ada tab opsional (Tahun/Jenis/
-// Tampilan) yang kadang ada kadang enggak tergantung halaman.
 document.querySelectorAll('.fp-menu-item').forEach(function (btn) {
     btn.addEventListener('click', function () {
         var target = this.dataset.target;
@@ -569,5 +678,11 @@ function fpFilterUlp(kata) {
     document.querySelectorAll('#fp-ulp-list .fp-ulp-row').forEach(function (row) {
         row.style.display = row.dataset.nama.indexOf(kata) !== -1 ? '' : 'none';
     });
+}
+
+function fpToggleSemuaGolongan() {
+    var boxes = document.querySelectorAll('.fp-golongan-checkbox');
+    var adaYangKosong = Array.prototype.some.call(boxes, function (b) { return !b.checked; });
+    boxes.forEach(function (b) { b.checked = adaYangKosong; });
 }
 </script>
